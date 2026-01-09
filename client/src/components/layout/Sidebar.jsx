@@ -49,8 +49,8 @@ const Sidebar = ({ country }) => {
   };
 
   const sidebarBgClass = country === 'BR'
-    ? 'bg-gradient-to-b from-blue-900 to-slate-900'
-    : 'bg-gradient-to-b from-red-900 to-slate-900';
+    ? 'bg-[#0058c1]'
+    : 'bg-[#ed3030]';
 
   return (
     <aside className={`hidden lg:flex w-72 ${sidebarBgClass} flex-col justify-between h-full flex-shrink-0 z-30 transition-all duration-300 overflow-y-auto custom-scrollbar`}>

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { pb } from '../../lib/pocketbase';
 
-const Header = ({ onToggleTheme, country, setCountry }) => {
+const Header = ({ onToggleTheme, country, setCountry, isDarkMode }) => {
     const { user } = useAuth();
 
     const avatarUrl = user?.avatar
@@ -60,7 +60,7 @@ const Header = ({ onToggleTheme, country, setCountry }) => {
                     className="p-2.5 rounded-full hover:bg-white dark:hover:bg-card-dark text-gray-500 dark:text-gray-300 shadow-soft transition-all"
                 >
                     <span className="material-icons-round text-2xl">
-                        {document.documentElement.classList.contains('dark') ? 'light_mode' : 'dark_mode'}
+                        {isDarkMode ? 'light_mode' : 'dark_mode'}
                     </span>
                 </button>
 
