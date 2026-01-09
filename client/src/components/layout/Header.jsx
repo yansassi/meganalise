@@ -59,7 +59,9 @@ const Header = ({ onToggleTheme, country, setCountry }) => {
                     onClick={onToggleTheme}
                     className="p-2.5 rounded-full hover:bg-white dark:hover:bg-card-dark text-gray-500 dark:text-gray-300 shadow-soft transition-all"
                 >
-                    <span className="material-icons-round text-2xl">dark_mode</span>
+                    <span className="material-icons-round text-2xl">
+                        {document.documentElement.classList.contains('dark') ? 'light_mode' : 'dark_mode'}
+                    </span>
                 </button>
 
                 <div className="relative">

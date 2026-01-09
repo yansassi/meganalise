@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import ContentDetailsModal from './ContentDetailsModal';
 import { dataService } from '../../services/dataService';
+import { formatNumber } from '../../utils/formatters';
 
 
 const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", limit = null, showPagination = false }) => {
@@ -114,13 +115,13 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                                             </div>
                                         </td>
                                         <td className="py-5 text-right font-medium text-gray-600 dark:text-gray-300">
-                                            {item.reach ? item.reach.toLocaleString() : '-'}
+                                            {item.reach ? formatNumber(item.reach) : '-'}
                                         </td>
                                         <td className="py-5 text-right font-medium text-gray-600 dark:text-gray-300">
-                                            {item.views ? item.views.toLocaleString() : '-'}
+                                            {item.views ? formatNumber(item.views) : '-'}
                                         </td>
                                         <td className="py-5 text-right font-medium text-gray-600 dark:text-gray-300">
-                                            {item.saved ? item.saved.toLocaleString() : '-'}
+                                            {item.saved ? formatNumber(item.saved) : '-'}
                                         </td>
                                         <td className="py-5 text-right">
                                             <span className="font-black text-gray-800 dark:text-white">{item.virality}</span>

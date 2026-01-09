@@ -12,22 +12,14 @@ export default function Layout({ country, setCountry }) {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden text-gray-800 dark:text-gray-100 font-sans">
-      <Sidebar />
-
-      <main className="flex-1 flex flex-col h-full overflow-hidden bg-background-light dark:bg-background-dark transition-colors duration-300">
-        <Header
-          onToggleTheme={toggleDarkMode}
-          country={country}
-          setCountry={setCountry}
-        />
-
-        <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8 custom-scrollbar">
-          <div className="max-w-[1600px] mx-auto">
-            <Outlet context={{ country, setCountry }} />
-          </div>
-        </div>
-      </main>
+    <div className="flex h-screen bg-background-light dark:bg-background-dark text-gray-900 dark:text-white transition-colors duration-300 font-sans overflow-hidden">
+      <Sidebar country={country} />
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header onToggleTheme={toggleTheme} country={country} setCountry={setCountry} isDarkMode={darkMode} />
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 custom-scrollbar relative">
+          <Outlet context={{ country, setCountry }} />
+        </main>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatNumber } from '../../utils/formatters';
 
 const StatCards = ({ stats = [] }) => {
     return (
@@ -21,7 +22,7 @@ const StatCards = ({ stats = [] }) => {
                     </div>
 
                     <div>
-                        <h3 className="text-3xl font-bold">{stat.value}</h3>
+                        <h3 className="text-3xl font-bold">{formatNumber(stat.value)}</h3>
                         <div className="flex items-center mt-2">
                             {stat.trend !== 0 ? (
                                 <p className={`text-xs font-bold flex items-center ${stat.trend > 0 ? 'text-green-500' : 'text-red-500'}`}>

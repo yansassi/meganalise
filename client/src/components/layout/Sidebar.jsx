@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
-const Sidebar = () => {
+const Sidebar = ({ country }) => {
   const [openSubmenu, setOpenSubmenu] = React.useState('Instagram');
 
   const navItems = [
@@ -48,8 +48,12 @@ const Sidebar = () => {
     setOpenSubmenu(openSubmenu === name ? null : name);
   };
 
+  const sidebarBgClass = country === 'BR'
+    ? 'bg-gradient-to-b from-blue-900 to-slate-900'
+    : 'bg-gradient-to-b from-red-900 to-slate-900';
+
   return (
-    <aside className="hidden lg:flex w-72 bg-sidebar-bg flex-col justify-between h-full flex-shrink-0 z-30 transition-all duration-300 overflow-y-auto custom-scrollbar">
+    <aside className={`hidden lg:flex w-72 ${sidebarBgClass} flex-col justify-between h-full flex-shrink-0 z-30 transition-all duration-300 overflow-y-auto custom-scrollbar`}>
       <div>
         <div className="p-8 flex items-center gap-4">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-2xl shadow-glow">M</div>
