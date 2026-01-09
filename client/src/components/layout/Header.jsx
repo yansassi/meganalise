@@ -1,6 +1,17 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { pb } from '../lib/pocketbase';
 
 const Header = ({ onToggleTheme, country, setCountry }) => {
+    const { user } = useAuth();
+
+    const avatarUrl = user?.avatar
+        ? pb.files.getUrl(user, user.avatar)
+        : null;
+
+    const userName = user?.name || user?.email || 'Usuário';
+
     return (
         <header className="flex flex-wrap items-center justify-between px-4 md:px-8 py-6 gap-4">
             <div>
@@ -58,15 +69,20 @@ const Header = ({ onToggleTheme, country, setCountry }) => {
                     </button>
                 </div>
 
-                <div className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-800">
+                {/* User Profile Link */}
+                <Link to="/profile" className="flex items-center gap-3 pl-4 border-l border-gray-200 dark:border-gray-800 hover:opacity-80 transition-opacity">
                     <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center border-2 border-white dark:border-gray-700 shadow-soft overflow-hidden">
-                        <span className="material-icons-round text-gray-400 text-3xl">person</span>
+                        {avatarUrl ? (
+                            <img src={avatarUrl} alt={userName} className="w-full h-full object-cover" />
+                        ) : (
+                            <span className="material-icons-round text-gray-400 text-3xl">person</span>
+                        )}
                     </div>
-                    <div className="hidden sm:block">
-                        <p className="text-sm font-bold leading-tight">Admin</p>
+                    <div className="hidden sm:block text-left">
+                        <p className="text-sm font-bold leading-tight truncate max-w-[100px]">{userName}</p>
                         <p className="text-xs text-gray-500 font-medium mt-0.5">Gestor Social</p>
                     </div>
-                </div>
+                </Link>
             </div>
         </header>
     );

@@ -88,17 +88,14 @@ const Sidebar = () => {
       </div>
 
       <div className="px-6 pb-8 space-y-4">
-        <div className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center gap-3 hover:bg-white/10 transition-colors cursor-pointer group">
-          <NavLink to="/profile" className="flex items-center gap-3 w-full">
-            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-              <span className="material-icons-round">person</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium truncate">Minha Conta</p>
-              <p className="text-gray-500 text-xs truncate group-hover:text-gray-300">Editar Perfil</p>
-            </div>
-            <span className="material-icons-round text-gray-500 group-hover:text-white">chevron_right</span>
-          </NavLink>
+        <div className="p-5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-4">
+          <div className="p-2 rounded-lg bg-white/10 text-white/70">
+            <span className="material-icons-round text-xl">info</span>
+          </div>
+          <div className="text-xs">
+            <p className="text-white font-medium">Meganalise Pro</p>
+            <p className="text-gray-500 mt-0.5">v3.0.0</p>
+          </div>
         </div>
       </div>
     </aside>
