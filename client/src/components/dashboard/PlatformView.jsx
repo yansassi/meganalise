@@ -103,19 +103,11 @@ const PlatformView = ({ platform }) => {
         contentItems: [],
         isLoaded: false
     });
-    const [isDragging, setIsDragging] = useState(false);
-    const [parsedFiles, setParsedFiles] = useState([]);
-    const [showUploadModal, setShowUploadModal] = useState(false);
-
-    // Progress State
-    const [showProgress, setShowProgress] = useState(false);
-    const [progressValue, setProgressValue] = useState(0);
-    const [progressAction, setProgressAction] = useState('');
-    const [progressDetails, setProgressDetails] = useState('');
 
     useEffect(() => {
+        setData(prev => ({ ...prev, isLoaded: false }));
         loadFromDatabase();
-    }, [country]);
+    }, [country, platform]);
 
     const loadFromDatabase = async () => {
         const dbData = await dataService.getDashboardData(country, platform);
@@ -147,12 +139,9 @@ const PlatformView = ({ platform }) => {
             value: chartMap[date]
         }));
 
-        // Filter out stories for the main table if platform is Instagram
-
         let reels = [];
         let stories = [];
 
-        // Calculate aggregated story views and categorize
         dbData.content.forEach(c => {
             const item = {
                 id: c.original_id,
@@ -171,7 +160,6 @@ const PlatformView = ({ platform }) => {
             };
 
             if (platform === 'Instagram') {
-                // Expanded check: Explicit 'story' type OR 'social' type with views (legacy/heuristic)
                 if (c.platform_type === 'story' || (c.platform_type === 'social' && (c.views > 0 || c.title.startsWith('Story -')))) {
                     storyViews += (c.views || 0);
                     stories.push(item);
@@ -181,7 +169,6 @@ const PlatformView = ({ platform }) => {
             }
         });
 
-        // Current general contentItems (only non-stories if logic above persists, but we are replacing usage)
         const contentItems = dbData.content.map(c => ({
             id: c.original_id,
             title: c.title,
@@ -213,98 +200,15 @@ const PlatformView = ({ platform }) => {
         setData({
             stats,
             chartData,
-            contentItems, // kept for other platforms
-            reels,   // New
-            stories, // New
+            contentItems,
+            reels,
+            stories,
             isLoaded: true
         });
     };
 
-    const handleFileUpload = async (files) => {
-        setShowProgress(true);
-        setProgressAction('Processando Arquivos');
-        setProgressValue(0);
-
-        const tempParsed = [];
-        const totalFiles = files.length;
-
-        for (let i = 0; i < totalFiles; i++) {
-            const file = files[i];
-            setProgressDetails(`Lendo ${file.name}...`);
-
-            try {
-                // Simulate small delay for UX
-                await new Promise(r => setTimeout(r, 200));
-
-                const result = await instagramParser.parseFile(file);
-                tempParsed.push(result);
-            } catch (error) {
-                console.error("Erro ao ler arquivo:", file.name, error);
-            }
-
-            setProgressValue(((i + 1) / totalFiles) * 30); // First 30% is parsing
-        }
-
-        if (tempParsed.length > 0) {
-            // Auto-save logic
-            setProgressAction('Salvando no Banco de Dados');
-            setProgressDetails('Conectando ao PocketBase...');
-
-            let totalRecords = 0;
-            tempParsed.forEach(f => totalRecords += f.data.length);
-
-            let processedCount = 0;
-            let totalSaved = 0;
-
-            for (let i = 0; i < tempParsed.length; i++) {
-                const group = tempParsed[i];
-                const groupSize = group.data.length;
-
-                setProgressDetails(`Salvando lote ${i + 1}/${tempParsed.length}...`);
-
-                if (group.type === 'metric') {
-                    const res = await dataService.saveDailyMetrics(group.data, country);
-                    totalSaved += res.savedCount;
-                } else if (group.type === 'content') {
-                    const res = await dataService.saveContentItems(group.data, country);
-                    totalSaved += res.savedCount;
-                }
-
-                processedCount += groupSize;
-                // Progress from 30% to 100%
-                setProgressValue(30 + ((processedCount / totalRecords) * 70));
-            }
-
-            await loadFromDatabase();
-
-            setProgressDetails('Concluído!');
-            await new Promise(r => setTimeout(r, 500));
-        }
-
-        setShowProgress(false);
-    };
-
-    const onDrop = (e) => {
-        e.preventDefault();
-        setIsDragging(false);
-        handleFileUpload(e.dataTransfer.files);
-    };
-
     return (
         <div className="space-y-8 animate-fade-in relative">
-            <ProgressModal
-                isOpen={showProgress}
-                progress={progressValue}
-                action={progressAction}
-                details={progressDetails}
-            />
-
-            <UploadModal
-                isOpen={showUploadModal}
-                onClose={() => setShowUploadModal(false)}
-                onUpload={handleFileUpload}
-            />
-
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <h1 className="text-2xl font-bold">{platform} - Dados</h1>
@@ -312,49 +216,21 @@ const PlatformView = ({ platform }) => {
                         {country}
                     </span>
                 </div>
-
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setShowUploadModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/10 text-gray-700 dark:text-white text-sm font-bold rounded-xl shadow-soft hover:bg-gray-50 dark:hover:bg-white/20 transition-all border border-gray-100 dark:border-white/5"
-                    >
-                        <span className="material-icons-round text-lg">upload_file</span>
-                        Importar Dados
-                    </button>
-                </div>
             </div>
 
-            {/* Drag & Drop Zone (Initial State Only) */}
             {(!data.isLoaded) && (
-                <div
-                    className={`border-3 border-dashed rounded-3xl p-12 text-center transition-all duration-300
-                    ${isDragging
-                            ? 'border-primary bg-primary/5 scale-[1.01]'
-                            : 'border-gray-200 dark:border-gray-700 hover:border-primary/50'
-                        }
-                `}
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={onDrop}
-                >
-                    <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span className="material-icons-round text-3xl">cloud_upload</span>
+                <div className="border-3 border-dashed border-gray-200 dark:border-gray-700 rounded-3xl p-12 text-center">
+                    <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <span className="material-icons-round text-3xl">bar_chart</span>
                     </div>
-                    <h3 className="text-lg font-bold mb-2">Arraste e solte arquivos CSV</h3>
-                    <p className="text-gray-400 text-sm max-w-sm mx-auto mb-2">
-                        Carregue "Alcance.csv", "Interações.csv" ou exportações de conteúdo.
+                    <h3 className="text-lg font-bold mb-2">Sem dados para exibir</h3>
+                    <p className="text-gray-400 text-sm max-w-sm mx-auto mb-4">
+                        Nenhum dado encontrado para {platform} ({country}).
                     </p>
-                    <button className="text-primary font-bold hover:underline" onClick={() => document.getElementById('fileInput').click()}>
-                        Ou navegue pelos arquivos
-                    </button>
-                    <input
-                        id="fileInput"
-                        type="file"
-                        multiple
-                        accept=".csv"
-                        className="hidden"
-                        onChange={(e) => handleFileUpload(e.target.files)}
-                    />
+                    <a href="/upload" className="inline-flex items-center gap-2 text-primary font-bold hover:underline">
+                        Ir para Enviar Métricas
+                        <span className="material-icons-round text-sm">arrow_forward</span>
+                    </a>
                 </div>
             )}
 
