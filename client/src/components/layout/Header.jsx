@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { pb } from '../lib/pocketbase';
+import { useAuth } from '../../context/AuthContext';
+import { pb } from '../../lib/pocketbase';
 
 const Header = ({ onToggleTheme, country, setCountry }) => {
     const { user } = useAuth();
