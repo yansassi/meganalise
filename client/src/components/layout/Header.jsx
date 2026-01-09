@@ -7,7 +7,7 @@ const Header = ({ onToggleTheme, country, setCountry }) => {
     const { user } = useAuth();
 
     const avatarUrl = user?.avatar
-        ? pb.files.getUrl(user, user.avatar)
+        ? pb.files.getURL(user, user.avatar)
         : null;
 
     const userName = user?.name || user?.email || 'Usuário';

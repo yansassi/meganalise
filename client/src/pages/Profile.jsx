@@ -19,7 +19,7 @@ const Profile = () => {
         if (user) {
             setName(user.name || '');
             if (user.avatar) {
-                setPreview(pb.files.getUrl(user, user.avatar));
+                setPreview(pb.files.getURL(user, user.avatar));
             }
         }
     }, [user]);

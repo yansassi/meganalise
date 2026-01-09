@@ -157,14 +157,39 @@ export const dataService = {
             });
 
             // Fetch Content
-            // We filter content by social_network if the field exists, or fallback if not possible
-            // Ideally schema should have social_network.
-            const contentRecords = await pb.collection('instagram_content').getFullList({
-                filter: `country = "${country}" && social_network = "${targetPlatform}"`,
-                sort: '-date',
-                limit: 50,
-                requestKey: null
-            });
+            // We optimize: try to filter by social_network. If it fails (field missing), fallback to fetching all and filtering in JS.
+            let contentRecords = [];
+            try {
+                // Try exact filter first
+                const filter = `country = "${country}" && social_network = "${targetPlatform}"`;
+                contentRecords = await pb.collection('instagram_content').getFullList({
+                    filter: filter,
+                    sort: '-date',
+                    limit: 50,
+                    requestKey: null
+                });
+            } catch (err) {
+                // If 400, assumes field doesn't exist or other error. Fallback to broad fetch if platform is instagram (legacy support)
+                // If platform is NOT instagram, we really wanted isolation.
+                // But to prevent crash, we fetch all for country and filter in memory.
+                console.warn("Filtering by social_network failed (likely field missing). Falling back to Javascript filtering.", err);
+
+                const allContent = await pb.collection('instagram_content').getFullList({
+                    filter: `country = "${country}"`,
+                    sort: '-date',
+                    limit: 100, // Limit to recent items to avoid huge fetch
+                    requestKey: null
+                });
+
+                // Filter in memory
+                // Logic: 
+                // 1. If item has social_network field, match it.
+                // 2. If item DOES NOT have social_network field (legacy), assume it is 'instagram'.
+                contentRecords = allContent.filter(item => {
+                    const itemPlatform = item.social_network || 'instagram';
+                    return itemPlatform === targetPlatform;
+                });
+            }
 
             return {
                 metrics: metricsRecords,
@@ -306,13 +331,11 @@ export const dataService = {
     getContentImageUrl(item) {
         if (!item) return null;
 
-        // Se tem arquivo uploadado, usa URL do PocketBase
         if (item.image_file) {
-            return pb.getFileUrl(item, item.image_file);
+            return pb.files.getURL(item, item.image_file);
         }
 
         // Senão, usa URL externa (compatibilidade)
         return item.image_url || null;
     }
 };
-

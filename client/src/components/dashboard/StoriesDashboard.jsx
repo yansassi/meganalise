@@ -17,7 +17,7 @@ const StoriesDashboard = () => {
     }, [country]);
 
     const loadData = async () => {
-        const dbData = await dataService.getDashboardData(country);
+        const dbData = await dataService.getDashboardData(country, 'Instagram');
         processStoriesData(dbData);
     };
 
