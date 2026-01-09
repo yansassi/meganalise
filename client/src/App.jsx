@@ -13,6 +13,8 @@ import InstagramAudienceTab from './components/dashboard/InstagramAudienceTab';
 
 
 // Dashboard retrieves country from Outlet context
+import Login from './pages/Login';
+
 const Dashboard = () => {
   const { country } = useOutletContext();
 
@@ -77,6 +79,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/login" element={<Login />} />
         <Route path="/" element={<Layout country={country} setCountry={setCountry} />}>
           <Route index element={<Dashboard />} />
           <Route path="platform/youtube" element={<PlatformView platform="YouTube" />} />
