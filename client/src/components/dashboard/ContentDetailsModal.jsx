@@ -7,7 +7,25 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadSuccess, setUploadSuccess] = useState(false);
 
-    if (!isOpen || !item) return null;
+    // Processar arquivo de imagem
+    const handleImageFile = (file) => {
+        if (!file || !file.type.startsWith('image/')) {
+            alert('Por favor, selecione apenas arquivos de imagem.');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) { // 5MB
+            alert('A imagem deve ter no máximo 5MB.');
+            return;
+        }
+
+        setImageFile(file);
+        setUploadSuccess(false);
+
+        const reader = new FileReader();
+        reader.onload = (e) => setImagePreview(e.target.result);
+        reader.readAsDataURL(file);
+    };
 
     // Handler para Ctrl+V
     useEffect(() => {
@@ -30,26 +48,6 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
         window.addEventListener('paste', handlePaste);
         return () => window.removeEventListener('paste', handlePaste);
     }, [isOpen]);
-
-    // Processar arquivo de imagem
-    const handleImageFile = (file) => {
-        if (!file || !file.type.startsWith('image/')) {
-            alert('Por favor, selecione apenas arquivos de imagem.');
-            return;
-        }
-
-        if (file.size > 5 * 1024 * 1024) { // 5MB
-            alert('A imagem deve ter no máximo 5MB.');
-            return;
-        }
-
-        setImageFile(file);
-        setUploadSuccess(false);
-
-        const reader = new FileReader();
-        reader.onload = (e) => setImagePreview(e.target.result);
-        reader.readAsDataURL(file);
-    };
 
     // Upload da imagem
     const handleUploadImage = async () => {
@@ -79,6 +77,7 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
         setUploadSuccess(false);
     };
 
+    if (!isOpen || !item) return null;
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
