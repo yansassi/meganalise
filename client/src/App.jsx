@@ -14,6 +14,9 @@ import InstagramAudienceTab from './components/dashboard/InstagramAudienceTab';
 
 // Dashboard retrieves country from Outlet context
 import Login from './pages/Login';
+import Profile from './pages/Profile';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/layout/ProtectedRoute';
 
 const Dashboard = () => {
   const { country } = useOutletContext();
@@ -78,22 +81,27 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={<Layout country={country} setCountry={setCountry} />}>
-          <Route index element={<Dashboard />} />
-          <Route path="platform/youtube" element={<PlatformView platform="YouTube" />} />
-          <Route path="platform/instagram" element={<PlatformView platform="Instagram" />} />
-          <Route path="platform/instagram/content" element={<ContentDashboard />} />
-          <Route path="platform/instagram/stories" element={<StoriesDashboard />} />
-          <Route path="platform/instagram/audience" element={<InstagramAudienceTab />} />
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<Layout country={country} setCountry={setCountry} />}>
+              <Route index element={<Dashboard />} />
+              <Route path="platform/youtube" element={<PlatformView platform="YouTube" />} />
+              <Route path="platform/instagram" element={<PlatformView platform="Instagram" />} />
+              <Route path="platform/instagram/content" element={<ContentDashboard />} />
+              <Route path="platform/instagram/stories" element={<StoriesDashboard />} />
+              <Route path="platform/instagram/audience" element={<InstagramAudienceTab />} />
 
-          <Route path="platform/tiktok" element={<PlatformView platform="TikTok" />} />
-          <Route path="platform/facebook" element={<PlatformView platform="Facebook" />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
+              <Route path="platform/tiktok" element={<PlatformView platform="TikTok" />} />
+              <Route path="platform/facebook" element={<PlatformView platform="Facebook" />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          </Route>
+        </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

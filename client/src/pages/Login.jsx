@@ -1,15 +1,32 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
     const [showModal, setShowModal] = useState(false);
-    const navigate = useNavigate();
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = (e) => {
+    const navigate = useNavigate();
+    const { login } = useAuth();
+
+    const handleLogin = async (e) => {
         e.preventDefault();
-        // Temporary login logic - just navigate to dashboard
-        navigate('/');
+        setError('');
+        setLoading(true);
+
+        try {
+            await login(email, password);
+            navigate('/');
+        } catch (err) {
+            console.error("Login failed:", err);
+            setError('Falha ao entrar. Verifique suas credenciais.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -29,6 +46,13 @@ const Login = () => {
                     <p className="text-gray-500 dark:text-gray-400">Insira suas credenciais para acessar o sistema.</p>
                 </div>
 
+                {error && (
+                    <div className="mb-6 p-4 rounded-xl bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 flex items-center gap-3 text-red-600 dark:text-red-400">
+                        <span className="material-icons-round">error</span>
+                        <span className="text-sm font-medium">{error}</span>
+                    </div>
+                )}
+
                 <form onSubmit={handleLogin} className="space-y-6">
                     <div className="space-y-2">
                         <label className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1">Email</label>
@@ -39,6 +63,8 @@ const Login = () => {
                                 placeholder="seu@email.com"
                                 className="w-full pl-12 pr-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                                 required
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
                     </div>
@@ -52,6 +78,8 @@ const Login = () => {
                                 placeholder="••••••••"
                                 className="w-full pl-12 pr-4 py-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
                                 required
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                             />
                         </div>
                     </div>
@@ -62,9 +90,17 @@ const Login = () => {
 
                     <button
                         type="submit"
-                        className="w-full py-3.5 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-0.5 transition-all duration-300"
+                        disabled={loading}
+                        className="w-full py-3.5 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
-                        Entrar
+                        {loading ? (
+                            <>
+                                <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                                <span>Entrando...</span>
+                            </>
+                        ) : (
+                            'Entrar'
+                        )}
                     </button>
                 </form>
 
