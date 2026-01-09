@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import ContentDetailsModal from './ContentDetailsModal';
+import { dataService } from '../../services/dataService';
+
 
 const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", limit = null, showPagination = false }) => {
     const [currentPage, setCurrentPage] = useState(1);
@@ -71,9 +73,9 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                                     >
                                         <td className="py-5 pl-2 max-w-[300px]">
                                             <div className="flex items-center gap-4">
-                                                {item.imageUrl && (
+                                                {dataService.getContentImageUrl(item) && (
                                                     <img
-                                                        src={item.imageUrl}
+                                                        src={dataService.getContentImageUrl(item)}
                                                         alt={item.title}
                                                         className="w-12 h-12 rounded-2xl object-cover shadow-sm group-hover:scale-105 transition-transform"
                                                     />

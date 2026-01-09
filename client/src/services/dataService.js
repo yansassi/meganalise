@@ -248,6 +248,45 @@ export const dataService = {
             console.error("Error fetching latest import", err);
             return null;
         }
+    },
+
+    /**
+     * Atualiza a imagem de capa de um conteúdo
+     * @param {string} contentId - ID do conteúdo
+     * @param {File} imageFile - Arquivo de imagem
+     */
+    async updateContentImage(contentId, imageFile) {
+        try {
+            const formData = new FormData();
+            formData.append('image_file', imageFile);
+
+            const result = await pb.collection('instagram_content').update(
+                contentId,
+                formData,
+                { requestKey: null }
+            );
+            return result;
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Obtém a URL da imagem de um conteúdo
+     * Prioriza image_file (upload), senão usa image_url (URL externa)
+     * @param {Object} item - Item de conteúdo
+     */
+    getContentImageUrl(item) {
+        if (!item) return null;
+
+        // Se tem arquivo uploadado, usa URL do PocketBase
+        if (item.image_file) {
+            return pb.getFileUrl(item, item.image_file);
+        }
+
+        // Senão, usa URL externa (compatibilidade)
+        return item.image_url || null;
     }
 };
 

@@ -1,7 +1,84 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { dataService } from '../../services/dataService';
 
 const ContentDetailsModal = ({ isOpen, onClose, item }) => {
+    const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadSuccess, setUploadSuccess] = useState(false);
+
     if (!isOpen || !item) return null;
+
+    // Handler para Ctrl+V
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const handlePaste = (e) => {
+            const items = e.clipboardData?.items;
+            if (!items) return;
+
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const file = item.getAsFile();
+                    handleImageFile(file);
+                    e.preventDefault();
+                    break;
+                }
+            }
+        };
+
+        window.addEventListener('paste', handlePaste);
+        return () => window.removeEventListener('paste', handlePaste);
+    }, [isOpen]);
+
+    // Processar arquivo de imagem
+    const handleImageFile = (file) => {
+        if (!file || !file.type.startsWith('image/')) {
+            alert('Por favor, selecione apenas arquivos de imagem.');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) { // 5MB
+            alert('A imagem deve ter no máximo 5MB.');
+            return;
+        }
+
+        setImageFile(file);
+        setUploadSuccess(false);
+
+        const reader = new FileReader();
+        reader.onload = (e) => setImagePreview(e.target.result);
+        reader.readAsDataURL(file);
+    };
+
+    // Upload da imagem
+    const handleUploadImage = async () => {
+        if (!imageFile || !item) return;
+
+        setIsUploading(true);
+        try {
+            await dataService.updateContentImage(item.id, imageFile);
+            setUploadSuccess(true);
+            setTimeout(() => {
+                setImageFile(null);
+                setImagePreview(null);
+                setUploadSuccess(false);
+            }, 2000);
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            alert('Erro ao fazer upload da imagem. Tente novamente.');
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
+    // Cancelar upload
+    const handleCancelUpload = () => {
+        setImageFile(null);
+        setImagePreview(null);
+        setUploadSuccess(false);
+    };
+
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
@@ -39,8 +116,8 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
                     <div className="flex flex-col md:flex-row gap-6">
                         {/* Image/Preview */}
                         <div className="w-full md:w-1/3 aspect-[9/16] md:aspect-square bg-gray-100 dark:bg-white/5 rounded-2xl overflow-hidden relative shadow-inner flex-shrink-0">
-                            {item.imageUrl ? (
-                                <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
+                            {dataService.getContentImageUrl(item) ? (
+                                <img src={dataService.getContentImageUrl(item)} alt={item.title} className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center">
                                     <span className="material-icons-round text-4xl mb-2">image</span>
@@ -87,6 +164,78 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Upload de Capa */}
+                    <div className="border border-gray-200 dark:border-white/10 rounded-2xl p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <span className="material-icons-round text-purple-500">add_photo_alternate</span>
+                            <h4 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wider">Adicionar Capa</h4>
+                        </div>
+
+                        {imagePreview ? (
+                            <div className="space-y-4">
+                                <div className="relative aspect-square w-full max-w-xs mx-auto rounded-2xl overflow-hidden shadow-lg">
+                                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                </div>
+                                <div className="flex gap-3 justify-center">
+                                    <button
+                                        onClick={handleCancelUpload}
+                                        disabled={isUploading}
+                                        className="px-4 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 rounded-xl font-bold text-sm transition-colors disabled:opacity-50"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={handleUploadImage}
+                                        disabled={isUploading || uploadSuccess}
+                                        className="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {isUploading ? (
+                                            <>
+                                                <span className="material-icons-round text-sm animate-spin">sync</span>
+                                                Enviando...
+                                            </>
+                                        ) : uploadSuccess ? (
+                                            <>
+                                                <span className="material-icons-round text-sm">check_circle</span>
+                                                Salvo!
+                                            </>
+                                        ) : (
+                                            <>
+                                                <span className="material-icons-round text-sm">cloud_upload</span>
+                                                Salvar Imagem
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-8 text-center hover:border-primary dark:hover:border-primary transition-colors">
+                                <div className="w-16 h-16 bg-purple-50 dark:bg-purple-900/20 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <span className="material-icons-round text-3xl">image</span>
+                                </div>
+                                <p className="text-gray-600 dark:text-gray-300 mb-2 font-medium">
+                                    Cole uma imagem (Ctrl+V) ou
+                                </p>
+                                <button
+                                    onClick={() => document.getElementById('imageFileInput').click()}
+                                    className="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold text-sm transition-colors"
+                                >
+                                    Selecionar Arquivo
+                                </button>
+                                <input
+                                    id="imageFileInput"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => e.target.files[0] && handleImageFile(e.target.files[0])}
+                                    className="hidden"
+                                />
+                                <p className="text-xs text-gray-400 mt-3">
+                                    Máximo 5MB • JPG, PNG ou WebP
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Detailed Metrics Grid */}
