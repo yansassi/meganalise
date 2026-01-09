@@ -118,7 +118,7 @@ const PlatformView = ({ platform }) => {
     }, [country]);
 
     const loadFromDatabase = async () => {
-        const dbData = await dataService.getDashboardData(country);
+        const dbData = await dataService.getDashboardData(country, platform);
         if (dbData.metrics.length > 0 || dbData.content.length > 0) {
             processDbData(dbData);
         } else {

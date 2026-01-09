@@ -78,11 +78,11 @@ const UploadMetrics = () => {
 
                 // Check if we need to pass platform to save functions
                 if (group.type === 'metric') {
-                    await dataService.saveDailyMetrics(group.data, selectedCountry);
+                    await dataService.saveDailyMetrics(group.data, selectedCountry, selectedPlatform);
                 } else if (group.type === 'content') {
                     // We might need to ensure the content items have the correct platform_type
                     // For now, instagramParser sets it. If we parse other files, we might need to override here.
-                    await dataService.saveContentItems(group.data, selectedCountry);
+                    await dataService.saveContentItems(group.data, selectedCountry, selectedPlatform);
                 }
 
                 processedCount += groupSize;
@@ -131,8 +131,8 @@ const UploadMetrics = () => {
                                     key={p.id}
                                     onClick={() => setSelectedPlatform(p.id)}
                                     className={`relative p-4 rounded-2xl border-2 text-left transition-all duration-300 group overflow-hidden ${selectedPlatform === p.id
-                                            ? 'border-primary bg-primary/5 shadow-lg scale-[1.02]'
-                                            : 'border-transparent bg-white dark:bg-card-dark hover:border-gray-200 dark:hover:border-white/10 shadow-soft'
+                                        ? 'border-primary bg-primary/5 shadow-lg scale-[1.02]'
+                                        : 'border-transparent bg-white dark:bg-card-dark hover:border-gray-200 dark:hover:border-white/10 shadow-soft'
                                         }`}
                                 >
                                     <div className={`w-10 h-10 rounded-full ${p.color} flex items-center justify-center text-white mb-3 shadow-md`}>

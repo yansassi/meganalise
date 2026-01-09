@@ -6,7 +6,14 @@ const Sidebar = () => {
 
   const navItems = [
     { name: 'Painel', icon: 'dashboard', path: '/' },
-    { name: 'YouTube', icon: 'smart_display', path: '/platform/youtube' },
+    {
+      name: 'YouTube',
+      icon: 'smart_display',
+      path: '/platform/youtube',
+      submenu: [
+        { name: 'Geral', path: '/platform/youtube' },
+      ]
+    },
     {
       name: 'Instagram',
       icon: 'photo_camera',
@@ -18,8 +25,22 @@ const Sidebar = () => {
         { name: 'Público', path: '/platform/instagram/audience' }
       ]
     },
-    { name: 'TikTok', icon: 'music_note', path: '/platform/tiktok' },
-    { name: 'Facebook', icon: 'facebook', path: '/platform/facebook' },
+    {
+      name: 'TikTok',
+      icon: 'music_note',
+      path: '/platform/tiktok',
+      submenu: [
+        { name: 'Geral', path: '/platform/tiktok' },
+      ]
+    },
+    {
+      name: 'Facebook',
+      icon: 'facebook',
+      path: '/platform/facebook',
+      submenu: [
+        { name: 'Geral', path: '/platform/facebook' },
+      ]
+    },
     { name: 'Configurações', icon: 'settings', path: '/settings' },
   ];
 

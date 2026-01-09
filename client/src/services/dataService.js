@@ -29,9 +29,10 @@ export const dataService = {
      * @param {Array} metrics - Array of normalized metric objects
      * @param {string} country - 'BR' or 'PY'
      */
-    async saveDailyMetrics(metrics, country) {
+    async saveDailyMetrics(metrics, country, platform) {
         let savedCount = 0;
         const errors = [];
+        const targetPlatform = platform.toLowerCase();
 
         // Sequential processing to manage rate limits and logic
         for (const item of metrics) {
@@ -42,14 +43,14 @@ export const dataService = {
                 const endOfDay = `${item.date} 23:59:59`;
 
                 const existing = await pb.collection('instagram_daily_metrics').getList(1, 50, {
-                    filter: `date >= "${startOfDay}" && date <= "${endOfDay}" && metric = "${item.metric}" && country = "${country}" && platform = "instagram"`,
+                    filter: `date >= "${startOfDay}" && date <= "${endOfDay}" && metric = "${item.metric}" && country = "${country}" && platform = "${targetPlatform}"`,
                     requestKey: null
                 });
 
                 const payload = {
                     date: item.date,
                     country,
-                    platform: 'instagram',
+                    platform: targetPlatform,
                     metric: item.metric,
                     value: item.value
                 };
@@ -85,9 +86,10 @@ export const dataService = {
     /**
      * Batch creates or updates content items in PocketBase
      */
-    async saveContentItems(items, country) {
+    async saveContentItems(items, country, platform) {
         let savedCount = 0;
         const errors = [];
+        const targetPlatform = platform.toLowerCase();
 
         for (const item of items) {
             try {
@@ -99,7 +101,7 @@ export const dataService = {
                 // Check by original_id + country (assuming IDs might collide across countries if they are different accounts, but usually ID is unique)
                 // Using valid PocketBase filter syntax
                 const existing = await pb.collection('instagram_content').getList(1, 1, {
-                    filter: `original_id = "${item.id}" && country = "${country}"`,
+                    filter: `original_id = "${item.id}" && country = "${country}" && social_network = "${targetPlatform}"`,
                     requestKey: null
                 });
 
@@ -108,6 +110,7 @@ export const dataService = {
                     title: item.title,
                     image_url: item.imageUrl,
                     platform_type: type,
+                    social_network: targetPlatform,
                     date: item.date,
                     reach: item.reach,
                     likes: item.likes,
@@ -140,21 +143,24 @@ export const dataService = {
     },
 
     /**
-     * Fetches combined dashboard data for specific country
+     * Fetches dashboard data for specific country and platform
      */
-    async getDashboardData(country) {
+    async getDashboardData(country, platform) {
         try {
+            const targetPlatform = platform.toLowerCase();
+
             // Fetch Metrics
-            // Simplified fetch: get all records for this country. In production, filter by date range.
             const metricsRecords = await pb.collection('instagram_daily_metrics').getFullList({
-                filter: `country = "${country}" && platform = "instagram"`,
+                filter: `country = "${country}" && platform = "${targetPlatform}"`,
                 sort: 'date',
                 requestKey: null
             });
 
             // Fetch Content
+            // We filter content by social_network if the field exists, or fallback if not possible
+            // Ideally schema should have social_network.
             const contentRecords = await pb.collection('instagram_content').getFullList({
-                filter: `country = "${country}"`,
+                filter: `country = "${country}" && social_network = "${targetPlatform}"`,
                 sort: '-date',
                 limit: 50,
                 requestKey: null
@@ -167,6 +173,26 @@ export const dataService = {
         } catch (err) {
             console.error("Error fetching dashboard data", err);
             return { metrics: [], content: [] };
+        }
+    },
+
+    /**
+     * Fetches aggregated data (SUM) for the main dashboard
+     */
+    async getAggregateDashboardData(country) {
+        try {
+            // Get ALL metrics for the country, regardless of platform
+            const metricsRecords = await pb.collection('instagram_daily_metrics').getFullList({
+                filter: `country = "${country}"`,
+                sort: 'date',
+                requestKey: null
+            });
+
+            // We aggregate these manually on the client side since PB doesn't support aggregate queries nicely via API
+            return { metrics: metricsRecords };
+        } catch (err) {
+            console.error("Error fetching aggregate data", err);
+            return { metrics: [] };
         }
     },
 
