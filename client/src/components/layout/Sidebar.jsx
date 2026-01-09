@@ -48,16 +48,17 @@ const Sidebar = ({ country }) => {
     setOpenSubmenu(openSubmenu === name ? null : name);
   };
 
+  // Deep Corporate Luxury Gradients
   const sidebarBgClass = country === 'BR'
-    ? 'bg-[#0058c1]'
-    : 'bg-[#ed3030]';
+    ? 'bg-gradient-to-b from-[#0058c1] to-[#001e45]' // Blue to Deep Blue
+    : 'bg-gradient-to-b from-[#ed3030] to-[#450a0a]'; // Red to Deep Red
 
   return (
-    <aside className={`hidden lg:flex w-72 ${sidebarBgClass} flex-col justify-between h-full flex-shrink-0 z-30 transition-all duration-300 overflow-y-auto custom-scrollbar`}>
+    <aside className={`hidden lg:flex w-72 ${sidebarBgClass} flex-col justify-between h-full flex-shrink-0 z-30 transition-all duration-700 ease-in-out shadow-2xl overflow-y-auto custom-scrollbar`}>
       <div>
-        <div className="p-8 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-2xl shadow-glow">M</div>
-          <span className="text-white text-xl font-bold tracking-tight">Meganalise</span>
+        <div className="p-8 flex items-center gap-4 animate-entrance">
+          <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center text-white font-bold text-2xl shadow-inner border border-white/20">M</div>
+          <span className="text-white text-2xl font-bold tracking-tight drop-shadow-md">Meganalise</span>
         </div>
 
         <nav className="px-6 space-y-3">

@@ -1,43 +1,87 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #6C5DD3;
-  --color-secondary: #FF754C;
-  --color-sidebar-bg: #0F1235;
-  --color-background-light: #F5F6FA;
-  --color-background-dark: #0F172A;
+  --color-primary: #0058c1;
+  --color-primary-dark: #004e9a;
+  --color-secondary: #ed3030;
+  --color-secondary-dark: #c92a2a;
+  
+  --color-sidebar-bg: #0F172A; /* Deep Dark for high contrast */
+  
+  --color-background-light: #F8FAFC; /* Slate 50 - Premium Paper feel */
   --color-card-light: #FFFFFF;
-  --color-card-dark: #1E293B;
-
+  
   --font-sans: "Poppins", sans-serif;
 
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
   --radius-3xl: 2rem;
 
-  --shadow-soft: 0 10px 40px -10px rgba(0, 0, 0, 0.05);
-  --shadow-glow: 0 0 20px rgba(108, 93, 211, 0.3);
+  --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+  --shadow-glow-blue: 0 0 20px rgba(0, 88, 193, 0.15);
+  --shadow-glow-red: 0 0 20px rgba(237, 48, 48, 0.15);
+  --shadow-premium: 0 20px 40px -10px rgba(0, 0, 0, 0.1), 0 0 10px rgba(0,0,0,0.05);
 }
 
 @layer base {
   body {
-    @apply font-sans bg-background-light text-gray-800 dark:bg-background-dark dark:text-gray-100 transition-colors duration-300;
+    @apply font-sans bg-background-light text-slate-800 transition-colors duration-300;
   }
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+/* --- ANIMATIONS --- */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }
 
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Utility Animations */
+.animate-entrance {
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+.animate-slide-right {
+  animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+}
+
+/* Stagger Delays */
+.delay-100 { animation-delay: 100ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-400 { animation-delay: 400ms; }
+
+/* Glass Effects */
+.glass-panel {
+  @apply bg-white/90 backdrop-blur-md border border-white/50 shadow-card;
+}
+
+.hover-lift {
+  @apply transition-transform duration-300 hover:-translate-y-1 hover:shadow-premium;
+}
+
+/* Scrollbar */
+.custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 10px;
 }
-
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #334155;
-}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }

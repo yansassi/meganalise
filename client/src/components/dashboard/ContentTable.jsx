@@ -37,40 +37,41 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                 item={selectedItem}
             />
 
-            <div className="bg-white dark:bg-card-dark p-8 rounded-3xl shadow-soft overflow-hidden flex flex-col h-full">
+            <div className="bg-white p-8 rounded-3xl shadow-card hover:shadow-premium transition-all duration-300 overflow-hidden flex flex-col h-full animate-slide-right border border-slate-100/50">
                 {title && (
                     <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xl font-bold">{title}</h3>
+                        <h3 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h3>
                         {!showPagination && limit && items.length > limit && (
-                            <button className="text-primary text-sm font-bold hover:underline transition-all">Ver Todos</button>
+                            <button className="text-primary text-sm font-bold hover:underline transition-all hover:text-primary-dark">Ver Todos</button>
                         )}
                     </div>
                 )}
 
-                <div className="overflow-x-auto flex-1">
-                    <table className="w-full text-left">
+                <div className="overflow-x-auto flex-1 custom-scrollbar">
+                    <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="text-gray-400 text-[10px] uppercase font-bold tracking-widest border-b border-gray-100 dark:border-gray-800">
-                                <th className="pb-5 pl-2">Conteúdo</th>
+                            <tr className="text-slate-400 text-[10px] uppercase font-bold tracking-widest border-b border-slate-100">
+                                <th className="pb-5 pl-4">Conteúdo</th>
                                 <th className="pb-5">Plataforma</th>
                                 <th className="pb-5 text-right">Alcance</th>
                                 <th className="pb-5 text-right">Visualizações</th>
                                 <th className="pb-5 text-right">Salvamentos</th>
                                 <th className="pb-5 text-right">Viralidade</th>
-                                <th className="pb-5 text-right pr-2">Status</th>
+                                <th className="pb-5 text-right pr-4">Status</th>
                             </tr>
                         </thead>
                         <tbody className="text-sm">
                             {displayedItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="py-8 text-center text-gray-400">Nenhum conteúdo disponível</td>
+                                    <td colSpan="7" className="py-8 text-center text-slate-400">Nenhum conteúdo disponível</td>
                                 </tr>
                             ) : (
-                                displayedItems.map((item) => (
+                                displayedItems.map((item, index) => (
                                     <tr
                                         key={item.id}
                                         onClick={() => setSelectedItem(item)}
-                                        className="group hover:bg-gray-50/50 dark:hover:bg-white/5 transition-colors border-b last:border-0 border-gray-50 dark:border-gray-800 cursor-pointer"
+                                        style={{ animationDelay: `${index * 50}ms` }}
+                                        className="group hover:bg-slate-50 transition-colors border-b last:border-0 border-slate-50 cursor-pointer animate-entrance"
                                     >
                                         <td className="py-5 pl-2 max-w-[300px]">
                                             <div className="flex items-center gap-4">
