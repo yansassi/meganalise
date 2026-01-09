@@ -6,6 +6,7 @@ const Sidebar = () => {
 
   const navItems = [
     { name: 'Painel', icon: 'dashboard', path: '/' },
+    { name: 'Enviar Métricas', icon: 'cloud_upload', path: '/upload' },
     { name: 'YouTube', icon: 'smart_display', path: '/platform/youtube' },
     {
       name: 'Instagram',

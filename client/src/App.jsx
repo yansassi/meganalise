@@ -15,6 +15,7 @@ import InstagramAudienceTab from './components/dashboard/InstagramAudienceTab';
 // Dashboard retrieves country from Outlet context
 import Login from './pages/Login';
 import Profile from './pages/Profile';
+import UploadMetrics from './pages/UploadMetrics';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
@@ -92,7 +93,7 @@ function App() {
               <Route path="platform/instagram/content" element={<ContentDashboard />} />
               <Route path="platform/instagram/stories" element={<StoriesDashboard />} />
               <Route path="platform/instagram/audience" element={<InstagramAudienceTab />} />
-
+              <Route path="/upload" element={<UploadMetrics />} />
               <Route path="platform/tiktok" element={<PlatformView platform="TikTok" />} />
               <Route path="platform/facebook" element={<PlatformView platform="Facebook" />} />
               <Route path="settings" element={<Settings />} />
