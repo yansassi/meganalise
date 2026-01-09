@@ -127,7 +127,7 @@ const PlatformView = ({ platform }) => {
     };
 
     const processDbData = (dbData) => {
-        let reach = 0, interactions = 0, followers = 0, websiteClicks = 0, storyViews = 0;
+        let reach = 0, interactions = 0, followers = 0, websiteClicks = 0, profileVisits = 0, storyViews = 0;
         const chartMap = {};
 
         dbData.metrics.forEach(m => {
@@ -135,6 +135,7 @@ const PlatformView = ({ platform }) => {
             if (m.metric === 'interactions') interactions += m.value;
             if (m.metric === 'followers') followers += m.value;
             if (m.metric === 'website_clicks') websiteClicks += m.value;
+            if (m.metric === 'profile_visits') profileVisits += m.value;
 
             if (m.metric === 'reach') {
                 chartMap[m.date] = (chartMap[m.date] || 0) + m.value;
@@ -201,6 +202,7 @@ const PlatformView = ({ platform }) => {
             { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
             { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
             { label: 'Seguidores', value: followers, trend: 0, icon: 'group', color: 'orange' },
+            { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
             { label: 'Cliques no Link', value: websiteClicks, trend: 0, icon: 'link', color: 'green' }
         ];
 
