@@ -6,7 +6,6 @@ const Sidebar = () => {
 
   const navItems = [
     { name: 'Painel', icon: 'dashboard', path: '/' },
-    { name: 'Enviar Métricas', icon: 'cloud_upload', path: '/upload' },
     { name: 'YouTube', icon: 'smart_display', path: '/platform/youtube' },
     {
       name: 'Instagram',
@@ -89,14 +88,16 @@ const Sidebar = () => {
       </div>
 
       <div className="px-6 pb-8 space-y-4">
-        <div className="p-5 rounded-2xl bg-white/5 border border-white/10 flex items-center gap-4">
-          <div className="p-2 rounded-lg bg-white/10 text-white/70">
-            <span className="material-icons-round text-xl">info</span>
-          </div>
-          <div className="text-xs">
-            <p className="text-white font-medium">Meganalise Pro</p>
-            <p className="text-gray-500 mt-0.5">v3.0.0</p>
-          </div>
+        <div className="p-4 rounded-xl bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/20 hover:border-primary/40 transition-all cursor-pointer group">
+          <NavLink to="/upload" className="flex items-center gap-3 w-full">
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30 group-hover:scale-110 transition-transform">
+              <span className="material-icons-round">cloud_upload</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-white text-sm font-bold truncate">Enviar Métricas</p>
+              <p className="text-primary-light text-xs truncate opacity-80 group-hover:opacity-100">Upload de CSV</p>
+            </div>
+          </NavLink>
         </div>
       </div>
     </aside>
