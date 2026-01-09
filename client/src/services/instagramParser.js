@@ -253,6 +253,12 @@ export const instagramParser = {
             return { type: 'metric', metric: 'website_clicks', data: normalizeDailyMetric(data, 'website_clicks') };
         }
 
+        // Content Format Summary (redundant data, skip silently)
+        if (fileName.includes('principais formatos') || fileName.includes('formatos de conte')) {
+            console.log('Skipping content format summary (data already available from detailed content export)');
+            return { type: 'content_format_summary', data: [] };
+        }
+
         console.warn('Unknown file type:', fileName, Object.keys(data[0] || {}));
         return { type: 'unknown', data };
     },
