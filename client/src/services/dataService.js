@@ -168,5 +168,86 @@ export const dataService = {
             console.error("Error fetching dashboard data", err);
             return { metrics: [], content: [] };
         }
+    },
+
+    /**
+     * Saves audience demographics data to PocketBase
+     * @param {Array} audienceData - Array of normalized audience objects
+     */
+    async saveAudienceData(audienceData) {
+        let savedCount = 0;
+        const errors = [];
+        const importDate = new Date().toISOString();
+
+        for (const item of audienceData) {
+            try {
+                const payload = {
+                    platform: 'instagram',
+                    import_date: importDate,
+                    category: item.category,
+                    subcategory: item.subcategory,
+                    gender: item.gender,
+                    value: item.value,
+                    rank: item.rank
+                };
+
+                await pb.collection('instagram_audience_demographics').create(payload, { requestKey: null });
+                savedCount++;
+            } catch (err) {
+                console.error(`Failed to save audience data ${item.category}/${item.subcategory}`, err);
+                errors.push(err);
+            }
+        }
+
+        return { savedCount, errors, importDate };
+    },
+
+    /**
+     * Fetches audience demographics data
+     * @param {string} category - Optional category filter ('age_gender', 'cities', 'countries', 'pages')
+     * @param {string} importDate - Optional import date filter
+     */
+    async getAudienceData(category = null, importDate = null) {
+        try {
+            let filter = 'platform = "instagram"';
+
+            if (category) {
+                filter += ` && category = "${category}"`;
+            }
+
+            if (importDate) {
+                filter += ` && import_date = "${importDate}"`;
+            }
+
+            const records = await pb.collection('instagram_audience_demographics').getFullList({
+                filter,
+                sort: category === 'cities' || category === 'pages' ? 'rank' : 'subcategory',
+                requestKey: null
+            });
+
+            return records;
+        } catch (err) {
+            console.error("Error fetching audience data", err);
+            return [];
+        }
+    },
+
+    /**
+     * Gets the latest import date for audience data
+     */
+    async getLatestAudienceImport() {
+        try {
+            const records = await pb.collection('instagram_audience_demographics').getList(1, 1, {
+                filter: 'platform = "instagram"',
+                sort: '-import_date',
+                requestKey: null
+            });
+
+            return records.items.length > 0 ? records.items[0].import_date : null;
+        } catch (err) {
+            console.error("Error fetching latest import", err);
+            return null;
+        }
     }
 };
+

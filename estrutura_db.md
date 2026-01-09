@@ -77,7 +77,31 @@ Armazena posts e vídeos do Instagram.
 
 ---
 
-### 5. `comments_log` (log_comentarios)
+### 4. `instagram_audience_demographics`
+Armazena dados demográficos da audiência do Instagram (faixa etária, gênero, cidades, países, páginas seguidas).
+
+*   **Tipo:** Base
+*   **Regras de API:** Público (Create/View/List/Update/Delete)
+
+| Nome do Campo | Tipo | Opções/Notas |
+| :--- | :--- | :--- |
+| `id` | System | Gerado automaticamente |
+| `platform` | Text | "instagram" |
+| `import_date` | Date/Time | Data/hora da importação |
+| `category` | Select | "age_gender", "cities", "countries", "pages" |
+| `subcategory` | Text | Ex: "18-24", "São Paulo", "Brazil", "Cifras" |
+| `gender` | Text | "women", "men", null (apenas para age_gender) |
+| `value` | Number | Valor percentual |
+| `rank` | Number | Posição no ranking (para cities e pages) |
+
+> [!NOTE]
+> **Categorias de Dados:**
+> - `age_gender`: Distribuição por faixa etária e gênero (18-24, 25-34, etc.)
+> - `cities`: Top 10 cidades da audiência
+> - `countries`: Distribuição por países
+> - `pages`: Top 10 páginas que a audiência também segue
+
+
 Armazena comentários importados para análise de sentimento e rastreamento de perguntas e respostas.
 
 *   **Tipo:** Base

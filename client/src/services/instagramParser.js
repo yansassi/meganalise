@@ -255,5 +255,172 @@ export const instagramParser = {
 
         console.warn('Unknown file type:', fileName, Object.keys(data[0] || {}));
         return { type: 'unknown', data };
+    },
+
+    /**
+     * Parses Público.csv (Audience Demographics)
+     * Structure:
+     * - Line 1: sep=,
+     * - Line 2: "Faixa etária e gênero"
+     * - Lines 3-9: Age/Gender data
+     * - Line 11: "Principais cidades"
+     * - Lines 12-13: Cities data
+     * - Line 15: "Principais países"
+     * - Lines 16-17: Countries data
+     * - Line 19: "Principais Páginas"
+     * - Lines 20-21: Pages data
+     */
+    async parseAudienceFile(file) {
+        const { data, metadata } = await parseCSV(file);
+        const result = [];
+
+        // Read raw lines to process sections
+        const reader = new FileReader();
+        return new Promise((resolve, reject) => {
+            reader.onload = (event) => {
+                const buffer = event.target.result;
+                const view = new DataView(buffer);
+                let decoder;
+
+                // Check for UTF-16LE BOM
+                if (view.byteLength >= 2 && view.getUint8(0) === 0xFF && view.getUint8(1) === 0xFE) {
+                    decoder = new TextDecoder('utf-16le');
+                } else {
+                    decoder = new TextDecoder('utf-8');
+                }
+
+                const csvText = decoder.decode(buffer);
+                const lines = csvText.split(/\r\n|\n/).filter(line => line.trim());
+
+                try {
+                    // Section 1: Age and Gender (lines 3-9 approximately)
+                    // Find the header line with "Mulheres","Homens"
+                    let ageGenderStart = -1;
+                    for (let i = 0; i < lines.length; i++) {
+                        if (lines[i].includes('Mulheres') && lines[i].includes('Homens')) {
+                            ageGenderStart = i;
+                            break;
+                        }
+                    }
+
+                    if (ageGenderStart !== -1) {
+                        // Process next 6 lines (age ranges)
+                        for (let i = ageGenderStart + 1; i < Math.min(ageGenderStart + 7, lines.length); i++) {
+                            const line = lines[i];
+                            if (!line || line.includes('Principais')) break;
+
+                            const parts = line.split(',').map(p => p.replace(/"/g, '').trim());
+                            if (parts.length >= 3 && parts[0]) {
+                                const ageRange = parts[0];
+                                const womenValue = parseFloat(parts[1]) || 0;
+                                const menValue = parseFloat(parts[2]) || 0;
+
+                                result.push({
+                                    category: 'age_gender',
+                                    subcategory: ageRange,
+                                    gender: 'women',
+                                    value: womenValue,
+                                    rank: null
+                                });
+
+                                result.push({
+                                    category: 'age_gender',
+                                    subcategory: ageRange,
+                                    gender: 'men',
+                                    value: menValue,
+                                    rank: null
+                                });
+                            }
+                        }
+                    }
+
+                    // Section 2: Cities
+                    let citiesStart = -1;
+                    for (let i = 0; i < lines.length; i++) {
+                        if (lines[i].includes('Principais cidades')) {
+                            citiesStart = i;
+                            break;
+                        }
+                    }
+
+                    if (citiesStart !== -1 && citiesStart + 2 < lines.length) {
+                        const cityNames = lines[citiesStart + 1].split(',').map(c => c.replace(/"/g, '').trim());
+                        const cityValues = lines[citiesStart + 2].split(',').map(v => parseFloat(v.replace(/"/g, '').trim()) || 0);
+
+                        for (let i = 0; i < Math.min(cityNames.length, cityValues.length); i++) {
+                            if (cityNames[i]) {
+                                result.push({
+                                    category: 'cities',
+                                    subcategory: cityNames[i],
+                                    gender: null,
+                                    value: cityValues[i],
+                                    rank: i + 1
+                                });
+                            }
+                        }
+                    }
+
+                    // Section 3: Countries
+                    let countriesStart = -1;
+                    for (let i = 0; i < lines.length; i++) {
+                        if (lines[i].includes('Principais países')) {
+                            countriesStart = i;
+                            break;
+                        }
+                    }
+
+                    if (countriesStart !== -1 && countriesStart + 2 < lines.length) {
+                        const countryNames = lines[countriesStart + 1].split(',').map(c => c.replace(/"/g, '').trim());
+                        const countryValues = lines[countriesStart + 2].split(',').map(v => parseFloat(v.replace(/"/g, '').trim()) || 0);
+
+                        for (let i = 0; i < Math.min(countryNames.length, countryValues.length); i++) {
+                            if (countryNames[i]) {
+                                result.push({
+                                    category: 'countries',
+                                    subcategory: countryNames[i],
+                                    gender: null,
+                                    value: countryValues[i],
+                                    rank: i + 1
+                                });
+                            }
+                        }
+                    }
+
+                    // Section 4: Pages
+                    let pagesStart = -1;
+                    for (let i = 0; i < lines.length; i++) {
+                        if (lines[i].includes('Principais Páginas') || lines[i].includes('Principais Paginas')) {
+                            pagesStart = i;
+                            break;
+                        }
+                    }
+
+                    if (pagesStart !== -1 && pagesStart + 2 < lines.length) {
+                        const pageNames = lines[pagesStart + 1].split(',').map(p => p.replace(/"/g, '').trim());
+                        const pageValues = lines[pagesStart + 2].split(',').map(v => parseFloat(v.replace(/"/g, '').trim()) || 0);
+
+                        for (let i = 0; i < Math.min(pageNames.length, pageValues.length); i++) {
+                            if (pageNames[i]) {
+                                result.push({
+                                    category: 'pages',
+                                    subcategory: pageNames[i],
+                                    gender: null,
+                                    value: pageValues[i],
+                                    rank: i + 1
+                                });
+                            }
+                        }
+                    }
+
+                    resolve({ type: 'audience', data: result });
+                } catch (error) {
+                    reject(error);
+                }
+            };
+
+            reader.onerror = (error) => reject(error);
+            reader.readAsArrayBuffer(file);
+        });
     }
 };
+

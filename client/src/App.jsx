@@ -9,6 +9,8 @@ import { instagramParser } from './services/instagramParser';
 import PlatformView from './components/dashboard/PlatformView';
 import StoriesDashboard from './components/dashboard/StoriesDashboard';
 import ContentDashboard from './components/dashboard/ContentDashboard';
+import InstagramAudienceTab from './components/dashboard/InstagramAudienceTab';
+
 
 // Dashboard retrieves country from Outlet context
 const Dashboard = () => {
@@ -81,6 +83,8 @@ function App() {
           <Route path="platform/instagram" element={<PlatformView platform="Instagram" />} />
           <Route path="platform/instagram/content" element={<ContentDashboard />} />
           <Route path="platform/instagram/stories" element={<StoriesDashboard />} />
+          <Route path="platform/instagram/audience" element={<InstagramAudienceTab />} />
+
           <Route path="platform/tiktok" element={<PlatformView platform="TikTok" />} />
           <Route path="platform/facebook" element={<PlatformView platform="Facebook" />} />
           <Route path="settings" element={<Settings />} />

@@ -14,7 +14,8 @@ const Sidebar = () => {
       submenu: [
         { name: 'Geral', path: '/platform/instagram' },
         { name: 'Conteúdo', path: '/platform/instagram/content' },
-        { name: 'Stories', path: '/platform/instagram/stories' }
+        { name: 'Stories', path: '/platform/instagram/stories' },
+        { name: 'Público', path: '/platform/instagram/audience' }
       ]
     },
     { name: 'TikTok', icon: 'music_note', path: '/platform/tiktok' },
@@ -52,7 +53,7 @@ const Sidebar = () => {
                   </button>
 
                   {/* Submenu Items */}
-                  <div className={`pl-12 space-y-2 overflow-hidden transition-all duration-300 ${openSubmenu === item.name ? 'max-h-40 mt-2' : 'max-h-0'}`}>
+                  <div className={`pl-12 space-y-2 overflow-hidden transition-all duration-300 ${openSubmenu === item.name ? 'max-h-52 mt-2' : 'max-h-0'}`}>
                     {item.submenu.map(sub => (
                       <NavLink
                         key={sub.name}
