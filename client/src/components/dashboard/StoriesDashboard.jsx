@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import { dataService } from '../../services/dataService';
 import StatCards from './StatCards';
 import ContentTable from './ContentTable';
+import DateRangeFilter from './DateRangeFilter';
 
 const StoriesDashboard = () => {
     const { country } = useOutletContext();
@@ -11,13 +12,15 @@ const StoriesDashboard = () => {
         contentItems: [],
         isLoaded: false
     });
+    const [dateRange, setDateRange] = useState({ startDate: null, endDate: null });
 
     useEffect(() => {
+        if (!dateRange.startDate || !dateRange.endDate) return;
         loadData();
-    }, [country]);
+    }, [country, dateRange]);
 
     const loadData = async () => {
-        const dbData = await dataService.getDashboardData(country, 'Instagram');
+        const dbData = await dataService.getDashboardData(country, 'Instagram', dateRange.startDate, dateRange.endDate);
         processStoriesData(dbData);
     };
 
@@ -71,11 +74,14 @@ const StoriesDashboard = () => {
 
     return (
         <div className="space-y-8 animate-fade-in">
-            <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold">Instagram - Stories</h1>
-                <span className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-white/10 text-xs font-bold border border-gray-200 dark:border-white/10">
-                    {country}
-                </span>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold">Instagram - Stories</h1>
+                    <span className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-white/10 text-xs font-bold border border-gray-200 dark:border-white/10">
+                        {country}
+                    </span>
+                </div>
+                <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" />
             </div>
 
             <StatCards stats={data.stats} />

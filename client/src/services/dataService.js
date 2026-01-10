@@ -145,27 +145,34 @@ export const dataService = {
     /**
      * Fetches dashboard data for specific country and platform
      */
-    async getDashboardData(country, platform) {
+    async getDashboardData(country, platform, startDate = null, endDate = null) {
         try {
             const targetPlatform = platform.toLowerCase();
 
+            // Build Date Filter
+            let dateFilter = '';
+            if (startDate) dateFilter += ` && date >= "${startDate} 00:00:00"`;
+            if (endDate) dateFilter += ` && date <= "${endDate} 23:59:59"`;
+
             // Fetch Metrics
             const metricsRecords = await pb.collection('instagram_daily_metrics').getFullList({
-                filter: `country = "${country}" && platform = "${targetPlatform}"`,
+                filter: `country = "${country}" && platform = "${targetPlatform}"${dateFilter}`,
                 sort: 'date',
                 requestKey: null
             });
+
 
             // Fetch Content
             // We optimize: try to filter by social_network. If it fails (field missing), fallback to fetching all and filtering in JS.
             let contentRecords = [];
             try {
                 // Try exact filter first
-                const filter = `country = "${country}" && social_network = "${targetPlatform}"`;
+                const filter = `country = "${country}" && social_network = "${targetPlatform}"${dateFilter}`;
                 contentRecords = await pb.collection('instagram_content').getFullList({
                     filter: filter,
                     sort: '-date',
                     limit: 50,
+
                     requestKey: null
                 });
             } catch (err) {
@@ -204,14 +211,19 @@ export const dataService = {
     /**
      * Fetches aggregated data (SUM) for the main dashboard
      */
-    async getAggregateDashboardData(country) {
+    async getAggregateDashboardData(country, startDate = null, endDate = null) {
         try {
+            let dateFilter = '';
+            if (startDate) dateFilter += ` && date >= "${startDate} 00:00:00"`;
+            if (endDate) dateFilter += ` && date <= "${endDate} 23:59:59"`;
+
             // Get ALL metrics for the country, regardless of platform
             const metricsRecords = await pb.collection('instagram_daily_metrics').getFullList({
-                filter: `country = "${country}"`,
+                filter: `country = "${country}"${dateFilter}`,
                 sort: 'date',
                 requestKey: null
             });
+
 
             // We aggregate these manually on the client side since PB doesn't support aggregate queries nicely via API
             return { metrics: metricsRecords };

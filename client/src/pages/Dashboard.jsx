@@ -3,6 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import StatCards from '../components/dashboard/StatCards';
 // import GrowthChart from '../components/dashboard/GrowthChart'; // Placeholder
 import RightPanel from '../components/dashboard/RightPanel';
+import DateRangeFilter from '../components/dashboard/DateRangeFilter';
 // dataService needs to be imported, assuming it's available or we fix the path
 import { dataService } from '../services/dataService'; // We'll double check path
 
@@ -15,14 +16,17 @@ const Dashboard = () => {
         { label: 'Campanhas', value: 0, trend: 0, icon: 'rocket_launch', color: 'green' },
     ]);
     const [loading, setLoading] = useState(true);
+    const [dateRange, setDateRange] = useState({ startDate: null, endDate: null });
 
     useEffect(() => {
         const loadAggregatedData = async () => {
+            if (!dateRange.startDate || !dateRange.endDate) return;
+
             setLoading(true);
             try {
                 // Dynamic import logic was in App.jsx but standard import is better if possible. 
                 // We will stick to standard import as written above assuming dataService exists.
-                const data = await dataService.getAggregateDashboardData(country);
+                const data = await dataService.getAggregateDashboardData(country, dateRange.startDate, dateRange.endDate);
 
                 let totalReach = 0;
                 let totalEngagement = 0;
@@ -54,21 +58,25 @@ const Dashboard = () => {
             }
         };
         loadAggregatedData();
-    }, [country]);
+    }, [country, dateRange]);
 
     return (
         <div className="space-y-8 animate-fade-in pb-20">
             {/* Welcome Section */}
-            <div className="flex items-center gap-4 py-2 mb-6">
-                <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary transform rotate-3">
-                    <span className="material-icons-round text-3xl">waving_hand</span>
-                </div>
-                <div>
-                    <div className="flex items-center gap-2">
-                        <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Bem-vindo de volta!</h2>
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 py-2 mb-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-white shadow-sm flex items-center justify-center text-primary transform rotate-3">
+                        <span className="material-icons-round text-3xl">waving_hand</span>
                     </div>
-                    <p className="text-slate-500 font-medium">Visão geral unificada de todas as suas redes.</p>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h2 className="text-3xl font-bold text-slate-800 tracking-tight">Bem-vindo de volta!</h2>
+                        </div>
+                        <p className="text-slate-500 font-medium">Visão geral unificada de todas as suas redes.</p>
+                    </div>
                 </div>
+
+                <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" />
             </div>
 
             <div className="flex flex-col xl:flex-row gap-8">

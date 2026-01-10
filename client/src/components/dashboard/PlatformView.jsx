@@ -5,6 +5,7 @@ import { dataService } from '../../services/dataService';
 import StatCards from './StatCards';
 import GrowthChart from './GrowthChart';
 import ContentTable from './ContentTable';
+import DateRangeFilter from './DateRangeFilter';
 
 const ProgressModal = ({ isOpen, progress, action, details }) => {
     if (!isOpen) return null;
@@ -103,16 +104,20 @@ const PlatformView = ({ platform }) => {
         contentItems: [],
         isLoaded: false
     });
+    const [dateRange, setDateRange] = useState({ startDate: null, endDate: null });
+
 
     useEffect(() => {
+        if (!dateRange.startDate || !dateRange.endDate) return;
         setData(prev => ({ ...prev, isLoaded: false }));
         loadFromDatabase();
-    }, [country, platform]);
+    }, [country, platform, dateRange]);
 
     const loadFromDatabase = async () => {
-        const dbData = await dataService.getDashboardData(country, platform);
+        const dbData = await dataService.getDashboardData(country, platform, dateRange.startDate, dateRange.endDate);
         if (dbData.metrics.length > 0 || dbData.content.length > 0) {
             processDbData(dbData);
+
         } else {
             setData(prev => ({ ...prev, isLoaded: false }));
         }
@@ -216,6 +221,8 @@ const PlatformView = ({ platform }) => {
                         {country}
                     </span>
                 </div>
+
+                <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" />
             </div>
 
             {(!data.isLoaded) && (
