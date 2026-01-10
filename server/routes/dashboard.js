@@ -78,7 +78,7 @@ router.get('/:country/:platform', async (req, res) => {
         }
 
         // 1. Fetch Metrics
-        const metricsFilter = `country = "${country}" && social_network = "${socialNetwork}"${dateFilter}`;
+        const metricsFilter = `country = "${country}" && platform = "${socialNetwork}"${dateFilter}`;
         const metrics = await pb.collection('instagram_daily_metrics').getFullList({
             filter: metricsFilter,
             sort: 'date',

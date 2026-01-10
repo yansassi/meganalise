@@ -95,7 +95,7 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                         date: new Date(item.date).toISOString(),
                         metric: item.metric,
                         value: item.value,
-                        social_network: 'instagram',
+                        platform: 'instagram',
                         country: country
                     };
 
