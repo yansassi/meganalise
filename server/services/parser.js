@@ -22,13 +22,22 @@ const decodeBuffer = (buffer) => {
  */
 const normalizeDailyMetric = (data, metricName) => {
     return data.map(row => {
-        const valueKey = Object.keys(row).find(k => k !== 'Data');
+        // Find Date Key case-insensitive
+        const dateKey = Object.keys(row).find(k => k.toLowerCase() === 'data' || k.toLowerCase() === 'date');
+        const dateVal = row[dateKey];
+
+        // Find Value Key: first key that is not the date key
+        const valueKey = Object.keys(row).find(k => k !== dateKey);
+
+        // Safety check
+        if (!dateVal) return null;
+
         return {
-            date: row['Data']?.split('T')[0] || row['Data'],
+            date: dateVal.split('T')[0] || dateVal,
             value: parseInt(row[valueKey] || 0, 10),
             metric: metricName
         };
-    }).filter(item => item.date);
+    }).filter(item => item && item.date); // Filter nulls
 };
 
 const findValue = (row, candidates) => {
