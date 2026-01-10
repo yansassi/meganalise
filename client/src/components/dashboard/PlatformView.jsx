@@ -173,7 +173,50 @@ const PlatformView = ({ platform }) => {
             value: chartMap[date]
         }));
 
-        // ... (existing content processing) ...
+        let reels = [];
+        let stories = [];
+
+        const contentItems = dbData.content.map(c => {
+            const item = {
+                id: c.original_id,
+                title: c.title,
+                imageUrl: c.image_url,
+                platform: c.platform_type,
+                manager: 'Time Social',
+                date: new Date(c.date).toLocaleDateString('pt-BR'),
+                rawDate: c.date,
+                postingTime: c.posting_time,
+                virality: c.virality_score,
+                status: c.status,
+                reach: c.reach,
+                saved: c.saved,
+                views: c.views,
+                duration: c.duration,
+                permalink: c.permalink,
+                likes: c.likes,
+                shares: c.shares,
+                comments: c.comments
+            };
+
+            if (platform === 'Instagram') {
+                if (c.platform_type === 'story' || (c.platform_type === 'social' && (c.title?.startsWith('Story -') || c.views > 0 && c.reach < c.views && !c.title))) {
+                    // Simple heuristic for story if not explicit: usually views > others, but let's stick to platform_type if reliable.
+                    // The best is platform_type.
+                    if (c.platform_type === 'story') {
+                        storyViews += (c.views || 0);
+                        stories.push(item);
+                    } else if (c.platform_type === 'social' && c.title?.startsWith('Story -')) {
+                        storyViews += (c.views || 0);
+                        stories.push(item);
+                    } else {
+                        reels.push(item);
+                    }
+                } else {
+                    reels.push(item);
+                }
+            }
+            return item;
+        });
 
         const stats = [
             { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
