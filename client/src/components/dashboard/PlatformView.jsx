@@ -220,7 +220,7 @@ const PlatformView = ({ platform }) => {
 
         const stats = [
             { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
-            { label: 'Impressões', value: impressions, trend: 0, icon: 'trending_up', color: 'indigo' }, // New Card
+            { label: 'Visualizações', value: impressions, trend: 0, icon: 'trending_up', color: 'indigo' }, // New Card
             { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
             { label: 'Seguidores (Saldo)', value: netFollowers, trend: 0, icon: 'group_add', color: 'green' }, // Updated Label
             { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },

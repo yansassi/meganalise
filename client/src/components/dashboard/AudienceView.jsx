@@ -55,7 +55,7 @@ const AudienceView = ({ data }) => {
                     Faixa Etária e Gênero
                 </h3>
 
-                <div className="h-[300px] w-full">
+                <div style={{ width: '100%', height: 300, minHeight: 300 }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                             data={ageGenderData}

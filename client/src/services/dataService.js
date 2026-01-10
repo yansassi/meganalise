@@ -149,9 +149,9 @@ export const dataService = {
             return {
                 id: item.id,
                 importDate: item.import_date,
-                genderAge: item.gender_age_data ? JSON.parse(item.gender_age_data) : {},
-                cities: item.cities_data ? JSON.parse(item.cities_data) : [],
-                countries: item.countries_data ? JSON.parse(item.countries_data) : []
+                genderAge: typeof item.gender_age_data === 'string' ? JSON.parse(item.gender_age_data) : item.gender_age_data || {},
+                cities: typeof item.cities_data === 'string' ? JSON.parse(item.cities_data) : item.cities_data || [],
+                countries: typeof item.countries_data === 'string' ? JSON.parse(item.countries_data) : item.countries_data || []
             };
         } catch (err) {
             console.error("Error fetching audience demographics", err);

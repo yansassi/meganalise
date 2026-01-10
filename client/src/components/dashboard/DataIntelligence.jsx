@@ -124,7 +124,7 @@ const DataIntelligence = ({ contentItems }) => {
                 <p className="text-sm text-gray-500 mb-4">
                     Intensidade baseada na média de engajamento por postagem.
                 </p>
-                <div className="h-[350px] w-full">
+                <div style={{ width: '100%', height: 350, minHeight: 350 }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <ScatterChart
                             margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
@@ -184,7 +184,7 @@ const DataIntelligence = ({ contentItems }) => {
                     <span className="material-icons-round text-orange-500 bg-orange-500/10 p-1 rounded-lg">swords</span>
                     Batalha de Formatos (Média por Post)
                 </h3>
-                <div className="h-[300px]">
+                <div style={{ width: '100%', height: 300, minHeight: 300 }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={formatBattleData}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.1} />
@@ -208,7 +208,7 @@ const DataIntelligence = ({ contentItems }) => {
                     <span className="material-icons-round text-teal-500 bg-teal-500/10 p-1 rounded-lg">bubble_chart</span>
                     Matriz de Oportunidade (Alcance x Engajamento)
                 </h3>
-                <div className="h-[400px]">
+                <div style={{ width: '100%', height: 400, minHeight: 400 }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                             <CartesianGrid />

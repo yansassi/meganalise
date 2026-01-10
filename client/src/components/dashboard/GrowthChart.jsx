@@ -15,7 +15,7 @@ const GrowthChart = ({ data = [] }) => {
                 </select>
             </div>
 
-            <div className="w-full h-[280px]">
+            <div style={{ width: '100%', height: 280, minHeight: 280 }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={data} barSize={40}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" opacity={0.5} />
