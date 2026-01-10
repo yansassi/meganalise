@@ -50,20 +50,20 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                 <div className="overflow-x-auto flex-1 custom-scrollbar">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="text-slate-400 text-[10px] uppercase font-bold tracking-widest border-b border-slate-100">
-                                <th className="pb-5 pl-4">Conteúdo</th>
-                                <th className="pb-5">Plataforma</th>
-                                <th className="pb-5 text-right">Alcance</th>
-                                <th className="pb-5 text-right">Visualizações</th>
-                                <th className="pb-5 text-right">Salvamentos</th>
-                                <th className="pb-5 text-right">Viralidade</th>
-                                <th className="pb-5 text-right pr-4">Status</th>
+                            <tr className="text-gray-600 text-xs uppercase font-extrabold tracking-wider border-b border-gray-200 dark:border-gray-700">
+                                <th className="pb-4 pl-4 pt-4 whitespace-nowrap">Conteúdo</th>
+                                <th className="pb-4 px-4 pt-4 whitespace-nowrap text-center">Plataforma</th>
+                                <th className="pb-4 px-4 pt-4 whitespace-nowrap text-right">Alcance</th>
+                                <th className="pb-4 px-4 pt-4 whitespace-nowrap text-right">Visualizações</th>
+                                <th className="pb-4 px-4 pt-4 whitespace-nowrap text-right">Salvamentos</th>
+                                <th className="pb-4 px-4 pt-4 whitespace-nowrap text-right">Viralidade</th>
+                                <th className="pb-4 pr-4 pt-4 whitespace-nowrap text-right">Status</th>
                             </tr>
                         </thead>
-                        <tbody className="text-sm">
+                        <tbody className="text-sm font-medium">
                             {displayedItems.length === 0 ? (
                                 <tr>
-                                    <td colSpan="7" className="py-8 text-center text-slate-400">Nenhum conteúdo disponível</td>
+                                    <td colSpan="7" className="py-8 text-center text-gray-500">Nenhum conteúdo disponível</td>
                                 </tr>
                             ) : (
                                 displayedItems.map((item, index) => (
@@ -71,9 +71,9 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                                         key={item.id}
                                         onClick={() => setSelectedItem(item)}
                                         style={{ animationDelay: `${index * 50}ms` }}
-                                        className="group hover:bg-slate-50 transition-colors border-b last:border-0 border-slate-50 cursor-pointer animate-entrance"
+                                        className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b last:border-0 border-gray-100 dark:border-gray-800 cursor-pointer animate-entrance"
                                     >
-                                        <td className="py-5 pl-2 max-w-[300px]">
+                                        <td className="py-4 pl-4 max-w-[300px]">
                                             <div className="flex items-center gap-4">
                                                 {dataService.getContentImageUrl(item) && (
                                                     <img
@@ -85,7 +85,7 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-gray-800 dark:text-white line-clamp-2" title={item.title}>{item.title}</span>
                                                     <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-xs text-gray-400">{item.date}</span>
+                                                        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{item.date}</span>
                                                         {item.permalink && (
                                                             <a
                                                                 href={item.permalink}
@@ -101,38 +101,40 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="py-5">
-                                            <div className={`w-9 h-9 rounded-full flex items-center justify-center 
+                                        <td className="py-4 px-4">
+                                            <div className={`w-9 h-9 rounded-full flex items-center justify-center mx-auto
                           ${item.platform === 'video' ? 'bg-red-100 text-red-600 dark:bg-red-900/20' : ''}
                           ${item.platform === 'social' ? 'bg-pink-100 text-pink-600 dark:bg-pink-900/20' : ''}
                           ${item.platform === 'story' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/20' : ''}
                           ${item.platform === 'camera' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/20' : ''}
+                          ${item.platform === 'instagram' ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/20' : ''}
                         `}>
                                                 <span className="material-icons-round text-lg">
                                                     {item.platform === 'video' ? 'play_arrow' :
                                                         item.platform === 'story' ? 'amp_stories' :
-                                                            item.platform === 'social' ? 'camera_alt' : 'lens'}
+                                                            item.platform === 'social' ? 'camera_alt' :
+                                                                item.platform === 'instagram' ? 'photo_camera' : 'lens'}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="py-5 text-right font-medium text-gray-600 dark:text-gray-300">
+                                        <td className="py-4 px-4 text-right font-semibold text-gray-700 dark:text-gray-300">
                                             {item.reach ? formatNumber(item.reach) : '-'}
                                         </td>
-                                        <td className="py-5 text-right font-medium text-gray-600 dark:text-gray-300">
+                                        <td className="py-4 px-4 text-right font-semibold text-gray-700 dark:text-gray-300">
                                             {item.views ? formatNumber(item.views) : '-'}
                                         </td>
-                                        <td className="py-5 text-right font-medium text-gray-600 dark:text-gray-300">
+                                        <td className="py-4 px-4 text-right font-semibold text-gray-700 dark:text-gray-300">
                                             {item.saved ? formatNumber(item.saved) : '-'}
                                         </td>
-                                        <td className="py-5 text-right">
-                                            <span className="font-black text-gray-800 dark:text-white">{item.virality}</span>
-                                            <span className="text-gray-400">/100</span>
+                                        <td className="py-4 px-4 text-right">
+                                            <span className="font-extrabold text-gray-800 dark:text-white">{item.virality}</span>
+                                            <span className="text-gray-400 text-xs ml-0.5">/100</span>
                                         </td>
-                                        <td className="py-5 text-right pr-2">
-                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider
-                          ${item.status === 'Completed' ? 'bg-sidebar-bg text-white dark:bg-primary shadow-glow' : ''}
-                          ${item.status === 'Ongoing' ? 'bg-white border border-gray-200 text-gray-600 dark:bg-transparent dark:border-gray-600 dark:text-gray-300' : ''}
-                          ${item.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-500' : ''}
+                                        <td className="py-4 pr-4 text-right">
+                                            <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider
+                          ${item.status === 'Completed' ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400' : ''}
+                          ${item.status === 'Ongoing' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400' : ''}
+                          ${item.status === 'Pending' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400' : '-'}
                         `}>
                                                 {item.status}
                                             </span>
