@@ -84,7 +84,7 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                 try {
                     // Check if exists
                     const existing = await pb.collection('instagram_daily_metrics').getList(1, 1, {
-                        filter: `date = "${item.date} 00:00:00.000Z" && metric = "${item.metric}" && country = "${country}" && social_network = "instagram"`,
+                        filter: `date = "${item.date} 00:00:00.000Z" && metric = "${item.metric}" && country = "${country}" && platform = "instagram"`,
                         requestKey: null
                     });
 
