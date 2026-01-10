@@ -16,11 +16,17 @@ const Dashboard = () => {
         { label: 'Campanhas', value: 0, trend: 0, icon: 'rocket_launch', color: 'green' },
     ]);
     const [loading, setLoading] = useState(true);
-    const [dateRange, setDateRange] = useState({ startDate: null, endDate: null });
+    const [dateRange, setDateRange] = useState(() => {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - 90);
+        return { startDate: start, endDate: end };
+    });
 
     useEffect(() => {
         const loadAggregatedData = async () => {
-            if (!dateRange.startDate || !dateRange.endDate) return;
+            // No longer blocking as we have defaults
+
 
             setLoading(true);
             try {

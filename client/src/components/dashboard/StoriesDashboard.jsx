@@ -12,10 +12,15 @@ const StoriesDashboard = () => {
         contentItems: [],
         isLoaded: false
     });
-    const [dateRange, setDateRange] = useState({ startDate: null, endDate: null });
+    const [dateRange, setDateRange] = useState(() => {
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - 90);
+        return { startDate: start, endDate: end };
+    });
 
     useEffect(() => {
-        if (!dateRange.startDate || !dateRange.endDate) return;
+        // if (!dateRange.startDate || !dateRange.endDate) return; // Removed blocking check
         loadData();
     }, [country, dateRange]);
 
