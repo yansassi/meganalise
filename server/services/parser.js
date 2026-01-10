@@ -163,31 +163,44 @@ const parseInstagramCSV = async (buffer, fileName) => {
                     return;
                 }
 
-                if (metadataLower.includes('alcance') || fileNameLower.includes('alcance') || (hasColumn('data') && hasColumn('alcance'))) {
+                // Improved file type detection
+                const isReach = metadataLower.includes('alcance') || fileNameLower.includes('alcance') || fileNameLower.includes('reach') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('alcance') || hasColumn('reach')));
+                if (isReach) {
                     resolve({ type: 'metric', metric: 'reach', data: normalizeDailyMetric(data, 'reach') });
                     return;
                 }
-                if (metadataLower.includes('intera') || fileNameLower.includes('interações') || fileNameLower.includes('interacoes') || (hasColumn('data') && hasColumn('intera'))) {
+
+                const isInteractions = metadataLower.includes('intera') || fileNameLower.includes('interações') || fileNameLower.includes('interacoes') || fileNameLower.includes('interactions') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('intera') || hasColumn('curtidas') || hasColumn('likes')));
+                if (isInteractions) {
                     resolve({ type: 'metric', metric: 'interactions', data: normalizeDailyMetric(data, 'interactions') });
                     return;
                 }
-                if (fileNameLower.includes('seguidores') || (hasColumn('data') && hasColumn('seguidores'))) {
+
+                const isFollowers = fileNameLower.includes('seguidores') || fileNameLower.includes('followers') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('seguidores') || hasColumn('followers')));
+                if (isFollowers) {
                     resolve({ type: 'metric', metric: 'followers', data: normalizeDailyMetric(data, 'followers') });
                     return;
                 }
-                if (fileNameLower.includes('visitas') || (hasColumn('data') && hasColumn('visitas'))) {
+
+                const isProfileVisits = fileNameLower.includes('visitas') || fileNameLower.includes('visits') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('visitas') || hasColumn('visits')));
+                if (isProfileVisits) {
                     resolve({ type: 'metric', metric: 'profile_visits', data: normalizeDailyMetric(data, 'profile_visits') });
                     return;
                 }
-                if (fileNameLower.includes('visualizações') || fileNameLower.includes('visualizacoes') || (hasColumn('data') && hasColumn('visualiza'))) {
+
+                const isImpressions = fileNameLower.includes('visualizações') || fileNameLower.includes('visualizacoes') || fileNameLower.includes('impressions') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('visualiza') || hasColumn('impressions')));
+                if (isImpressions) {
                     resolve({ type: 'metric', metric: 'impressions', data: normalizeDailyMetric(data, 'impressions') });
                     return;
                 }
-                if (metadataLower.includes('clique') || fileNameLower.includes('cliques') || (hasColumn('data') && hasColumn('cliques'))) {
+
+                const isClicks = metadataLower.includes('clique') || fileNameLower.includes('cliques') || fileNameLower.includes('clicks') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('cliques') || hasColumn('clicks')));
+                if (isClicks) {
                     resolve({ type: 'metric', metric: 'website_clicks', data: normalizeDailyMetric(data, 'website_clicks') });
                     return;
                 }
 
+                console.warn('Unknown file type. Headers:', Object.keys(data[0] || {}), 'Filename:', fileName);
                 resolve({ type: 'unknown', data: [] });
             },
             error: (error) => reject(error),
