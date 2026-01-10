@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { instagramParser } from '../services/instagramParser';
+// import { instagramParser } from '../services/instagramParser'; // Deprecated - using backend
 import { dataService } from '../services/dataService';
 
 const UploadMetrics = () => {
@@ -32,69 +32,37 @@ const UploadMetrics = () => {
         setFiles(Array.from(uploadedFiles));
         setShowProgress(true);
         setCompleted(false);
-        setProgressAction('Processando Arquivos');
+        setProgressAction('Enviando para Análise');
         setProgressValue(0);
 
-        const tempParsed = [];
         const totalFiles = uploadedFiles.length;
+        let processedCount = 0;
 
         for (let i = 0; i < totalFiles; i++) {
             const file = uploadedFiles[i];
-            setProgressDetails(`Lendo ${file.name}...`);
+            setProgressAction('Processando Arquivo');
+            setProgressDetails(`Enviando ${file.name} para o servidor...`);
 
             try {
-                await new Promise(r => setTimeout(r, 200));
+                // Call API directly - Backend parses and saves
+                const result = await dataService.uploadInstagramData(file, selectedCountry);
 
-                // NOTE: Currently reusing instagramParser for all platforms as requested 
-                // ("escolho qual idioma é as métricas e pronto, aparece o processo de colocar os dados igual antes")
-                // In the future, we might need different parsers based on selectedPlatform
-                const result = await instagramParser.parseFile(file);
+                console.log('Upload Result:', result);
 
-                // Inject selected platform if the parser doesn't provide it or to override it
-                // result.data.forEach(item => item.platform = selectedPlatform); // If we need to modify data on the fly
+                // Update progress based on success
+                processedCount++;
+                const newProgress = (processedCount / totalFiles) * 100;
+                setProgressValue(newProgress);
 
-                tempParsed.push(result);
             } catch (error) {
-                console.error("Erro ao ler arquivo:", file.name, error);
+                console.error("Erro no upload:", file.name, error);
+                alert(`Erro ao processar ${file.name}: ${error.message}`);
             }
-
-            setProgressValue(((i + 1) / totalFiles) * 30);
         }
 
-        if (tempParsed.length > 0) {
-            setProgressAction('Salvando no Banco de Dados');
-            setProgressDetails(`Salvando dados do ${selectedPlatform} (${selectedCountry})...`);
-
-            let totalRecords = 0;
-            tempParsed.forEach(f => totalRecords += f.data.length);
-
-            let processedCount = 0;
-
-            for (let i = 0; i < tempParsed.length; i++) {
-                const group = tempParsed[i];
-                const groupSize = group.data.length;
-
-                setProgressDetails(`Salvando lote ${i + 1}/${tempParsed.length}...`);
-
-                // Check if we need to pass platform to save functions
-                if (group.type === 'metric') {
-                    await dataService.saveDailyMetrics(group.data, selectedCountry, selectedPlatform);
-                } else if (group.type === 'content') {
-                    // We might need to ensure the content items have the correct platform_type
-                    // For now, instagramParser sets it. If we parse other files, we might need to override here.
-                    await dataService.saveContentItems(group.data, selectedCountry, selectedPlatform);
-                }
-
-                processedCount += groupSize;
-                setProgressValue(30 + ((processedCount / totalRecords) * 70));
-            }
-
-            setProgressDetails('Concluído!');
-            setProgressValue(100);
-            setCompleted(true);
-        } else {
-            setShowProgress(false);
-        }
+        setProgressDetails('Concluído!');
+        setProgressValue(100);
+        setCompleted(true);
     };
 
     const onDrop = (e) => {

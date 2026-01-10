@@ -1,11 +1,20 @@
 const express = require('express');
 const multer = require('multer');
-const { parseInstagramCSV } = require('../services/parser');
 const { pb } = require('../services/db');
-const router = express.Router();
+const { parseInstagramCSV } = require('../services/parser');
 
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const router = express.Router();
+const upload = multer(); // Memory storage
+
+// Helper to map parser platform to DB type
+const mapPlatformToType = (platform) => {
+    switch (platform) {
+        case 'story': return 'story';
+        case 'video': return 'reel';
+        case 'social':
+        default: return 'post';
+    }
+};
 
 router.post('/instagram', upload.single('file'), async (req, res) => {
     try {
@@ -18,108 +27,111 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
             return res.status(400).json({ error: 'Country is required' });
         }
 
-        console.log(`Processing upload for ${country}: ${req.file.originalname}`);
+        const buffer = req.file.buffer;
+        const filename = req.file.originalname;
 
-        const result = await parseInstagramCSV(req.file.buffer, req.file.originalname);
+        console.log(`Processing file: ${filename} for country: ${country}`);
+
+        const result = await parseInstagramCSV(buffer, filename);
         let savedCount = 0;
         let errors = [];
 
-        if (result.type === 'metric') {
-            const platform = 'instagram'; // normalized
-            const metricName = result.metric;
-
+        if (result.type === 'content') {
             for (const item of result.data) {
                 try {
-                    const startOfDay = `${item.date} 00:00:00`;
-                    const endOfDay = `${item.date} 23:59:59`;
+                    // Check if exists
+                    const contentType = mapPlatformToType(item.platform);
 
-                    // Check existing
-                    const existing = await pb.collection('instagram_daily_metrics').getList(1, 50, {
-                        filter: `date >= "${startOfDay}" && date <= "${endOfDay}" && metric = "${metricName}" && country = "${country}" && platform = "${platform}"`,
-                    });
-
-                    const payload = {
-                        date: item.date,
-                        country,
-                        platform,
-                        metric: metricName,
-                        value: item.value
-                    };
-
-                    if (existing.items.length > 0) {
-                        // Update
-                        await pb.collection('instagram_daily_metrics').update(existing.items[0].id, { value: item.value });
-
-                        // Dedup
-                        if (existing.items.length > 1) {
-                            for (let i = 1; i < existing.items.length; i++) {
-                                await pb.collection('instagram_daily_metrics').delete(existing.items[i].id);
-                            }
-                        }
-                    } else {
-                        // Create
-                        await pb.collection('instagram_daily_metrics').create(payload);
-                    }
-                    savedCount++;
-                } catch (err) {
-                    console.error(`Error saving metric ${item.date}`, err);
-                    errors.push(err.message);
-                }
-            }
-        } else if (result.type === 'content') {
-            const platform = 'instagram';
-
-            for (const item of result.data) {
-                try {
-                    let type = 'social';
-                    if (item.platform === 'video') type = 'video';
-                    if (item.platform === 'story') type = 'story';
-
-                    // Check existing
+                    // Try to find existing record
+                    // Filter by original_id, country, and social_network (instagram)
                     const existing = await pb.collection('instagram_content').getList(1, 1, {
-                        filter: `original_id = "${item.id}" && country = "${country}" && social_network = "${platform}"`,
+                        filter: `original_id = "${item.id}" && country = "${country}" && social_network = "instagram"`,
+                        requestKey: null // Disable auto-cancellation
                     });
 
                     const recordData = {
                         original_id: item.id,
                         title: item.title,
-                        image_url: item.imageUrl,
-                        platform_type: type,
-                        social_network: platform,
-                        date: item.date,
+                        permalink: item.permalink,
+                        platform_type: contentType, // Matched to frontend expectation
+                        social_network: 'instagram',
+                        country: country,
+                        date: item.date ? new Date(item.date).toISOString() : new Date().toISOString(),
                         reach: item.reach,
                         likes: item.likes,
                         shares: item.shares,
-                        comments: item.comments || 0,
-                        virality_score: parseFloat(item.virality),
-                        status: item.status,
-                        country,
-                        saved: item.saved || 0,
-                        views: item.views || 0,
-                        duration: item.duration || 0,
-                        permalink: item.permalink || ''
+                        comments: item.comments,
+                        saved: item.saved,
+                        views: item.views,
+                        duration: item.duration,
+                        virality_score: parseFloat(item.virality), // Matched to frontend expectation
+                        status: item.status
                     };
 
                     if (existing.items.length > 0) {
-                        await pb.collection('instagram_content').update(existing.items[0].id, recordData);
+                        await pb.collection('instagram_content').update(existing.items[0].id, recordData, { requestKey: null });
                     } else {
-                        await pb.collection('instagram_content').create(recordData);
+                        await pb.collection('instagram_content').create(recordData, { requestKey: null });
                     }
                     savedCount++;
                 } catch (err) {
-                    console.error(`Error saving content ${item.title}`, err);
-                    errors.push(err.message);
+                    console.error(`Error saving content item ${item.id}:`, err.message);
+                    errors.push({ id: item.id, error: err.message });
+                }
+            }
+        } else if (result.type === 'metric') {
+            for (const item of result.data) {
+                try {
+                    // Check if exists
+                    const existing = await pb.collection('instagram_daily_metrics').getList(1, 1, {
+                        filter: `date = "${item.date} 00:00:00.000Z" && metric = "${item.metric}" && country = "${country}" && social_network = "instagram"`,
+                        requestKey: null
+                    });
+
+                    // Note: PocketBase date fields might need specific formatting or handling
+                    // Assuming 'date' field in PB is 'date' type.
+
+                    const recordData = {
+                        date: new Date(item.date).toISOString(),
+                        metric: item.metric,
+                        value: item.value,
+                        social_network: 'instagram',
+                        country: country
+                    };
+
+                    if (existing.items.length > 0) {
+                        await pb.collection('instagram_daily_metrics').update(existing.items[0].id, recordData, { requestKey: null });
+                    } else {
+                        await pb.collection('instagram_daily_metrics').create(recordData, { requestKey: null });
+                    }
+                    savedCount++;
+                } catch (err) {
+                    console.error(`Error saving metric ${item.metric} for ${item.date}:`, err.message);
+                    // Often metrics fail if date already exists due to unique constraints, 
+                    // but we are checking first. 
+                    // However, let's try to be robust.
+                    // If filter fails, maybe format is different.
+
+                    // Fallback to looser filter if initial check failed? 
+                    // No, let's just log.
+                    errors.push({ date: item.date, metric: item.metric, error: err.message });
                 }
             }
         } else {
-            return res.status(400).json({ error: 'Unknown CSV type', result });
+            return res.status(400).json({ error: 'Unknown file type or failed to parse' });
         }
 
-        res.json({ success: true, type: result.type, savedCount, errors });
+        res.json({
+            success: true,
+            type: result.type,
+            processed: result.data.length,
+            saved: savedCount,
+            errors: errors.length > 0 ? errors : undefined
+        });
 
-    } catch (err) {
-        console.error('Upload handler error:', err);
-        res.status(500).json({ error: err.message });
+    } catch (error) {
+        console.error('Upload handler error:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
