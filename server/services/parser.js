@@ -20,20 +20,41 @@ const decodeBuffer = (buffer) => {
 /**
  * Normalizes daily metric data
  */
+// Helper to safely parse dates (handles DD/MM/YYYY and other formats)
+const parseDate = (dateStr) => {
+    if (!dateStr) return null;
+
+    // Check for DD/MM/YYYY or DD-MM-YYYY format
+    // Regex matches 01/01/2020 or 1/1/2020
+    const ptBrMatch = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    if (ptBrMatch) {
+        const [_, day, month, year] = ptBrMatch;
+        // Return ISO format YYYY-MM-DD
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
+    // Fallback to standard parser (handles YYYY-MM-DD, ISO, etc)
+    return dateStr.split('T')[0];
+};
+
 const normalizeDailyMetric = (data, metricName) => {
     return data.map(row => {
-        // Find Date Key case-insensitive
-        const dateKey = Object.keys(row).find(k => k.toLowerCase() === 'data' || k.toLowerCase() === 'date');
+        // Find Date Key case-insensitive and robust
+        const keys = Object.keys(row);
+        const dateKey = keys.find(k => k.toLowerCase().trim() === 'data' || k.toLowerCase().trim() === 'date');
+
+        if (!dateKey) return null;
+
         const dateVal = row[dateKey];
 
-        // Find Value Key: first key that is not the date key
-        const valueKey = Object.keys(row).find(k => k !== dateKey);
+        // Find Value Key: first key that is not the date key and looks numeric-ish if possible
+        // But simply taking the other column is standard for these 2-col exports
+        const valueKey = keys.find(k => k !== dateKey);
 
-        // Safety check
-        if (!dateVal) return null;
+        if (!dateVal || !valueKey) return null;
 
         return {
-            date: dateVal.split('T')[0] || dateVal,
+            date: parseDate(dateVal),
             value: parseInt(row[valueKey] || 0, 10),
             metric: metricName
         };
@@ -164,37 +185,43 @@ const parseInstagramCSV = async (buffer, fileName) => {
                 }
 
                 // Improved file type detection
+                // Reach
                 const isReach = metadataLower.includes('alcance') || fileNameLower.includes('alcance') || fileNameLower.includes('reach') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('alcance') || hasColumn('reach')));
                 if (isReach) {
                     resolve({ type: 'metric', metric: 'reach', data: normalizeDailyMetric(data, 'reach') });
                     return;
                 }
 
-                const isInteractions = metadataLower.includes('intera') || fileNameLower.includes('interações') || fileNameLower.includes('interacoes') || fileNameLower.includes('interactions') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('intera') || hasColumn('curtidas') || hasColumn('likes')));
+                // Interactions - 'intera' matches interações/interactions/interacoes
+                const isInteractions = metadataLower.includes('intera') || fileNameLower.includes('intera') || fileNameLower.includes('likes') || fileNameLower.includes('curtidas') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('intera') || hasColumn('curtidas') || hasColumn('likes')));
                 if (isInteractions) {
                     resolve({ type: 'metric', metric: 'interactions', data: normalizeDailyMetric(data, 'interactions') });
                     return;
                 }
 
-                const isFollowers = fileNameLower.includes('seguidores') || fileNameLower.includes('followers') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('seguidores') || hasColumn('followers')));
+                // Followers
+                const isFollowers = fileNameLower.includes('seguid') || fileNameLower.includes('follow') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('seguidores') || hasColumn('followers')));
                 if (isFollowers) {
                     resolve({ type: 'metric', metric: 'followers', data: normalizeDailyMetric(data, 'followers') });
                     return;
                 }
 
-                const isProfileVisits = fileNameLower.includes('visitas') || fileNameLower.includes('visits') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('visitas') || hasColumn('visits')));
+                // Profile Visits
+                const isProfileVisits = fileNameLower.includes('visitas') || fileNameLower.includes('visit') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('visitas') || hasColumn('visits')));
                 if (isProfileVisits) {
                     resolve({ type: 'metric', metric: 'profile_visits', data: normalizeDailyMetric(data, 'profile_visits') });
                     return;
                 }
 
-                const isImpressions = fileNameLower.includes('visualizações') || fileNameLower.includes('visualizacoes') || fileNameLower.includes('impressions') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('visualiza') || hasColumn('impressions')));
+                // Impressions
+                const isImpressions = fileNameLower.includes('visualiza') || fileNameLower.includes('impression') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('visualiza') || hasColumn('impression')));
                 if (isImpressions) {
                     resolve({ type: 'metric', metric: 'impressions', data: normalizeDailyMetric(data, 'impressions') });
                     return;
                 }
 
-                const isClicks = metadataLower.includes('clique') || fileNameLower.includes('cliques') || fileNameLower.includes('clicks') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('cliques') || hasColumn('clicks')));
+                // Clicks
+                const isClicks = metadataLower.includes('clique') || fileNameLower.includes('clique') || fileNameLower.includes('click') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('clique') || hasColumn('click')));
                 if (isClicks) {
                     resolve({ type: 'metric', metric: 'website_clicks', data: normalizeDailyMetric(data, 'website_clicks') });
                     return;
