@@ -16,6 +16,26 @@ const mapPlatformToType = (platform) => {
     }
 };
 
+const updateAudienceDemographics = async (data, country) => {
+    // 1. Check if record exists for this country/platform (assuming 1 record per country OR daily snapshots?)
+    // Decision: Keep history. Create new record with date.
+
+    // Check if we already imported today? Prevent duplicates?
+    // Let's just create a snapshot. 
+
+    const recordData = {
+        platform: 'instagram',
+        country: country,
+        import_date: new Date().toISOString(),
+        gender_age_data: JSON.stringify(data.gender_age),
+        cities_data: JSON.stringify(data.cities),
+        countries_data: JSON.stringify(data.countries)
+    };
+
+    await pb.collection('instagram_audience_demographics').create(recordData, { requestKey: null });
+    return 1;
+};
+
 router.post('/instagram', upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
@@ -57,6 +77,7 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                         social_network: 'instagram',
                         country: country,
                         date: item.date ? new Date(item.date).toISOString() : new Date().toISOString(),
+                        posting_time: item.posting_time,
                         reach: item.reach,
                         likes: item.likes,
                         shares: item.shares,
@@ -116,6 +137,13 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                     // No, let's just log.
                     errors.push({ date: item.date, metric: item.metric, error: err.message });
                 }
+            }
+        } else if (result.type === 'demographics') {
+            try {
+                savedCount = await updateAudienceDemographics(result.data, country);
+            } catch (err) {
+                console.error('Error saving audience data:', err.message);
+                errors.push({ error: err.message, type: 'demographics' });
             }
         } else {
             return res.status(400).json({ error: 'Unknown file type or failed to parse' });

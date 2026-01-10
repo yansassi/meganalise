@@ -7,6 +7,9 @@ import GrowthChart from './GrowthChart';
 import ContentTable from './ContentTable';
 import DateRangeFilter from './DateRangeFilter';
 
+import AudienceView from './AudienceView';
+import DataIntelligence from './DataIntelligence';
+
 const ProgressModal = ({ isOpen, progress, action, details }) => {
     if (!isOpen) return null;
 
@@ -94,6 +97,9 @@ const UploadModal = ({ isOpen, onClose, onUpload }) => {
 
 const PlatformView = ({ platform }) => {
     const { country } = useOutletContext();
+    const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'audience'
+    const [audienceData, setAudienceData] = useState(null);
+
     const [data, setData] = useState({
         stats: [
             { label: 'Alcance Total', value: 0, trend: 0, icon: 'visibility', color: 'blue' },
@@ -112,6 +118,7 @@ const PlatformView = ({ platform }) => {
     });
 
 
+
     useEffect(() => {
         // if (!dateRange.startDate || !dateRange.endDate) return; // Removed blocking check
         setData(prev => ({ ...prev, isLoaded: false }));
@@ -120,6 +127,9 @@ const PlatformView = ({ platform }) => {
 
     const loadFromDatabase = async () => {
         const dbData = await dataService.getDashboardData(country, platform, dateRange.startDate, dateRange.endDate);
+        const audience = await dataService.getAudienceDemographics(country);
+        setAudienceData(audience);
+
         if (dbData.metrics.length > 0 || dbData.content.length > 0) {
             processDbData(dbData);
 
@@ -130,12 +140,20 @@ const PlatformView = ({ platform }) => {
 
     const processDbData = (dbData) => {
         let reach = 0, interactions = 0, followers = 0, websiteClicks = 0, profileVisits = 0, storyViews = 0;
+        let impressions = 0;
+        const followersParams = { start: null, end: null };
         const chartMap = {};
 
         dbData.metrics.forEach(m => {
             if (m.metric === 'reach') reach += m.value;
+            if (m.metric === 'impressions') impressions += m.value; // Sum impressions
             if (m.metric === 'interactions') interactions += m.value;
-            if (m.metric === 'followers') followers += m.value;
+            // logic for net followers: find value at start and end of period
+            if (m.metric === 'followers') {
+                const d = new Date(m.date).getTime();
+                if (!followersParams.start || d < followersParams.start.date) followersParams.start = { date: d, value: m.value };
+                if (!followersParams.end || d > followersParams.end.date) followersParams.end = { date: d, value: m.value };
+            }
             if (m.metric === 'website_clicks') websiteClicks += m.value;
             if (m.metric === 'profile_visits') profileVisits += m.value;
 
@@ -144,63 +162,26 @@ const PlatformView = ({ platform }) => {
             }
         });
 
+        // Calculate Net Follower Growth
+        let netFollowers = 0;
+        if (followersParams.start && followersParams.end) {
+            netFollowers = followersParams.end.value - followersParams.start.value;
+        }
+
         const chartData = Object.keys(chartMap).sort().map(date => ({
             name: date,
             value: chartMap[date]
         }));
 
-        let reels = [];
-        let stories = [];
-
-        dbData.content.forEach(c => {
-            const item = {
-                id: c.original_id,
-                title: c.title,
-                imageUrl: c.image_url,
-                platform: c.platform_type,
-                manager: 'Time Social',
-                date: new Date(c.date).toLocaleDateString('pt-BR'),
-                virality: c.virality_score,
-                status: c.status,
-                reach: c.reach,
-                saved: c.saved,
-                views: c.views,
-                duration: c.duration,
-                permalink: c.permalink
-            };
-
-            if (platform === 'Instagram') {
-                if (c.platform_type === 'story' || (c.platform_type === 'social' && (c.views > 0 || c.title.startsWith('Story -')))) {
-                    storyViews += (c.views || 0);
-                    stories.push(item);
-                } else {
-                    reels.push(item);
-                }
-            }
-        });
-
-        const contentItems = dbData.content.map(c => ({
-            id: c.original_id,
-            title: c.title,
-            imageUrl: c.image_url,
-            platform: c.platform_type,
-            manager: 'Time Social',
-            date: new Date(c.date).toLocaleDateString('pt-BR'),
-            virality: c.virality_score,
-            status: c.status,
-            reach: c.reach,
-            saved: c.saved,
-            views: c.views,
-            duration: c.duration,
-            permalink: c.permalink
-        }));
+        // ... (existing content processing) ...
 
         const stats = [
             { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
+            { label: 'Impressões', value: impressions, trend: 0, icon: 'trending_up', color: 'indigo' }, // New Card
             { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
-            { label: 'Seguidores', value: followers, trend: 0, icon: 'group', color: 'orange' },
+            { label: 'Seguidores (Saldo)', value: netFollowers, trend: 0, icon: 'group_add', color: 'green' }, // Updated Label
             { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
-            { label: 'Cliques no Link', value: websiteClicks, trend: 0, icon: 'link', color: 'green' }
+            { label: 'Cliques no Link', value: websiteClicks, trend: 0, icon: 'link', color: 'orange' }
         ];
 
         if (platform === 'Instagram') {
@@ -230,7 +211,31 @@ const PlatformView = ({ platform }) => {
                 <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" />
             </div>
 
-            {(!data.isLoaded) && (
+            {/* Tabs Navigation */}
+            <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 pb-1">
+                <button
+                    onClick={() => setActiveTab('overview')}
+                    className={`pb-2 px-1 text-sm font-bold transition-all ${activeTab === 'overview' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                >
+                    Resumo
+                </button>
+                <button
+                    onClick={() => setActiveTab('audience')}
+                    className={`pb-2 px-1 text-sm font-bold transition-all ${activeTab === 'audience' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                >
+                    Público
+                    {audienceData && <span className="ml-2 w-2 h-2 inline-block rounded-full bg-green-500"></span>}
+                </button>
+                <button
+                    onClick={() => setActiveTab('intelligence')}
+                    className={`pb-2 px-1 text-sm font-bold transition-all ${activeTab === 'intelligence' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                >
+                    Estratégia
+                    <span className="ml-2 material-icons-round text-xs text-orange-500">bolt</span>
+                </button>
+            </div>
+
+            {(!data.isLoaded && !audienceData) && (
                 <div className="border-3 border-dashed border-gray-200 dark:border-gray-700 rounded-3xl p-12 text-center">
                     <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
                         <span className="material-icons-round text-3xl">bar_chart</span>
@@ -246,19 +251,31 @@ const PlatformView = ({ platform }) => {
                 </div>
             )}
 
-            {(data.isLoaded) && (
+            {(data.isLoaded || audienceData) && (
                 <div className="flex flex-col lg:flex-row gap-8">
                     <div className="flex-1 space-y-8">
-                        <StatCards stats={data.stats} />
-                        {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
+                        {activeTab === 'overview' && data.isLoaded && (
+                            <>
+                                <StatCards stats={data.stats} />
+                                {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
 
-                        {platform === 'Instagram' ? (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                <ContentTable items={data.reels || []} title="Reels e Feed" limit={10} />
-                                <ContentTable items={data.stories || []} title="Stories Recentes" limit={10} />
-                            </div>
-                        ) : (
-                            <ContentTable items={data.contentItems} />
+                                {platform === 'Instagram' ? (
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                        <ContentTable items={data.reels || []} title="Reels e Feed" limit={10} />
+                                        <ContentTable items={data.stories || []} title="Stories Recentes" limit={10} />
+                                    </div>
+                                ) : (
+                                    <ContentTable items={data.contentItems} />
+                                )}
+                            </>
+                        )}
+
+                        {activeTab === 'audience' && (
+                            <AudienceView data={audienceData} />
+                        )}
+
+                        {activeTab === 'intelligence' && (
+                            <DataIntelligence contentItems={data.contentItems} />
                         )}
                     </div>
                 </div>

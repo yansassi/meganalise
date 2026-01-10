@@ -239,6 +239,31 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
 
                     {/* Detailed Metrics Grid */}
                     <div>
+                        <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">KPIs Estratégicos</h4>
+                        <div className="grid grid-cols-3 gap-4 mb-8">
+                            <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-500/20">
+                                <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase mb-1">Taxa de Engajamento</div>
+                                <div className="text-2xl font-black text-purple-700 dark:text-purple-300">
+                                    {((((item.likes || 0) + (item.comments || 0) + (item.shares || 0) + (item.saved || 0)) / (item.reach || 1)) * 100).toFixed(2)}%
+                                </div>
+                                <div className="text-[10px] text-purple-400">Sobre Alcance</div>
+                            </div>
+                            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl border border-yellow-100 dark:border-yellow-500/20">
+                                <div className="text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase mb-1">Taxa de Salvamento</div>
+                                <div className="text-2xl font-black text-yellow-700 dark:text-yellow-300">
+                                    {(((item.saved || 0) / (item.reach || 1)) * 100).toFixed(2)}%
+                                </div>
+                                <div className="text-[10px] text-yellow-400">Retenção de Valor</div>
+                            </div>
+                            <div className="p-4 bg-green-50 dark:bg-green-900/10 rounded-2xl border border-green-100 dark:border-green-500/20">
+                                <div className="text-xs font-bold text-green-600 dark:text-green-400 uppercase mb-1">Viralidade (Shares)</div>
+                                <div className="text-2xl font-black text-green-700 dark:text-green-300">
+                                    {(((item.shares || 0) / (item.reach || 1)) * 100).toFixed(2)}%
+                                </div>
+                                <div className="text-[10px] text-green-400">Potencial de Rede</div>
+                            </div>
+                        </div>
+
                         <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Métricas de Desempenho</h4>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <MetricBox label="Alcance" value={item.reach} icon="visibility" color="text-blue-500" />

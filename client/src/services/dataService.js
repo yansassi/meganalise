@@ -131,49 +131,30 @@ export const dataService = {
     },
 
     /**
-     * Fetches audience demographics data
-     * @param {string} category - Optional category filter ('age_gender', 'cities', 'countries', 'pages')
-     * @param {string} importDate - Optional import date filter
+     * Gets the latest audience demographics snapshot
+     * @param {string} country 
      */
-    async getAudienceData(category = null, importDate = null) {
+    async getAudienceDemographics(country) {
         try {
-            let filter = 'platform = "instagram"';
-
-            if (category) {
-                filter += ` && category = "${category}"`;
-            }
-
-            if (importDate) {
-                filter += ` && import_date = "${importDate}"`;
-            }
-
-            const records = await pb.collection('instagram_audience_demographics').getFullList({
-                filter,
-                sort: category === 'cities' || category === 'pages' ? 'rank' : 'subcategory',
-                requestKey: null
-            });
-
-            return records;
-        } catch (err) {
-            console.error("Error fetching audience data", err);
-            return [];
-        }
-    },
-
-    /**
-     * Gets the latest import date for audience data
-     */
-    async getLatestAudienceImport() {
-        try {
+            // Get latest record
             const records = await pb.collection('instagram_audience_demographics').getList(1, 1, {
-                filter: 'platform = "instagram"',
+                filter: `platform = "instagram" && country = "${country}"`,
                 sort: '-import_date',
                 requestKey: null
             });
 
-            return records.items.length > 0 ? records.items[0].import_date : null;
+            if (records.items.length === 0) return null;
+
+            const item = records.items[0];
+            return {
+                id: item.id,
+                importDate: item.import_date,
+                genderAge: item.gender_age_data ? JSON.parse(item.gender_age_data) : {},
+                cities: item.cities_data ? JSON.parse(item.cities_data) : [],
+                countries: item.countries_data ? JSON.parse(item.countries_data) : []
+            };
         } catch (err) {
-            console.error("Error fetching latest import", err);
+            console.error("Error fetching audience demographics", err);
             return null;
         }
     },

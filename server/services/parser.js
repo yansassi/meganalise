@@ -96,18 +96,26 @@ const normalizeContentData = (data, isUSFormat = false) => {
         const id = findValue(row, ['Identificação do post', 'Identificador multimídia', 'Identificador', 'Post ID']) || `post-${index}`;
 
         let dateFormatted = null;
+        let timeFormatted = null;
         const rawDate = findValue(row, ['Horário de publicação', 'Data', 'Date', 'Horario']);
 
         if (rawDate && rawDate !== 'Total') {
             try {
-                const datePart = rawDate.split(' ')[0];
+                const parts = rawDate.split(' ');
+                const datePart = parts[0];
+                const timePart = parts[1]; // Extract time "HH:MM"
+
+                if (timePart) {
+                    timeFormatted = timePart.substring(0, 5); // Ensure HH:MM
+                }
+
                 if (datePart.includes('/')) {
-                    const parts = datePart.split('/');
-                    if (parts.length === 3) {
+                    const dParts = datePart.split('/');
+                    if (dParts.length === 3) {
                         if (isUSFormat) {
-                            dateFormatted = `${parts[2]}-${parts[0]}-${parts[1]}`;
+                            dateFormatted = `${dParts[2]}-${dParts[0]}-${dParts[1]}`;
                         } else {
-                            dateFormatted = `${parts[2]}-${parts[1]}-${parts[0]}`;
+                            dateFormatted = `${dParts[2]}-${dParts[1]}-${dParts[0]}`;
                         }
                     }
                 } else {
@@ -139,9 +147,93 @@ const normalizeContentData = (data, isUSFormat = false) => {
 
         return {
             id, title, imageUrl: '', permalink, platform, manager: 'Time Social',
-            date: dateFormatted, virality, status, reach, likes, shares, comments, saved, views, duration
+            date: dateFormatted, posting_time: timeFormatted, virality, status, reach, likes, shares, comments, saved, views, duration
         };
     });
+};
+
+// Helper to parse diverse audience/demographics file
+const normalizeAudienceData = (lines) => {
+    const data = {
+        gender_age: {},
+        cities: [],
+        countries: []
+    };
+
+    let currentSection = null;
+
+    // Helper to extract percentages
+    const parsePercentage = (val) => {
+        if (!val) return 0;
+        return parseFloat(val.replace(',', '.').replace('%', ''));
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const lowerLine = line.toLowerCase();
+
+        // Section Detection
+        if (lowerLine.includes('faixa etária e gênero') || lowerLine.includes('age range and gender')) {
+            currentSection = 'gender_age';
+            continue; // Skip header
+        } else if (lowerLine.includes('principais cidades') || lowerLine.includes('top cities')) {
+            currentSection = 'cities';
+            continue;
+        } else if (lowerLine.includes('principais países') || lowerLine.includes('top countries')) {
+            currentSection = 'countries';
+            continue;
+        }
+
+        // Parse Data based on section
+        const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Split CSV respecting quotes
+        // Simple fallback if regex fails or simple CSV
+        const cols = parts.map(p => p.replace(/['"]/g, '').trim());
+
+        if (currentSection === 'gender_age') {
+            // Expected format: AgeRange, Female%, Male% (or similar)
+            // But sometimes it's transposed. Let's assume standard export:
+            // "18-24", "20%", "5%" OR "18-24", "20%" (if not split by gender)
+            // Usually exports are: Age Range, Woman, Man OR All.
+
+            // Heuristic: If first col looks like age range (e.g. 18-24, 65+)
+            if (cols[0] && /\d{2}-\d{2}|65\+/.test(cols[0])) {
+                const age = cols[0];
+                const val1 = parsePercentage(cols[1]); // Likely Women/Female often 1st
+                const val2 = parsePercentage(cols[2]); // Likely Men/Male
+
+                // We'll store as object. If only 1 val, assume total or female? 
+                // Let's store generic structures.
+                data.gender_age[age] = {
+                    female: val1,
+                    male: val2 || 0
+                };
+            }
+        } else if (currentSection === 'cities') {
+            // City, Percentage
+            if (cols.length >= 2 && cols[1].includes('%')) {
+                data.cities.push({
+                    name: cols[0],
+                    value: parsePercentage(cols[1])
+                });
+            }
+        } else if (currentSection === 'countries') {
+            // Country, Percentage
+            if (cols.length >= 2 && cols[1].includes('%')) {
+                data.countries.push({
+                    name: cols[0],
+                    value: parsePercentage(cols[1])
+                });
+            }
+        }
+    }
+
+    // Sort lists by value desc
+    data.cities.sort((a, b) => b.value - a.value);
+    data.countries.sort((a, b) => b.value - a.value);
+
+    return data;
 };
 
 const parseInstagramCSV = async (buffer, fileName) => {
@@ -149,6 +241,20 @@ const parseInstagramCSV = async (buffer, fileName) => {
     const lines = csvText.split(/\r\n|\n/);
 
     let headerIndex = 0;
+    // ... existing logic to find header ...
+    // But for Audience file, there isn't a single header. It's multi-section.
+    // So we invoke specific logic if detected.
+
+    const fileNameLower = fileName.toLowerCase();
+    const firstLines = lines.slice(0, 5).join('\n').toLowerCase();
+
+    // Check for Audience/Demographics
+    if (fileNameLower.includes('público') || fileNameLower.includes('audience') || firstLines.includes('faixa etária')) {
+        const audienceData = normalizeAudienceData(lines);
+        return { type: 'demographics', data: audienceData };
+    }
+
+    // ORIGINAL LOGIC for other files
     for (let i = 0; i < Math.min(lines.length, 10); i++) {
         const line = lines[i].toLowerCase();
         if (line.includes('"data"') || line.includes('data,') || line.includes('data;') ||
@@ -169,7 +275,6 @@ const parseInstagramCSV = async (buffer, fileName) => {
             complete: (results) => {
                 const data = results.data;
                 const metadataLower = metadataLines.toLowerCase();
-                const fileNameLower = fileName.toLowerCase();
 
                 const hasColumn = (keyPart) => {
                     if (!data[0]) return false;
