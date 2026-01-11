@@ -56,7 +56,7 @@ const AudienceView = ({ data }) => {
                 </h3>
 
                 <div style={{ width: '100%', height: 300, minHeight: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={200}>
                         <BarChart
                             data={ageGenderData}
                             layout="vertical"

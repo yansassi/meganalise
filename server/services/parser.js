@@ -161,6 +161,7 @@ const normalizeAudienceData = (lines) => {
     };
 
     let currentSection = null;
+    let pendingKeys = [];
 
     // Helper to extract percentages
     const parsePercentage = (val) => {
@@ -177,54 +178,64 @@ const normalizeAudienceData = (lines) => {
         // Section Detection
         if (lowerLine.includes('faixa etária e gênero') || lowerLine.includes('age range and gender')) {
             currentSection = 'gender_age';
-            continue; // Skip header
+            pendingKeys = [];
+            continue;
         } else if (lowerLine.includes('principais cidades') || lowerLine.includes('top cities')) {
             currentSection = 'cities';
+            pendingKeys = [];
             continue;
         } else if (lowerLine.includes('principais países') || lowerLine.includes('top countries')) {
             currentSection = 'countries';
+            pendingKeys = [];
             continue;
         }
 
         // Parse Data based on section
         const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Split CSV respecting quotes
-        // Simple fallback if regex fails or simple CSV
         const cols = parts.map(p => p.replace(/['"]/g, '').trim());
 
         if (currentSection === 'gender_age') {
-            // Expected format: AgeRange, Female%, Male% (or similar)
-            // But sometimes it's transposed. Let's assume standard export:
-            // "18-24", "20%", "5%" OR "18-24", "20%" (if not split by gender)
-            // Usually exports are: Age Range, Woman, Man OR All.
-
-            // Heuristic: If first col looks like age range (e.g. 18-24, 65+)
+            // Vertical format check: "18-24", "20%", "5%"
             if (cols[0] && /\d{2}-\d{2}|65\+/.test(cols[0])) {
                 const age = cols[0];
-                const val1 = parsePercentage(cols[1]); // Likely Women/Female often 1st
-                const val2 = parsePercentage(cols[2]); // Likely Men/Male
+                const val1 = parsePercentage(cols[1]);
+                const val2 = parsePercentage(cols[2]);
+                data.gender_age[age] = { female: val1, male: val2 || 0 };
+            }
+            // Horizontal format check (if keys matched previously? rare for age/gender but possible)
+        } else if (currentSection === 'cities' || currentSection === 'countries') {
+            // Horizontal Data Check
+            // Row 1: Names (e.g., "São Paulo", "Rio")
+            // Row 2: Values (e.g., "10.5", "5.2")
 
-                // We'll store as object. If only 1 val, assume total or female? 
-                // Let's store generic structures.
-                data.gender_age[age] = {
-                    female: val1,
-                    male: val2 || 0
-                };
-            }
-        } else if (currentSection === 'cities') {
-            // City, Percentage
-            if (cols.length >= 2 && cols[1].includes('%')) {
-                data.cities.push({
-                    name: cols[0],
-                    value: parsePercentage(cols[1])
+            // Heuristic: If row has numbers, it's values. If text, it's keys.
+            const isNumericRow = cols.some(c => !isNaN(parseFloat(c.replace(',', '.'))));
+
+            if (!isNumericRow) {
+                // Assume these are names
+                pendingKeys = cols;
+            } else if (pendingKeys.length > 0 && isNumericRow) {
+                // Map keys to values
+                const collection = currentSection === 'cities' ? data.cities : data.countries;
+
+                cols.forEach((val, idx) => {
+                    if (pendingKeys[idx]) {
+                        collection.push({
+                            name: pendingKeys[idx],
+                            value: parsePercentage(val)
+                        });
+                    }
                 });
-            }
-        } else if (currentSection === 'countries') {
-            // Country, Percentage
-            if (cols.length >= 2 && cols[1].includes('%')) {
-                data.countries.push({
-                    name: cols[0],
-                    value: parsePercentage(cols[1])
-                });
+                pendingKeys = []; // Reset after consuming
+            } else {
+                // Maybe vertical format? "City", "Value"
+                if (cols.length >= 2 && !isNaN(parseFloat(cols[1].replace(',', '.')))) {
+                    const collection = currentSection === 'cities' ? data.cities : data.countries;
+                    collection.push({
+                        name: cols[0],
+                        value: parsePercentage(cols[1])
+                    });
+                }
             }
         }
     }
@@ -241,10 +252,6 @@ const parseInstagramCSV = async (buffer, fileName) => {
     const lines = csvText.split(/\r\n|\n/);
 
     let headerIndex = 0;
-    // ... existing logic to find header ...
-    // But for Audience file, there isn't a single header. It's multi-section.
-    // So we invoke specific logic if detected.
-
     const fileNameLower = fileName.toLowerCase();
     const firstLines = lines.slice(0, 5).join('\n').toLowerCase();
 
@@ -254,7 +261,13 @@ const parseInstagramCSV = async (buffer, fileName) => {
         return { type: 'demographics', data: audienceData };
     }
 
-    // ORIGINAL LOGIC for other files
+    // Check for "Principais formatos" to ignore/handle gracefully
+    if (fileNameLower.includes('formatos') || firstLines.includes('conteúdo publicado')) {
+        // Return dummy success or specific type that front-end ignores or handles
+        return { type: 'ignored', data: {} };
+    }
+
+    // ... rest of logic
     for (let i = 0; i < Math.min(lines.length, 10); i++) {
         const line = lines[i].toLowerCase();
         if (line.includes('"data"') || line.includes('data,') || line.includes('data;') ||
@@ -281,6 +294,7 @@ const parseInstagramCSV = async (buffer, fileName) => {
                     return Object.keys(data[0]).some(k => k.toLowerCase().includes(keyPart.toLowerCase()));
                 };
 
+                // Content detection logic...
                 const isUSFilename = /^[a-z]{3}-\d{2}-\d{4}/i.test(fileNameLower);
                 const hasContentColumns = hasColumn('permalink') || hasColumn('link permanente') || hasColumn('tipo de conte') || hasColumn('tipo de post') || hasColumn('identificação do post');
 
@@ -289,43 +303,37 @@ const parseInstagramCSV = async (buffer, fileName) => {
                     return;
                 }
 
-                // Improved file type detection
-                // Reach
+                // Metrics detection logic...
                 const isReach = metadataLower.includes('alcance') || fileNameLower.includes('alcance') || fileNameLower.includes('reach') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('alcance') || hasColumn('reach')));
                 if (isReach) {
                     resolve({ type: 'metric', metric: 'reach', data: normalizeDailyMetric(data, 'reach') });
                     return;
                 }
 
-                // Interactions - 'intera' matches interações/interactions/interacoes
                 const isInteractions = metadataLower.includes('intera') || fileNameLower.includes('intera') || fileNameLower.includes('likes') || fileNameLower.includes('curtidas') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('intera') || hasColumn('curtidas') || hasColumn('likes')));
                 if (isInteractions) {
                     resolve({ type: 'metric', metric: 'interactions', data: normalizeDailyMetric(data, 'interactions') });
                     return;
                 }
 
-                // Followers
                 const isFollowers = fileNameLower.includes('seguid') || fileNameLower.includes('follow') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('seguidores') || hasColumn('followers')));
                 if (isFollowers) {
                     resolve({ type: 'metric', metric: 'followers', data: normalizeDailyMetric(data, 'followers') });
                     return;
                 }
 
-                // Profile Visits
                 const isProfileVisits = fileNameLower.includes('visitas') || fileNameLower.includes('visit') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('visitas') || hasColumn('visits')));
                 if (isProfileVisits) {
                     resolve({ type: 'metric', metric: 'profile_visits', data: normalizeDailyMetric(data, 'profile_visits') });
                     return;
                 }
 
-                // Impressions
                 const isImpressions = fileNameLower.includes('visualiza') || fileNameLower.includes('impression') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('visualiza') || hasColumn('impression')));
                 if (isImpressions) {
                     resolve({ type: 'metric', metric: 'impressions', data: normalizeDailyMetric(data, 'impressions') });
                     return;
                 }
 
-                // Clicks
                 const isClicks = metadataLower.includes('clique') || fileNameLower.includes('clique') || fileNameLower.includes('click') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('clique') || hasColumn('click')));
                 if (isClicks) {
                     resolve({ type: 'metric', metric: 'website_clicks', data: normalizeDailyMetric(data, 'website_clicks') });

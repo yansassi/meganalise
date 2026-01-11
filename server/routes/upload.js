@@ -56,6 +56,10 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
         let savedCount = 0;
         let errors = [];
 
+        if (result.type === 'ignored') {
+            return res.json({ success: true, type: 'ignored', message: 'Arquivo processado (ignorado)' });
+        }
+
         if (result.type === 'content') {
             for (const item of result.data) {
                 try {

@@ -125,7 +125,7 @@ const DataIntelligence = ({ contentItems }) => {
                     Intensidade baseada na média de engajamento por postagem.
                 </p>
                 <div style={{ width: '100%', height: 350, minHeight: 350 }}>
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={200}>
                         <ScatterChart
                             margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
                         >
@@ -185,7 +185,7 @@ const DataIntelligence = ({ contentItems }) => {
                     Batalha de Formatos (Média por Post)
                 </h3>
                 <div style={{ width: '100%', height: 300, minHeight: 300 }}>
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={200}>
                         <BarChart data={formatBattleData}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" opacity={0.1} />
                             <XAxis dataKey="name" axisLine={false} tickLine={false} />
@@ -209,7 +209,7 @@ const DataIntelligence = ({ contentItems }) => {
                     Matriz de Oportunidade (Alcance x Engajamento)
                 </h3>
                 <div style={{ width: '100%', height: 400, minHeight: 400 }}>
-                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} debounce={200}>
                         <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                             <CartesianGrid />
                             <XAxis type="number" dataKey="x" name="Alcance" unit="" stroke="#9ca3af" />
