@@ -39,7 +39,7 @@ const StoriesDashboard = () => {
         // Logic: Explicit 'story' type OR heuristic (social + views > 0 or Title starts with 'Story -')
         const stories = dbData.content.filter(c =>
             c.platform_type === 'story' ||
-            (c.platform_type === 'social' && (c.views > 0 || c.title.startsWith('Story -')))
+            (c.platform_type === 'social' && c.title && c.title.startsWith('Story -'))
         );
 
         totalStories = stories.length;
