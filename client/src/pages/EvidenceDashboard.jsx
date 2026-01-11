@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
 
+import ContentGrid from '../components/dashboard/ContentGrid';
+
 const MetricCard = ({ title, value, icon, color }) => (
     <div className="bg-white dark:bg-card-dark p-6 rounded-3xl shadow-soft flex items-center gap-4 transition-transform hover:scale-[1.02]">
         <div className={`p-4 rounded-2xl ${color} text-white shadow-lg`}>
@@ -41,6 +43,26 @@ export default function EvidenceDashboard() {
     if (!data) return <div className="p-10 text-center text-slate-400">Registro não encontrado.</div>;
 
     const { registry, metrics, content } = data;
+
+    // Map content for Grid
+    const contentItems = content.map(c => ({
+        id: c.original_id,
+        pbId: c.id,
+        title: c.title,
+        imageUrl: c.image_url,
+        imageFile: c.image_file,
+        platform: c.platform_type || 'social',
+        permalink: c.permalink,
+        manager: 'Time Social',
+        date: new Date(c.date).toLocaleDateString('pt-BR'),
+        virality: c.virality_score,
+        status: c.status,
+        reach: c.reach,
+        views: c.views,
+        likes: c.likes,
+        shares: c.shares,
+        comments: c.comments
+    }));
 
     return (
         <div className="space-y-8 animate-fade-in pb-10">
@@ -105,82 +127,13 @@ export default function EvidenceDashboard() {
                 />
             </div>
 
-            {/* Content List */}
-            <div className="bg-white dark:bg-card-dark rounded-3xl shadow-soft overflow-hidden">
-                <div className="p-6 border-b border-slate-100 dark:border-slate-800">
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                        <span className="material-icons-round text-blue-600">list</span>
-                        Conteúdos Identificados
-                    </h2>
-                </div>
-
-                {content.length === 0 ? (
-                    <div className="p-10 text-center text-slate-400">
-                        Nenhum conteúdo encontrado com as palavras-chave neste período.
-                    </div>
-                ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 font-bold text-xs uppercase tracking-wider">
-                                    <th className="p-4 rounded-tl-2xl">Data</th>
-                                    <th className="p-4">Conteúdo</th>
-                                    <th className="p-4 text-center">Likes</th>
-                                    <th className="p-4 text-center">Coment.</th>
-                                    <th className="p-4 text-center">Link</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                {content.map((item) => (
-                                    <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                                        <td className="p-4 text-slate-500 text-sm font-medium whitespace-nowrap">
-                                            {new Date(item.timestamp).toLocaleDateString()}
-                                            <br />
-                                            <span className="text-xs opacity-70">{new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                        </td>
-                                        <td className="p-4 max-w-md">
-                                            <div className="flex gap-4">
-                                                {dataService.getContentImageUrl(item) && (
-                                                    <img
-                                                        src={dataService.getContentImageUrl(item)}
-                                                        alt="Post thumbnail"
-                                                        className="w-16 h-16 object-cover rounded-xl shadow-sm"
-                                                    />
-                                                )}
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-slate-800 dark:text-white text-sm line-clamp-2 leading-relaxed">
-                                                        {item.caption || 'Sem legenda'}
-                                                    </p>
-                                                    <span className="text-xs text-blue-500 font-bold mt-1 block">
-                                                        {item.social_network || 'Instagram'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="p-4 text-center font-bold text-slate-700 dark:text-slate-300">
-                                            {item.like_count?.toLocaleString()}
-                                        </td>
-                                        <td className="p-4 text-center font-bold text-slate-700 dark:text-slate-300">
-                                            {item.comments_count?.toLocaleString()}
-                                        </td>
-                                        <td className="p-4 text-center">
-                                            <a
-                                                href={item.permalink}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all shadow-sm mx-auto"
-                                                title="Ver original"
-                                            >
-                                                <span className="material-icons-round text-lg">open_in_new</span>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                )}
-            </div>
+            {/* Content Grid */}
+            <ContentGrid
+                items={contentItems}
+                title="Conteúdos Identificados"
+                limit={100}
+                showPagination={true}
+            />
         </div>
     );
 }
