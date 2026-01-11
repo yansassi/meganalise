@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { dataService } from '../../services/dataService';
-import ContentTable from './ContentTable';
+import ContentGrid from './ContentGrid';
 import StatCards from './StatCards';
 import DateRangeFilter from './DateRangeFilter';
 
@@ -106,12 +106,13 @@ const ContentDashboard = () => {
             {data.isLoaded && (
                 <div className="flex flex-col gap-8">
                     <StatCards stats={data.stats} />
-                    <ContentTable
+                    <ContentGrid
                         items={data.reels}
                         title="Galeria de Conteúdo"
-                        limit={25}
+                        limit={45}
                         showPagination={true}
                     />
+
                 </div>
             )}
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { dataService } from '../../services/dataService';
 import StatCards from './StatCards';
-import ContentTable from './ContentTable';
+import ContentGrid from './ContentGrid';
 import DateRangeFilter from './DateRangeFilter';
 
 const StoriesDashboard = () => {
@@ -52,9 +52,11 @@ const StoriesDashboard = () => {
 
         const storyItems = stories.map(c => ({
             id: c.original_id,
+            pbId: c.id, // PocketBase ID for file URL
             title: c.title,
             imageUrl: c.image_url,
-            platform: 'instagram', // UI Icon
+            imageFile: c.image_file, // For uploaded cover
+            platform: c.platform_type, // Use actual platform type (story)
             manager: 'Time Social',
             date: new Date(c.date).toLocaleDateString('pt-BR'),
             virality: c.virality_score,
@@ -91,7 +93,7 @@ const StoriesDashboard = () => {
 
             <StatCards stats={data.stats} />
 
-            <ContentTable items={data.contentItems} title="Histórico de Stories" limit={25} showPagination={true} />
+            <ContentGrid items={data.contentItems} title="Histórico de Stories" limit={45} showPagination={true} />
         </div>
     );
 };
