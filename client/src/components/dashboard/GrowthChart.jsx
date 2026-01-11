@@ -3,7 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 
 const GrowthChart = ({ data = [] }) => {
     return (
-        <div className="bg-white dark:bg-card-dark p-8 rounded-3xl shadow-soft h-[400px]">
+        <div className="glass-card p-8 rounded-3xl shadow-soft h-[400px]">
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h3 className="text-xl font-bold">Análise de Crescimento</h3>

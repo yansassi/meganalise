@@ -15,7 +15,7 @@ const ProgressModal = ({ isOpen, progress, action, details }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-            <div className="bg-white dark:bg-card-dark w-full max-w-md p-8 rounded-3xl shadow-2xl transform scale-100 transition-all">
+            <div className="glass-card w-full max-w-md p-8 rounded-3xl shadow-2xl transform scale-100 transition-all">
                 <div className="text-center mb-6">
                     <div className="w-16 h-16 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
                         <span className="material-icons-round text-3xl animate-spin">sync</span>
@@ -52,7 +52,7 @@ const UploadModal = ({ isOpen, onClose, onUpload }) => {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in" onClick={onClose}>
-            <div className="bg-white dark:bg-card-dark w-full max-w-2xl p-8 rounded-3xl shadow-2xl transform scale-100 transition-all" onClick={e => e.stopPropagation()}>
+            <div className="glass-card w-full max-w-2xl p-8 rounded-3xl shadow-2xl transform scale-100 transition-all" onClick={e => e.stopPropagation()}>
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-bold">Importar Dados</h3>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full">

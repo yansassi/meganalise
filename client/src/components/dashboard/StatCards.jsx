@@ -36,13 +36,13 @@ const StatCards = ({ stats = [] }) => {
                     iconBg: 'bg-white/20 text-white',
                     trendTag: 'bg-white/20 text-white'
                 };
-            default: // White / Fallback Theme (High Contrast)
+            default: // Glass / Neutral Theme
                 return {
-                    container: 'bg-white dark:bg-card-dark border border-slate-100 dark:border-white/5 shadow-card',
+                    container: 'glass-card',
                     text: 'text-slate-800 dark:text-white',
-                    subText: 'text-slate-500 dark:text-gray-400',
+                    subText: 'text-slate-500 dark:text-blue-200/70',
                     iconBg: 'bg-slate-100 dark:bg-white/10 text-primary',
-                    trendTag: 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-gray-300'
+                    trendTag: 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-blue-100'
                 };
         }
     };

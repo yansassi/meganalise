@@ -4,7 +4,7 @@ const RightPanel = ({ platformMix = [] }) => {
     return (
         <div className="space-y-8">
             {/* Platform Mix */}
-            <div className="bg-white dark:bg-card-dark p-6 rounded-3xl shadow-soft">
+            <div className="glass-card p-6 rounded-3xl shadow-soft">
                 <h3 className="text-lg font-bold mb-6">Mix de Plataformas</h3>
                 <div className="space-y-6">
                     {platformMix.length === 0 ? (

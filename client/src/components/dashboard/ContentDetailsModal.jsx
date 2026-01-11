@@ -82,11 +82,11 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
             <div
-                className="bg-white dark:bg-card-dark w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl transform scale-100 transition-all p-0"
+                className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl transform scale-100 transition-all p-0"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white dark:bg-card-dark z-10">
+                <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white/80 dark:bg-[#0f172a]/90 backdrop-blur-xl z-10">
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center 
                             ${item.platform === 'video' ? 'bg-red-100 text-red-600 dark:bg-red-900/20' : ''}

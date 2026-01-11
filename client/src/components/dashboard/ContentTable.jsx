@@ -37,7 +37,7 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                 item={selectedItem}
             />
 
-            <div className="bg-white dark:bg-card-dark p-8 rounded-3xl shadow-card hover:shadow-premium transition-all duration-300 overflow-hidden flex flex-col h-full animate-slide-right border border-slate-100/50 dark:border-white/5">
+            <div className="glass-card p-8 rounded-3xl hover:shadow-premium transition-all duration-300 overflow-hidden flex flex-col h-full animate-slide-right">
                 {title && (
                     <div className="flex items-center justify-between mb-8">
                         <h3 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h3>

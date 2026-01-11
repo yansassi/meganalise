@@ -116,7 +116,7 @@ const DataIntelligence = ({ contentItems }) => {
     return (
         <div className="space-y-8 animate-fade-in">
             {/* Heatmap Section */}
-            <div className="bg-white dark:bg-card-dark p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-white/5">
+            <div className="glass-card p-6 rounded-3xl shadow-sm">
                 <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                     <span className="material-icons-round text-red-500 bg-red-500/10 p-1 rounded-lg">grid_on</span>
                     Heatmap de Performance (Melhores Horários)
@@ -179,7 +179,7 @@ const DataIntelligence = ({ contentItems }) => {
             </div>
 
             {/* Format Battle */}
-            <div className="bg-white dark:bg-card-dark p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-white/5">
+            <div className="glass-card p-6 rounded-3xl shadow-sm">
                 <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                     <span className="material-icons-round text-orange-500 bg-orange-500/10 p-1 rounded-lg">swords</span>
                     Batalha de Formatos (Média por Post)
@@ -203,7 +203,7 @@ const DataIntelligence = ({ contentItems }) => {
             </div>
 
             {/* Opportunity Matrix */}
-            <div className="bg-white dark:bg-card-dark p-6 rounded-3xl shadow-sm border border-gray-100 dark:border-white/5">
+            <div className="glass-card p-6 rounded-3xl shadow-sm">
                 <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
                     <span className="material-icons-round text-teal-500 bg-teal-500/10 p-1 rounded-lg">bubble_chart</span>
                     Matriz de Oportunidade (Alcance x Engajamento)
