@@ -235,6 +235,7 @@ const PlatformView = ({ platform }) => {
                 pbId: c.id, // PocketBase internal ID for updates
                 title: c.title,
                 imageUrl: c.image_url,
+                imageFile: c.image_file, // Include image_file from DB
                 platform: c.platform_type,
                 manager: 'Time Social',
                 date: new Date(c.date).toLocaleDateString('pt-BR'),
