@@ -165,9 +165,18 @@ export const dataService = {
                     requestKey: null
                 });
 
-                const genderData = genderRecords.items.length > 0 ? JSON.parse(genderRecords.items[0].data) : {};
-                const territoryData = territoryRecords.items.length > 0 ? JSON.parse(territoryRecords.items[0].data) : {};
-                const activityData = activityRecords.items.length > 0 ? JSON.parse(activityRecords.items[0].data) : [];
+                const safeParse = (data) => {
+                    try {
+                        return typeof data === 'string' ? JSON.parse(data) : data;
+                    } catch (e) {
+                        console.warn('JSON Parse error in demographics:', e);
+                        return {};
+                    }
+                };
+
+                const genderData = genderRecords.items.length > 0 ? safeParse(genderRecords.items[0].data) : {};
+                const territoryData = territoryRecords.items.length > 0 ? safeParse(territoryRecords.items[0].data) : {};
+                const activityData = activityRecords.items.length > 0 ? safeParse(activityRecords.items[0].data) : [];
 
                 // Map to AudienceView format
                 // AudienceView expects: genderAge (keys: 18-24, etc? Or just Gender?), cities, countries
@@ -222,12 +231,14 @@ export const dataService = {
      * @param {string} contentId - ID do conteúdo
      * @param {File} imageFile - Arquivo de imagem
      */
-    async updateContentImage(contentId, imageFile) {
+    async updateContentImage(contentId, imageFile, platform = 'instagram') {
         try {
             const formData = new FormData();
             formData.append('image_file', imageFile);
 
-            const result = await pb.collection('instagram_content').update(
+            const collectionName = platform === 'tiktok' ? 'tiktok_content' : 'instagram_content';
+
+            const result = await pb.collection(collectionName).update(
                 contentId,
                 formData,
                 { requestKey: null }

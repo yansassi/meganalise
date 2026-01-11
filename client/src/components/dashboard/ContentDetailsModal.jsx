@@ -74,7 +74,10 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
         try {
             // Use pbId (PocketBase internal ID) instead of id (original_id)
             const recordId = item.pbId || item.id;
-            const result = await dataService.updateContentImage(recordId, imageFile);
+            // Determine platform from item (social_network usually holds 'tiktok' or 'instagram')
+            const platform = item.social_network || 'instagram';
+
+            const result = await dataService.updateContentImage(recordId, imageFile, platform);
 
             // Update item with new image_file field
             if (result && result.image_file) {

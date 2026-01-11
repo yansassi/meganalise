@@ -15,7 +15,8 @@ const COLLECTIONS = {
         { name: 'shares', type: 'number' },
         { name: 'views', type: 'number' },
         { name: 'country', type: 'text' },
-        { name: 'date_published', type: 'date' }
+        { name: 'date_published', type: 'date' },
+        { name: 'image_file', type: 'file' }
     ],
     'tiktok_daily_metrics': [
         { name: 'date', type: 'date' },
@@ -28,7 +29,7 @@ const COLLECTIONS = {
         { name: 'type', type: 'text' },
         { name: 'data', type: 'json' },
         { name: 'date_reference', type: 'date' },
-        // { name: 'country', type: 'text' } // Adding country for future consistency
+        { name: 'country', type: 'text' }
     ]
 };
 

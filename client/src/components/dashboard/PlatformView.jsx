@@ -264,7 +264,8 @@ const PlatformView = ({ platform }) => {
                 permalink: c.permalink,
                 likes: c.likes,
                 shares: c.shares,
-                comments: c.comments
+                comments: c.comments,
+                social_network: c.social_network // Pass social_network from DB to Item
             };
 
             if (platform === 'Instagram') {

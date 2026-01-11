@@ -112,6 +112,7 @@ router.get('/:country/:platform', async (req, res) => {
 
             try {
                 content = await pb.collection('tiktok_content').getFullList({
+                    filter: `country = "${country}"`,
                     sort: '-date_published',
                     requestKey: null
                 });

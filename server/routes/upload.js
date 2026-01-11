@@ -255,7 +255,8 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                 const recordData = {
                     type: result.subtype,
                     data: JSON.stringify(result.data),
-                    date_reference: new Date().toISOString()
+                    date_reference: new Date().toISOString(),
+                    country: country
                 };
                 // We can append or update today's record? Let's create new for history.
                 await pb.collection('tiktok_audience_demographics').create(recordData, { requestKey: null });
