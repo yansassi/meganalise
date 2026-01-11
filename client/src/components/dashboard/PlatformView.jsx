@@ -229,6 +229,7 @@ const PlatformView = ({ platform }) => {
         const contentItems = dbData.content.map(c => {
             const item = {
                 id: c.original_id,
+                pbId: c.id, // PocketBase internal ID for updates
                 title: c.title,
                 imageUrl: c.image_url,
                 platform: c.platform_type,

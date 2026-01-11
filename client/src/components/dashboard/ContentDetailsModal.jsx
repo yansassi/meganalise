@@ -55,7 +55,9 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
 
         setIsUploading(true);
         try {
-            await dataService.updateContentImage(item.id, imageFile);
+            // Use pbId (PocketBase internal ID) instead of id (original_id)
+            const recordId = item.pbId || item.id;
+            await dataService.updateContentImage(recordId, imageFile);
             setUploadSuccess(true);
             setTimeout(() => {
                 setImageFile(null);
