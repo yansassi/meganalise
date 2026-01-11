@@ -225,19 +225,16 @@ const PlatformView = ({ platform }) => {
             };
 
             if (platform === 'Instagram') {
-                if (c.platform_type === 'story' || (c.platform_type === 'social' && (c.title?.startsWith('Story -') || c.views > 0 && c.reach < c.views && !c.title))) {
-                    // Simple heuristic for story if not explicit: usually views > others, but let's stick to platform_type if reliable.
-                    // The best is platform_type.
-                    if (c.platform_type === 'story') {
+                const isStory = c.platform_type === 'story' || (c.platform_type === 'social' && c.title?.startsWith('Story -'));
+
+                if (isStory) {
+                    // It is a story
+                    if (c.platform_type === 'story' || (c.platform_type === 'social' && c.title?.startsWith('Story -'))) {
                         storyViews += (c.views || 0);
                         stories.push(item);
-                    } else if (c.platform_type === 'social' && c.title?.startsWith('Story -')) {
-                        storyViews += (c.views || 0);
-                        stories.push(item);
-                    } else {
-                        reels.push(item);
                     }
                 } else {
+                    // It is a Reel or Feed Post
                     reels.push(item);
                 }
             }
