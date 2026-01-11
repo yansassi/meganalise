@@ -53,10 +53,10 @@ const Sidebar = ({ country }) => {
     setOpenSubmenu(openSubmenu === name ? null : name);
   };
 
-  // Cleaner, Vibrant Gradients for better contrast
+  // Solid vibrant blue for sidebar
   const sidebarValues = country === 'BR'
-    ? { bg: 'bg-gradient-to-b from-[#2563EB] to-[#1E40AF]', activeText: 'text-blue-700' } // Blue-600 to Blue-800
-    : { bg: 'bg-gradient-to-b from-[#DC2626] to-[#991B1B]', activeText: 'text-red-700' }; // Red-600 to Red-800
+    ? { bg: 'bg-[#2563EB]', activeText: 'text-[#2563EB]' }
+    : { bg: 'bg-[#DC2626]', activeText: 'text-[#DC2626]' };
 
   return (
     <aside className={`hidden lg:flex w-72 ${sidebarValues.bg} flex-col justify-between h-full flex-shrink-0 z-30 transition-all duration-500 shadow-2xl overflow-y-auto custom-scrollbar`}>
@@ -126,18 +126,11 @@ const Sidebar = ({ country }) => {
         </nav>
       </div>
 
-      <div className="px-4 pb-8 space-y-4">
-        <div className="p-1 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer group">
-          <NavLink to="/upload" className="flex items-center gap-3 w-full p-3">
-            <div className={`w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform ${sidebarValues.activeText}`}>
-              <span className="material-icons-round">cloud_upload</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-bold truncate group-hover:translate-x-1 transition-transform">Enviar Métricas</p>
-              <p className="text-white/60 text-xs truncate">Upload de CSV</p>
-            </div>
-          </NavLink>
-        </div>
+      <div className="px-6 pb-6 pt-6 border-t border-blue-500/30">
+        <NavLink to="/upload" className="w-full bg-[#1E40AF] hover:bg-[#1e3a8a] text-white rounded-lg py-3 px-4 flex items-center justify-center transition-colors shadow-lg">
+          <span className="material-icons-round mr-2">cloud_upload</span>
+          <span className="font-semibold text-sm">Enviar Métricas</span>
+        </NavLink>
       </div>
     </aside>
   );

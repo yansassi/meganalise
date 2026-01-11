@@ -1,85 +1,49 @@
 @import "tailwindcss";
 
 @theme {
-  /* Company Brand Colors - Preserved for Sidebar */
-  --color-primary: #0058c1;
-  --color-primary-dark: #004e9a;
-  --color-secondary: #ed3030;
-  --color-secondary-dark: #c92a2a;
+  /* New Color Scheme - Clean & Modern */
+  --color-bg-main: #F3F4F6;
+  --color-sidebar: #2563EB;
+  --color-sidebar-dark: #1E40AF;
+  --color-sidebar-darker: #1e3a8a;
 
-  --color-sidebar-bg: #0F172A;
+  /* Accent Colors */
+  --color-green: #10B981;
+  --color-purple: #D946EF;
+  --color-blue: #3B82F6;
+  --color-orange: #F97316;
 
-  /* New Accent Colors - Completely Different */
-  --color-emerald: #10B981;
-  --color-emerald-dark: #059669;
-  --color-fuchsia: #D946EF;
-  --color-fuchsia-dark: #C026D3;
-  --color-sky: #0EA5E9;
-  --color-sky-dark: #0284C7;
-  --color-orange: #FB923C;
-  --color-orange-dark: #F97316;
+  /* Text Colors */
+  --color-text-primary: #1F2937;
+  --color-text-secondary: #9CA3AF;
+  --color-text-muted: #6B7280;
 
-  /* New Background Colors - Lavender-Mint Theme */
-  --color-bg-light-start: #F8F9FF;
-  --color-bg-light-end: #F0FDF9;
-  --color-bg-dark-start: #312E81;
-  --color-bg-dark-end: #4C1D95;
-
-  /* New Text Colors - Purple-Gray Tones */
-  --color-text-primary: #2D3748;
-  --color-text-secondary: #475569;
-  --color-text-muted: #9CA3AF;
-
-  /* Glass Effect Tokens - Lavender Tinted */
-  --color-glass-surface: rgba(248, 249, 255, 0.85);
-  --color-glass-surface-dark: rgba(49, 46, 129, 0.7);
-  --color-glass-border: rgba(248, 249, 255, 0.6);
-  --color-glass-border-dark: rgba(255, 255, 255, 0.1);
-
-  --shadow-neon: 0 0 20px rgba(16, 185, 129, 0.25);
-  --shadow-premium: 0 20px 40px -10px rgba(49, 46, 129, 0.2), 0 0 15px rgba(217, 70, 239, 0.1);
+  /* Border & Shadow */
+  --color-border-light: #E5E7EB;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
 }
 
 @layer base {
   body {
     @apply font-sans transition-colors duration-300;
     color: var(--color-text-primary);
-    /* Lavender-Mint Gradient Background */
-    background: linear-gradient(135deg, #F8F9FF 0%, #F0FDF9 100%);
-  }
-
-  .dark body {
-    /* Indigo-Purple Gradient Background */
-    background: linear-gradient(135deg, #312E81 0%, #4C1D95 50%, #312E81 100%);
-    background-attachment: fixed;
-    color: #F8F9FF;
+    background: #F3F4F6;
   }
 }
 
-/* --- GLASSMORPHISM UTILITIES --- */
-.glass-card {
-  background: var(--color-glass-surface);
-  backdrop-filter: blur(16px);
-  border: 1px solid var(--color-glass-border);
-  box-shadow: var(--shadow-premium);
+/* Utility Classes */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
-.dark .glass-card {
-  background: var(--color-glass-surface-dark);
-  border-color: var(--color-glass-border-dark);
-  box-shadow: var(--shadow-neon);
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-.glass-panel {
-  @apply bg-white/90 backdrop-blur-md border border-white/50;
-  box-shadow: var(--shadow-card);
-}
-
-.hover-lift {
-  @apply transition-transform duration-300 hover:-translate-y-1 hover:shadow-premium;
-}
-
-/* Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
@@ -89,10 +53,10 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #C4B5FD;
+  background: #D1D5DB;
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #A78BFA;
+  background: #9CA3AF;
 }

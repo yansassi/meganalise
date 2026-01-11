@@ -2,47 +2,47 @@ import React from 'react';
 import { formatNumber } from '../../utils/formatters';
 
 const StatCards = ({ stats = [] }) => {
-    const getCardTheme = (color) => {
+    const getCardStyles = (color) => {
         switch (color) {
-            case 'blue':
+            case 'green':
                 return {
-                    container: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
-                    text: 'text-white',
-                    subText: 'text-emerald-50',
+                    container: 'bg-[#10B981] text-white',
                     iconBg: 'bg-white/20 text-white',
-                    trendTag: 'bg-white/20 text-white'
+                    labelText: 'text-white/80',
+                    valueText: 'text-white',
+                    decorativeIcon: true
                 };
             case 'purple':
                 return {
-                    container: 'bg-gradient-to-br from-fuchsia-500 to-fuchsia-600',
-                    text: 'text-white',
-                    subText: 'text-fuchsia-50',
+                    container: 'bg-[#D946EF] text-white',
                     iconBg: 'bg-white/20 text-white',
-                    trendTag: 'bg-white/20 text-white'
+                    labelText: 'text-white/80',
+                    valueText: 'text-white',
+                    decorativeIcon: true
+                };
+            case 'blue':
+                return {
+                    container: 'bg-[#3B82F6] text-white',
+                    iconBg: 'bg-white/20 text-white',
+                    labelText: 'text-white/80',
+                    valueText: 'text-white',
+                    decorativeIcon: true
                 };
             case 'orange':
                 return {
-                    container: 'bg-gradient-to-br from-orange-400 to-orange-500',
-                    text: 'text-white',
-                    subText: 'text-orange-50',
+                    container: 'bg-[#F97316] text-white',
                     iconBg: 'bg-white/20 text-white',
-                    trendTag: 'bg-white/20 text-white'
+                    labelText: 'text-white/80',
+                    valueText: 'text-white',
+                    decorativeIcon: true
                 };
-            case 'green':
+            default: // White card
                 return {
-                    container: 'bg-gradient-to-br from-sky-500 to-sky-600',
-                    text: 'text-white',
-                    subText: 'text-sky-50',
-                    iconBg: 'bg-white/20 text-white',
-                    trendTag: 'bg-white/20 text-white'
-                };
-            default: // Glass / Neutral Theme
-                return {
-                    container: 'glass-card',
-                    text: 'text-[#1E293B] dark:text-white',
-                    subText: 'text-[#64748B] dark:text-purple-200/70',
-                    iconBg: 'bg-emerald-100 dark:bg-white/10 text-emerald-700 dark:text-emerald-400',
-                    trendTag: 'bg-purple-100 dark:bg-white/10 text-[#475569] dark:text-purple-100'
+                    container: 'bg-white text-[#1F2937] border border-gray-100 shadow-xl',
+                    iconBg: 'bg-gray-100 text-gray-600',
+                    labelText: 'text-gray-500',
+                    valueText: 'text-[#1F2937]',
+                    decorativeIcon: false
                 };
         }
     };
@@ -50,43 +50,32 @@ const StatCards = ({ stats = [] }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, index) => {
-                const theme = getCardTheme(stat.color);
+                const styles = getCardStyles(stat.color);
 
                 return (
                     <div
                         key={stat.label}
                         style={{ animationDelay: `${index * 100}ms` }}
-                        className={`animate-entrance ${theme.container} p-6 rounded-3xl shadow-xl hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 relative overflow-hidden group`}
+                        className={`animate-entrance ${styles.container} rounded-2xl p-5 shadow-lg relative overflow-hidden group min-h-[140px] flex flex-col justify-between transition-transform hover:-translate-y-1 duration-300`}
                     >
-                        {/* Decorative Circles - only visible on colored cards for subtle effect, masked on white */}
-                        {stat.color && (
-                            <>
-                                <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 rounded-full bg-white/10 blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
-                                <div className="absolute bottom-0 left-0 -ml-10 -mb-10 w-24 h-24 rounded-full bg-black/5 blur-2xl"></div>
-                            </>
+                        {/* Decorative large icon for colored cards */}
+                        {styles.decorativeIcon && (
+                            <div className="absolute -bottom-4 -right-4 p-4 opacity-10 transform scale-150 group-hover:scale-125 transition-transform duration-500 pointer-events-none">
+                                <span className="material-icons-round text-6xl text-white">{stat.icon}</span>
+                            </div>
                         )}
 
-                        <div className="flex items-center justify-between mb-4 relative z-10">
-                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm backdrop-blur-sm ${theme.iconBg}`}>
-                                <span className="material-icons-round text-2xl">{stat.icon}</span>
-                            </div>
-                            <div className={`flex items-center px-2.5 py-1 rounded-lg backdrop-blur-sm ${theme.trendTag}`}>
-                                {stat.trend !== 0 ? (
-                                    <span className="text-xs font-black flex items-center">
-                                        <span className="material-icons-round text-sm mr-1">
-                                            {stat.trend > 0 ? 'trending_up' : 'trending_down'}
-                                        </span>
-                                        {stat.trend > 0 ? '+' : ''}{stat.trend}%
-                                    </span>
-                                ) : (
-                                    <span className="text-xs font-bold opacity-80">-</span>
-                                )}
-                            </div>
+                        <div className={`${styles.iconBg} w-10 h-10 rounded-full flex items-center justify-center mb-3 backdrop-blur-sm`}>
+                            <span className="material-icons-round text-sm">{stat.icon}</span>
                         </div>
 
-                        <div className="relative z-10 mt-2">
-                            <p className={`${theme.subText} text-xs font-black uppercase tracking-wider mb-1`}>{stat.label}</p>
-                            <h3 className={`${theme.text} text-3xl font-black tracking-tight`}>{formatNumber(stat.value)}</h3>
+                        <div className="relative z-10">
+                            <h3 className={`${styles.labelText} text-[10px] font-bold uppercase tracking-widest mb-1`}>
+                                {stat.label}
+                            </h3>
+                            <p className={`${styles.valueText} text-2xl font-bold`}>
+                                {formatNumber(stat.value)}
+                            </p>
                         </div>
                     </div>
                 );

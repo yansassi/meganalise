@@ -302,26 +302,29 @@ const PlatformView = ({ platform }) => {
             </div>
 
             {/* Tabs Navigation */}
-            <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 pb-1">
+            <div className="flex items-center space-x-10 mb-8 border-b border-gray-200 pb-px">
                 <button
                     onClick={() => setActiveTab('overview')}
-                    className={`pb-2 px-1 text-sm font-bold transition-all ${activeTab === 'overview' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                    className={`pb-4 border-b-2 font-bold text-sm transition-all ${activeTab === 'overview' ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-gray-400 hover:text-gray-600'
+                        }`}
                 >
                     Resumo
                 </button>
                 <button
                     onClick={() => setActiveTab('audience')}
-                    className={`pb-2 px-1 text-sm font-bold transition-all ${activeTab === 'audience' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                    className={`pb-4 border-b-2 font-bold text-sm flex items-center transition-all ${activeTab === 'audience' ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-gray-400 hover:text-gray-600'
+                        }`}
                 >
                     Público
-                    {audienceData && <span className="ml-2 w-2 h-2 inline-block rounded-full bg-green-500"></span>}
+                    {audienceData && <span className="ml-2 w-1.5 h-1.5 bg-green-500 rounded-full"></span>}
                 </button>
                 <button
                     onClick={() => setActiveTab('intelligence')}
-                    className={`pb-2 px-1 text-sm font-bold transition-all ${activeTab === 'intelligence' ? 'text-primary border-b-2 border-primary' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+                    className={`pb-4 border-b-2 font-bold text-sm flex items-center transition-all ${activeTab === 'intelligence' ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-gray-400 hover:text-gray-600'
+                        }`}
                 >
                     Estratégia
-                    <span className="ml-2 material-icons-round text-xs text-orange-500">bolt</span>
+                    <span className="ml-2 material-icons-round text-xs text-yellow-400">bolt</span>
                 </button>
             </div>
 

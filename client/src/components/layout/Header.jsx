@@ -15,17 +15,17 @@ const Header = ({ country, setCountry }) => {
     return (
         <header className="flex flex-wrap items-center justify-between px-4 md:px-8 py-6 gap-4">
             <div>
-                <h1 className="text-2xl font-bold tracking-tight text-[#2D3748] dark:text-white">Painel</h1>
-                <p className="text-[#475569] dark:text-purple-200 text-sm mt-0.5">Visão geral do seu crescimento social</p>
+                <h1 className="text-3xl font-bold text-[#1F2937]">Painel</h1>
+                <p className="text-[#9CA3AF] text-sm font-medium">Visão geral do seu crescimento social</p>
             </div>
 
             <div className="flex-1 max-w-lg hidden md:block">
                 <div className="relative group">
-                    <span className="material-icons-round absolute left-5 top-1/2 -translate-y-1/2 text-[#9CA3AF] group-focus-within:text-emerald-500 transition-colors">search</span>
+                    <span className="material-icons-round absolute left-5 top-1/2 -translate-y-1/2 text-gray-400">search</span>
                     <input
                         type="text"
-                        placeholder="Pesquisar análises, campanhas..."
-                        className="w-full bg-white/90 dark:bg-white/10 border-none rounded-3xl py-4 pl-14 pr-6 shadow-soft text-sm focus:ring-2 focus:ring-emerald-400 transition-all outline-none placeholder:text-[#9CA3AF]"
+                        placeholder="Pesquisar..."
+                        className="w-full pl-14 pr-4 py-3 rounded-full border-none focus:ring-2 focus:ring-blue-400 bg-white shadow-sm text-sm placeholder-gray-400"
                     />
                 </div>
             </div>
@@ -72,8 +72,8 @@ const Header = ({ country, setCountry }) => {
                         )}
                     </div>
                     <div className="hidden sm:block text-left">
-                        <p className="text-sm font-bold leading-tight truncate max-w-[100px] text-[#2D3748] dark:text-white">{userName}</p>
-                        <p className="text-xs text-[#475569] dark:text-purple-200 font-medium mt-0.5">Gestor Social</p>
+                        <p className="text-sm font-bold leading-tight truncate max-w-[100px] text-[#1F2937]">{userName}</p>
+                        <p className="text-xs text-[#9CA3AF] font-medium">Admin</p>
                     </div>
                 </Link>
             </div>

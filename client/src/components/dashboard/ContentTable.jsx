@@ -37,12 +37,12 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                 item={selectedItem}
             />
 
-            <div className="glass-card p-8 rounded-3xl hover:shadow-premium transition-all duration-300 overflow-hidden flex flex-col h-full animate-slide-right">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col h-full animate-slide-right">
                 {title && (
                     <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xl font-bold text-[#2D3748] dark:text-white tracking-tight">{title}</h3>
+                        <h3 className="text-lg font-bold text-[#1F2937] tracking-tight">{title}</h3>
                         {!showPagination && limit && items.length > limit && (
-                            <button className="text-emerald-600 dark:text-emerald-400 text-sm font-bold hover:underline transition-all hover:text-emerald-700 dark:hover:text-emerald-300">Ver Todos</button>
+                            <button className="text-blue-600 text-sm font-bold hover:underline transition-all hover:text-blue-700">Ver Todos</button>
                         )}
                     </div>
                 )}
@@ -50,7 +50,7 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                 <div className="overflow-x-auto flex-1 custom-scrollbar">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="text-[#9CA3AF] dark:text-purple-200/70 text-xs uppercase font-extrabold tracking-wider border-b border-purple-100 dark:border-white/10">
+                            <tr className="text-gray-400 text-xs uppercase font-extrabold tracking-wider border-b border-gray-100">
                                 <th className="pb-4 pl-4 pt-4 whitespace-nowrap">Conteúdo</th>
                                 <th className="pb-4 px-4 pt-4 whitespace-nowrap text-center">Plataforma</th>
                                 <th className="pb-4 px-4 pt-4 whitespace-nowrap text-right">Alcance</th>
@@ -71,7 +71,7 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                                         key={item.id}
                                         onClick={() => setSelectedItem(item)}
                                         style={{ animationDelay: `${index * 50}ms` }}
-                                        className="group hover:bg-purple-50 dark:hover:bg-white/5 transition-colors border-b last:border-0 border-purple-100 dark:border-white/5 cursor-pointer animate-entrance"
+                                        className="group hover:bg-gray-50 transition-colors border-b last:border-0 border-gray-100 cursor-pointer animate-entrance"
                                     >
                                         <td className="py-4 pl-4 max-w-[300px]">
                                             <div className="flex items-center gap-4">

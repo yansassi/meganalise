@@ -63,29 +63,29 @@ const DateRangeFilter = ({ onFilterChange, className }) => {
     };
 
     return (
-        <div className={`glass-card p-4 rounded-2xl flex flex-col md:flex-row items-center gap-4 ${className}`}>
-            <div className="flex bg-purple-50 dark:bg-white/5 p-1 rounded-xl">
+        <div className={`bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center gap-4 ${className}`}>
+            <div className="flex bg-gray-50 p-1 rounded-xl">
                 <button
                     onClick={() => handlePresetChange('today')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'today' ? 'bg-white dark:bg-white/20 text-emerald-600 dark:text-white shadow-sm' : 'text-[#475569] dark:text-purple-200 hover:text-[#2D3748] dark:hover:text-white'}`}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'today' ? 'bg-white text-[#2563EB] shadow-sm' : 'text-gray-600 hover:text-[#1F2937]'}`}
                 >
                     Hoje
                 </button>
                 <button
                     onClick={() => handlePresetChange('last7')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'last7' ? 'bg-white dark:bg-white/20 text-emerald-600 dark:text-white shadow-sm' : 'text-[#475569] dark:text-purple-200 hover:text-[#2D3748] dark:hover:text-white'}`}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'last7' ? 'bg-white text-[#2563EB] shadow-sm' : 'text-gray-600 hover:text-[#1F2937]'}`}
                 >
                     7 Dias
                 </button>
                 <button
                     onClick={() => handlePresetChange('last30')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'last30' ? 'bg-white dark:bg-white/20 text-emerald-600 dark:text-white shadow-sm' : 'text-[#475569] dark:text-purple-200 hover:text-[#2D3748] dark:hover:text-white'}`}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'last30' ? 'bg-white text-[#2563EB] shadow-sm' : 'text-gray-600 hover:text-[#1F2937]'}`}
                 >
                     30 Dias
                 </button>
                 <button
                     onClick={() => handlePresetChange('thisMonth')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'thisMonth' ? 'bg-white dark:bg-white/20 text-emerald-600 dark:text-white shadow-sm' : 'text-[#475569] dark:text-purple-200 hover:text-[#2D3748] dark:hover:text-white'}`}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'thisMonth' ? 'bg-white text-[#2563EB] shadow-sm' : 'text-gray-600 hover:text-[#1F2937]'}`}
                 >
                     Este Mês
                 </button>
@@ -97,16 +97,16 @@ const DateRangeFilter = ({ onFilterChange, className }) => {
                         type="date"
                         value={startDate}
                         onChange={(e) => handleCustomDateChange('start', e.target.value)}
-                        className="bg-purple-50 dark:bg-white/5 border border-purple-100 dark:border-white/10 text-[#2D3748] dark:text-white text-sm font-medium rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-500 transition-all"
+                        className="bg-gray-50 border border-gray-200 text-[#1F2937] text-sm font-medium rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition-all"
                     />
                 </div>
-                <span className="text-[#9CA3AF] dark:text-purple-200 font-bold">-</span>
+                <span className="text-gray-400 font-bold">-</span>
                 <div className="relative">
                     <input
                         type="date"
                         value={endDate}
                         onChange={(e) => handleCustomDateChange('end', e.target.value)}
-                        className="bg-purple-50 dark:bg-white/5 border border-purple-100 dark:border-white/10 text-[#2D3748] dark:text-white text-sm font-medium rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-emerald-400 focus:border-emerald-500 transition-all"
+                        className="bg-gray-50 border border-gray-200 text-[#1F2937] text-sm font-medium rounded-xl px-3 py-2 outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500 transition-all"
                     />
                 </div>
             </div>
