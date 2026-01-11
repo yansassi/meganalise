@@ -388,7 +388,7 @@ const PlatformView = ({ platform }) => {
                                         <section className="w-full overflow-hidden">
                                             <MediaReel
                                                 title="Stories Recentes"
-                                                items={data.stories || []}
+                                                items={(data.stories || []).slice(0, 25)}
                                                 onItemClick={(story) => setSelectedStory(story)}
                                             />
                                         </section>
@@ -405,7 +405,7 @@ const PlatformView = ({ platform }) => {
                                         <section className="w-full overflow-hidden">
                                             <MediaReel
                                                 title="Reels e Feed"
-                                                items={data.reels || []}
+                                                items={(data.reels || []).slice(0, 25)}
                                                 onItemClick={(item) => setSelectedStory(item)}
                                             />
                                         </section>
