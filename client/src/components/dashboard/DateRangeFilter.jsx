@@ -63,29 +63,29 @@ const DateRangeFilter = ({ onFilterChange, className }) => {
     };
 
     return (
-        <div className={`bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row items-center gap-4 ${className}`}>
+        <div className={`bg-white dark:bg-card-dark p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-white/5 flex flex-col md:flex-row items-center gap-4 ${className}`}>
             <div className="flex bg-slate-100 p-1 rounded-xl">
                 <button
                     onClick={() => handlePresetChange('today')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'today' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'today' ? 'bg-white dark:bg-white/10 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                     Hoje
                 </button>
                 <button
                     onClick={() => handlePresetChange('last7')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'last7' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'last7' ? 'bg-white dark:bg-white/10 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                     7 Dias
                 </button>
                 <button
                     onClick={() => handlePresetChange('last30')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'last30' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'last30' ? 'bg-white dark:bg-white/10 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                     30 Dias
                 </button>
                 <button
                     onClick={() => handlePresetChange('thisMonth')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'thisMonth' ? 'bg-white text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'thisMonth' ? 'bg-white dark:bg-white/10 text-primary shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                 >
                     Este Mês
                 </button>

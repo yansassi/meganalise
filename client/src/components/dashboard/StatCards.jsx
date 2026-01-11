@@ -38,11 +38,11 @@ const StatCards = ({ stats = [] }) => {
                 };
             default: // White / Fallback Theme (High Contrast)
                 return {
-                    container: 'bg-white border border-slate-100 shadow-card',
-                    text: 'text-slate-800',
-                    subText: 'text-slate-500',
-                    iconBg: 'bg-slate-100 text-primary',
-                    trendTag: 'bg-slate-100 text-slate-600'
+                    container: 'bg-white dark:bg-card-dark border border-slate-100 dark:border-white/5 shadow-card',
+                    text: 'text-slate-800 dark:text-white',
+                    subText: 'text-slate-500 dark:text-gray-400',
+                    iconBg: 'bg-slate-100 dark:bg-white/10 text-primary',
+                    trendTag: 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-gray-300'
                 };
         }
     };

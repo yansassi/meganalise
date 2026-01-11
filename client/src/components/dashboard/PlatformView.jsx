@@ -113,7 +113,7 @@ const PlatformView = ({ platform }) => {
     const [dateRange, setDateRange] = useState(() => {
         const end = new Date();
         const start = new Date();
-        start.setDate(end.getDate() - 90);
+        start.setDate(end.getDate() - 365);
         return { startDate: start, endDate: end };
     });
 
