@@ -189,7 +189,7 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
             for (const item of result.data) {
                 try {
                     const existing = await pb.collection('tiktok_content').getList(1, 1, {
-                        filter: `original_id = "${item.original_id}"`,
+                        filter: `original_id = "${item.original_id}" && country = "${country}"`,
                         requestKey: null
                     });
 
@@ -224,15 +224,17 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
             for (const item of result.data) {
                 try {
                     const existing = await pb.collection('tiktok_daily_metrics').getList(1, 1, {
-                        filter: `date = "${item.date} 00:00:00.000Z" && metric = "${item.metric}"`,
+                        filter: `date = "${item.date} 00:00:00.000Z" && metric = "${item.metric}" && country = "${country}"`,
                         requestKey: null
                     });
 
                     const recordData = {
                         date: new Date(item.date).toISOString(),
                         metric: item.metric,
+                        metric: item.metric,
                         value: item.value,
-                        platform: 'tiktok'
+                        platform: 'tiktok',
+                        country: country // Added country isolation
                     };
 
                     if (existing.items.length > 0) {

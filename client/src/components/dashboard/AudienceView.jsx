@@ -1,5 +1,6 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import ActivityChart from './ActivityChart';
 
 const AudienceView = ({ data }) => {
     if (!data) {
@@ -93,6 +94,13 @@ const AudienceView = ({ data }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Hourly Activity Section */}
+            {data.hourlyActivity && data.hourlyActivity.length > 0 && (
+                <div className="w-full">
+                    <ActivityChart data={data.hourlyActivity} />
+                </div>
+            )}
 
             {/* Geo Section: Grid of Cities & Countries */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -45,7 +45,7 @@ const UploadMetrics = () => {
 
             try {
                 // Call API directly - Backend parses and saves
-                const result = await dataService.uploadInstagramData(file, selectedCountry);
+                const result = await dataService.uploadMetrics(file, selectedCountry, selectedPlatform);
 
                 console.log('Upload Result:', result);
 

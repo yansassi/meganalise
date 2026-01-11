@@ -11,6 +11,7 @@ import DateRangeFilter from './DateRangeFilter';
 
 import AudienceView from './AudienceView';
 import DataIntelligence from './DataIntelligence';
+import RetentionChart from './RetentionChart';
 
 const ProgressModal = ({ isOpen, progress, action, details }) => {
     if (!isOpen) return null;
@@ -110,6 +111,7 @@ const PlatformView = ({ platform }) => {
             { label: 'Seguidores', value: 0, trend: 0, icon: 'group', color: 'orange' },
         ],
         chartData: [],
+        retentionData: [],
         contentItems: [],
         isLoaded: false
     });
@@ -192,6 +194,18 @@ const PlatformView = ({ platform }) => {
                 chartMap[m.date] = (chartMap[m.date] || 0) + m.value;
             }
         });
+
+        // TikTok Retention Processing
+        const retentionMap = {};
+        if (platform === 'TikTok') {
+            dbData.metrics.forEach(m => {
+                if (['total_viewers', 'new_viewers', 'returning_viewers'].includes(m.metric)) {
+                    if (!retentionMap[m.date]) retentionMap[m.date] = { date: m.date };
+                    retentionMap[m.date][m.metric] = m.value;
+                }
+            });
+        }
+        const retentionData = Object.values(retentionMap).sort((a, b) => new Date(a.date) - new Date(b.date));
 
         // Compute Follower Growth (Delta)
         const followerGrowthMap = {};
@@ -286,6 +300,7 @@ const PlatformView = ({ platform }) => {
         setData({
             stats,
             chartData,
+            retentionData,
             contentItems,
             reels,
             stories,
@@ -425,6 +440,13 @@ const PlatformView = ({ platform }) => {
                                                 <GrowthChart data={data.chartData} />
                                             </div>
                                         )}
+
+                                        {platform === 'TikTok' && data.retentionData.length > 0 && (
+                                            <div className="w-full">
+                                                <RetentionChart data={data.retentionData} />
+                                            </div>
+                                        )}
+
                                         <div className="w-full">
                                             <ContentTable items={data.contentItems} />
                                         </div>

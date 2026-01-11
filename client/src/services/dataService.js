@@ -30,16 +30,20 @@ export const dataService = {
      * Fetches dashboard data for specific country and platform
      */
     /**
-     * Uploads Instagram CSV to backend for processing
+     * Uploads Metrics CSV to backend for processing
      * @param {File} file 
      * @param {string} country 
+     * @param {string} platform
      */
-    async uploadInstagramData(file, country) {
+    async uploadMetrics(file, country, platform = 'instagram') {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('country', country);
 
-        const response = await fetch('https://api.meganalise.pro/api/upload/instagram', {
+        // Normalize platform to endpoint
+        const endpoint = platform.toLowerCase() === 'tiktok' ? 'tiktok' : 'instagram';
+
+        const response = await fetch(`https://api.meganalise.pro/api/upload/${endpoint}`, {
             method: 'POST',
             body: formData
         });
@@ -155,8 +159,15 @@ export const dataService = {
                     requestKey: null
                 });
 
+                const activityRecords = await pb.collection('tiktok_audience_demographics').getList(1, 1, {
+                    filter: `type = "activity"`,
+                    sort: '-created',
+                    requestKey: null
+                });
+
                 const genderData = genderRecords.items.length > 0 ? JSON.parse(genderRecords.items[0].data) : {};
                 const territoryData = territoryRecords.items.length > 0 ? JSON.parse(territoryRecords.items[0].data) : {};
+                const activityData = activityRecords.items.length > 0 ? JSON.parse(activityRecords.items[0].data) : [];
 
                 // Map to AudienceView format
                 // AudienceView expects: genderAge (keys: 18-24, etc? Or just Gender?), cities, countries
@@ -178,7 +189,8 @@ export const dataService = {
                     tiktokGender: genderData, // Pass raw for now?
                     countries: Object.entries(territoryData).map(([name, value]) => ({ name, value: value * 100 })),
                     cities: [], // Empty for now as TikTok doesn't provide cities in this file
-                    genderAge: { "All": { male: (genderData['Male'] || 0) * 100, female: (genderData['Female'] || 0) * 100 } }
+                    genderAge: { "All": { male: (genderData['Male'] || 0) * 100, female: (genderData['Female'] || 0) * 100 } },
+                    hourlyActivity: activityData // Add hourly activity
                 };
             }
 
