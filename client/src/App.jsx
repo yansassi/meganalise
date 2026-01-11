@@ -8,6 +8,8 @@ import PlatformView from './components/dashboard/PlatformView';
 import StoriesDashboard from './components/dashboard/StoriesDashboard';
 import ContentDashboard from './components/dashboard/ContentDashboard';
 import InstagramAudienceTab from './components/dashboard/InstagramAudienceTab';
+import Evidence from './pages/Evidence';
+import EvidenceDashboard from './pages/EvidenceDashboard';
 
 
 // Dashboard retrieves country from Outlet context
@@ -47,6 +49,8 @@ function App() {
               <Route path="/upload" element={<UploadMetrics />} />
               <Route path="platform/tiktok" element={<PlatformView platform="TikTok" />} />
               <Route path="platform/facebook" element={<PlatformView platform="Facebook" />} />
+              <Route path="evidence" element={<Evidence />} />
+              <Route path="evidence/:id" element={<EvidenceDashboard />} />
               <Route path="settings" element={<Settings />} />
               <Route path="profile" element={<Profile />} />
               <Route path="*" element={<Navigate to="/" replace />} />

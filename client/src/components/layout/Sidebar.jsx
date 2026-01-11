@@ -41,6 +41,11 @@ const Sidebar = ({ country }) => {
         { name: 'Geral', path: '/platform/facebook' },
       ]
     },
+    {
+      name: 'Evidência',
+      icon: 'folder_special',
+      path: '/evidence'
+    },
     { name: 'Configurações', icon: 'settings', path: '/settings' },
   ];
 

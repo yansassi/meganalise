@@ -45,11 +45,17 @@
 
 /* --- GLASSMORPHISM UTILITIES --- */
 .glass-card {
-  @apply bg-white/80 dark:bg-[#0f172a]/60 backdrop-blur-xl border border-white/60 dark:border-white/10 shadow-card dark:shadow-neon;
+  @apply bg-white/80 dark:bg-[#0f172a]/60 backdrop-blur-xl border border-white/60 dark:border-white/10;
+  box-shadow: var(--shadow-card);
+}
+
+.dark .glass-card {
+  box-shadow: var(--shadow-neon);
 }
 
 .glass-panel {
-  @apply bg-white/90 backdrop-blur-md border border-white/50 shadow-card;
+  @apply bg-white/90 backdrop-blur-md border border-white/50;
+  box-shadow: var(--shadow-card);
 }
 
 .hover-lift {

@@ -195,5 +195,128 @@ export const dataService = {
 
         // Senão, usa URL externa (compatibilidade)
         return item.image_url || null;
+    },
+
+    /**
+     * EVIDENCE REGISTRY METHODS
+     */
+
+    /**
+     * Creates or updates an Evidence Registry
+     * @param {Object} data - { title, start_date, end_date, keywords (array) }
+     */
+    async saveEvidenceRegistry(data) {
+        try {
+            // Keywords stored as JSON
+            const payload = {
+                ...data,
+                keywords: JSON.stringify(data.keywords)
+            };
+
+            // Check if we are updating or creating (if ID exists)
+            if (data.id) {
+                return await pb.collection('evidence_registries').update(data.id, payload);
+            } else {
+                return await pb.collection('evidence_registries').create(payload);
+            }
+        } catch (err) {
+            console.error("Error saving evidence registry", err);
+            throw err;
+        }
+    },
+
+    /**
+     * Fetches all evidence registries
+     */
+    async getEvidenceRegistries() {
+        try {
+            const records = await pb.collection('evidence_registries').getFullList({
+                sort: '-created',
+            });
+            return records.map(r => ({
+                ...r,
+                keywords: typeof r.keywords === 'string' ? JSON.parse(r.keywords) : r.keywords,
+            }));
+        } catch (err) {
+            console.error("Error fetching registries", err);
+            return [];
+        }
+    },
+
+    /**
+     * Deletes a registry
+     */
+    async deleteEvidenceRegistry(id) {
+        return await pb.collection('evidence_registries').delete(id);
+    },
+
+    /**
+     * Fetches details for a single registry
+     */
+    async getEvidenceRegistry(id) {
+        try {
+            const record = await pb.collection('evidence_registries').getOne(id);
+            return {
+                ...record,
+                keywords: typeof record.keywords === 'string' ? JSON.parse(record.keywords) : record.keywords
+            };
+        } catch (err) {
+            console.error("Error fetching registry details", err);
+            return null;
+        }
+    },
+
+    /**
+     * Fetches aggregated dashboard data filtered by registry parameters
+     * @param {string} registryId 
+     */
+    async getEvidenceDashboardData(registryId) {
+        try {
+            // 1. Get Registry Details
+            const registry = await this.getEvidenceRegistry(registryId);
+            if (!registry) throw new Error("Registry not found");
+
+            const { start_date, end_date, keywords } = registry;
+            const keywordsLower = keywords.map(k => k.toLowerCase());
+
+            // 2. Fetch Content from Instagram within date range
+            // Note: This fetches purely based on timestamp first to filter efficiently
+            const filter = `timestamp >= "${start_date} 00:00:00" && timestamp <= "${end_date} 23:59:59"`;
+
+            // Fetching a larger list - might need pagination in real app, strictly capping at 500 for now
+            const contentRecords = await pb.collection('instagram_content').getList(1, 500, {
+                filter: filter,
+                sort: '-timestamp'
+            });
+
+            // 3. Filter by Keywords in Memory
+            // check caption, permalink, or other text fields
+            const matchedContent = contentRecords.items.filter(item => {
+                const textToCheck = (item.caption || '') + ' ' + (item.permalink || '');
+                const lowerText = textToCheck.toLowerCase();
+                return keywordsLower.some(k => lowerText.includes(k));
+            });
+
+            // 4. Calculate Aggregated Metrics for matched content
+            const metrics = {
+                total_posts: matchedContent.length,
+                total_likes: matchedContent.reduce((sum, item) => sum + (item.like_count || 0), 0),
+                total_comments: matchedContent.reduce((sum, item) => sum + (item.comments_count || 0), 0),
+                total_views: matchedContent.reduce((sum, item) => sum + (item.view_count || 0), 0), // if available
+            };
+
+            // Engagement: (Likes + Comments)
+            metrics.total_interactions = metrics.total_likes + metrics.total_comments;
+
+            return {
+                registry,
+                metrics,
+                content: matchedContent
+            };
+
+        } catch (err) {
+            console.error("Error generating evidence dashboard", err);
+            throw err;
+        }
     }
 };
