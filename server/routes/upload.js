@@ -10,7 +10,7 @@ const upload = multer(); // Memory storage
 const mapPlatformToType = (platform) => {
     switch (platform) {
         case 'story': return 'story';
-        case 'video': return 'reel';
+        case 'video': return 'video';
         case 'social':
         default: return 'social';
     }
