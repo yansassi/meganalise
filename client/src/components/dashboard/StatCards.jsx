@@ -39,10 +39,10 @@ const StatCards = ({ stats = [] }) => {
             default: // Glass / Neutral Theme
                 return {
                     container: 'glass-card',
-                    text: 'text-[#2D3748] dark:text-white',
-                    subText: 'text-[#475569] dark:text-purple-200/70',
-                    iconBg: 'bg-purple-50 dark:bg-white/10 text-emerald-600',
-                    trendTag: 'bg-purple-50 dark:bg-white/10 text-[#475569] dark:text-purple-100'
+                    text: 'text-[#1E293B] dark:text-white',
+                    subText: 'text-[#64748B] dark:text-purple-200/70',
+                    iconBg: 'bg-emerald-100 dark:bg-white/10 text-emerald-700 dark:text-emerald-400',
+                    trendTag: 'bg-purple-100 dark:bg-white/10 text-[#475569] dark:text-purple-100'
                 };
         }
     };
