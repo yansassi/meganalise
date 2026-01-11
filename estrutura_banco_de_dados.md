@@ -15,6 +15,7 @@ Estas são as coleções principais utilizadas pela lógica de negócio da aplic
 | **`instagram_daily_metrics`** | `base` | `id`, `platform` (select), `date` (date), `metric_category` (text), `created`, `updated` |
 | **`instagram_content`** | `base` | `id`, `original_id` (text), `title` (text), `image_url` (text), `permalink` (text), `created`, `updated` |
 | **`instagram_audience_demographics`** | `base` | `id`, `platform` (text), `import_date` (date), `gender_age` (select), `created`, `updated` |
+| **`evidence_registries`** | `base` | `id`, `title` (text), `start_date` (date), `end_date` (date), `keywords` (json), `created`, `updated` |
 
 ---
 
@@ -215,3 +216,78 @@ Estes arquivos nomes longos (geralmente datas e IDs) contêm o detalhamento de c
 *   **Visualização:**
     *   **Tabelas:** Os dados alimentam as tabelas "Reels e Feed" e "Stories Recentes" no dashboard.
     *   **Detalhes:** Ao clicar em um item, o `ContentDetailsModal.jsx` exibe todas as métricas detalhadas importadas do CSV.
+
+---
+
+## 🔍 Funcionalidade de Evidência (Evidence Registry)
+
+A funcionalidade de Evidência permite criar registros de monitoramento de marcas/produtos através de palavras-chave, gerando dashboards automáticos com conteúdos identificados.
+
+### Coleção: `evidence_registries`
+
+**Estrutura:**
+*   `id`: Identificador único do registro.
+*   `title`: Nome/título do registro (ex: "Campanha Natal 2025").
+*   `start_date`: Data de início do período de monitoramento (formato: YYYY-MM-DD).
+*   `end_date`: Data de fim do período de monitoramento (formato: YYYY-MM-DD).
+*   `keywords`: Array de palavras-chave em formato JSON (ex: `["realme", "smartphone", "oferta"]`).
+*   `created`: Data de criação do registro.
+*   `updated`: Data da última atualização.
+
+### Lógica de Busca e Filtragem
+
+**Processo em 2 Etapas:**
+
+1.  **Filtro no Banco de Dados (PocketBase):**
+    *   Utiliza o operador `~` (LIKE) para buscar conteúdos dentro do período especificado.
+    *   Filtro aplicado: `date >= "YYYY-MM-DD 00:00:00" && date <= "YYYY-MM-DD 23:59:59" && (title ~ "palavra1" || title ~ "palavra2" || ...)`
+    *   **Vantagem:** Busca eficiente em todo o histórico do banco, não limitada aos posts mais recentes.
+    *   **Limitação:** O operador `~` faz busca por substring, podendo retornar falsos positivos (ex: "realme" encontra "realmente").
+
+2.  **Refinamento em Memória (JavaScript/RegEx):**
+    *   Aplica validação de **palavra completa** usando expressões regulares com word boundaries (`\b`).
+    *   Regex aplicado: `/\bpalavra\b/i` (case-insensitive).
+    *   **Resultado:** Elimina falsos positivos, garantindo que apenas palavras exatas sejam consideradas.
+    *   **Exemplo:** "realme" aceita "Celular Realme 9" mas rejeita "isso aconteceu realmente".
+
+**Campos Pesquisados:**
+*   Apenas o campo `title` (legenda/caption) do conteúdo.
+*   O campo `permalink` foi **removido** da busca para evitar falsos positivos de parâmetros de URL.
+
+### Componentes Frontend
+
+**1. Página de Listagem (`client/src/pages/Evidence.jsx`):**
+*   Lista todos os registros de evidência criados.
+*   Permite criar novos registros através de modal.
+*   Permite deletar registros existentes.
+*   Exibe preview das informações: título, período, e primeiras 3 palavras-chave.
+
+**2. Dashboard de Evidência (`client/src/pages/EvidenceDashboard.jsx`):**
+*   Exibe métricas agregadas do registro:
+    *   Total de posts encontrados.
+    *   Interações totais (likes + comments + shares + saved).
+    *   Total de likes.
+    *   Total de comentários.
+*   Utiliza `ContentGrid` para exibir os conteúdos identificados com layout visual premium (cards com imagens).
+*   **Funcionalidades:**
+    *   Botão "Editar": Permite alterar título, datas e palavras-chave do registro.
+    *   Botão "Imprimir Relatório": Gera versão imprimível do dashboard.
+    *   Link externo nos cards: Acesso direto ao post original no Instagram.
+
+**3. Serviço de Dados (`client/src/services/dataService.js`):**
+*   `saveEvidenceRegistry(data)`: Cria ou atualiza um registro.
+*   `getEvidenceRegistries()`: Lista todos os registros.
+*   `deleteEvidenceRegistry(id)`: Remove um registro.
+*   `getEvidenceRegistry(id)`: Busca detalhes de um registro específico.
+*   `getEvidenceDashboardData(registryId)`: Gera dashboard com métricas e conteúdos filtrados.
+
+### Fluxo de Uso
+
+1.  **Criação:** Usuário acessa "Evidência" no menu lateral e clica em "Novo Registro".
+2.  **Configuração:** Define título, período (datas) e palavras-chave separadas por vírgula.
+3.  **Visualização:** Ao clicar no registro, é gerado automaticamente um dashboard com:
+    *   Métricas agregadas dos posts encontrados.
+    *   Grid visual de todos os conteúdos que mencionam as palavras-chave.
+4.  **Edição:** Possibilidade de ajustar parâmetros (datas, palavras) e recarregar os resultados.
+5.  **Exportação:** Opção de imprimir relatório para documentação.
+
