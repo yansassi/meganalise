@@ -158,6 +158,11 @@ const normalizeContentData = (data, isUSFormat = false) => {
             }
         }
 
+        if (!dateFormatted) {
+            // If date cannot be parsed, this is likely a summary row or invalid data. Skip it.
+            return null;
+        }
+
         // Robust ID generation
         let id = findValue(row, ['Identificação do post', 'Identificador multimídia', 'Identificador', 'Post ID', 'ID']);
         if (!id) {
