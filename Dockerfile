@@ -2,10 +2,13 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package.json only to avoid lockfile platform issues
+COPY package.json ./
 
-# Install dependencies
+# Install build dependencies for native modules if needed
+# RUN apk add --no-cache python3 make g++
+
+# Install dependencies (create fresh lockfile)
 RUN npm install --omit=dev
 
 # Copy server source code
