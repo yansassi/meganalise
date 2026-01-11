@@ -276,7 +276,8 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                 const recordData = {
                     type: 'activity',
                     data: JSON.stringify(result.data),
-                    date_reference: new Date().toISOString()
+                    date_reference: new Date().toISOString(),
+                    country: country
                 };
                 await pb.collection('tiktok_audience_demographics').create(recordData, { requestKey: null });
                 savedCount = 1;

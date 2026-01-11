@@ -264,7 +264,13 @@ export const dataService = {
         if (imageField && item.pbId) {
             // Construct PocketBase file URL manually
             // Format: https://auth.meganalise.pro/api/files/COLLECTION_NAME/RECORD_ID/FILENAME
-            return `https://auth.meganalise.pro/api/files/instagram_content/${item.pbId}/${imageField}`;
+
+            let collection = 'instagram_content';
+            if (item.social_network === 'tiktok' || item.platform === 'tiktok') {
+                collection = 'tiktok_content';
+            }
+
+            return `https://auth.meganalise.pro/api/files/${collection}/${item.pbId}/${imageField}`;
         }
 
         // Senão, usa URL externa (compatibilidade)
