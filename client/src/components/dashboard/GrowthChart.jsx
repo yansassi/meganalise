@@ -1,7 +1,8 @@
+```javascript
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
-const GrowthChart = ({ data = [] }) => {
+const GrowthChart = ({ data }) => {
     return (
         <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 h-[400px]">
             <div className="flex items-center justify-between mb-8">
@@ -41,7 +42,7 @@ const GrowthChart = ({ data = [] }) => {
                         />
                         <Bar dataKey="value" radius={[4, 4, 4, 4]}>
                             {data.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.value >= 0 ? '#10B981' : '#D946EF'} />
+                                <Cell key={`cell - ${ index } `} fill={entry.value >= 0 ? '#10B981' : '#D946EF'} />
                             ))}
                         </Bar>
                     </BarChart>

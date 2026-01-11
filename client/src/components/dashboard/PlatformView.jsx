@@ -369,17 +369,22 @@ const PlatformView = ({ platform }) => {
                 </div>
             )}
 
+            {/* Dashboard Content */}
             {(data.isLoaded || audienceData) && (
-                <div className="flex flex-col lg:flex-row gap-8">
-                    <div className="flex-1 space-y-8">
+                <div className="flex flex-col gap-8 w-full">
+                    {/* Main Content Area - Full Width */}
+                    <div className="w-full space-y-8">
                         {activeTab === 'overview' && data.isLoaded && (
                             <>
-                                <StatCards stats={data.stats} />
+                                {/* Stats Grid - Should use grid layout from component */}
+                                <div className="w-full">
+                                    <StatCards stats={data.stats} />
+                                </div>
 
                                 {platform === 'Instagram' ? (
-                                    <div className="space-y-12">
+                                    <div className="space-y-12 mt-8">
                                         {/* 1. Stories Reel */}
-                                        <section>
+                                        <section className="w-full overflow-hidden">
                                             <MediaReel
                                                 title="Stories Recentes"
                                                 items={data.stories || []}
@@ -388,13 +393,15 @@ const PlatformView = ({ platform }) => {
                                         </section>
 
                                         {/* 2. Growth Chart (Reach/Views context) */}
-                                        <section>
+                                        <section className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                                             <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Alcance</h3>
-                                            {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
+                                            <div className="w-full h-[300px]">
+                                                {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
+                                            </div>
                                         </section>
 
                                         {/* 3. Feed/Reels Reel */}
-                                        <section>
+                                        <section className="w-full overflow-hidden">
                                             <MediaReel
                                                 title="Reels e Feed"
                                                 items={data.reels || []}
@@ -402,19 +409,24 @@ const PlatformView = ({ platform }) => {
                                             />
                                         </section>
 
-                                        {/* 4. Growth Chart (Interactions context - duplicated for now, ideal would be different metrics) */}
-                                        {/* For now user asked for "analise de crescimento dos conteúdo", we can reuse the chart or show a different one if we had data prepared */}
-                                        {/* We will reuse GrowthChart but maybe we can filter for Interactions if we compute it. */}
-                                        {/* Currently GrowthChart generic. Let's show it again as requested "em baixo analise de crescimento dos conteúdo" */}
-                                        <section>
+                                        {/* 4. Growth Chart (Interactions context) */}
+                                        <section className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
                                             <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Crescimento (Interações)</h3>
-                                            {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
+                                            <div className="w-full h-[300px]">
+                                                {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
+                                            </div>
                                         </section>
                                     </div>
                                 ) : (
                                     <>
-                                        {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
-                                        <ContentTable items={data.contentItems} />
+                                        {data.chartData.length > 0 && (
+                                            <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
+                                                <GrowthChart data={data.chartData} />
+                                            </div>
+                                        )}
+                                        <div className="w-full">
+                                            <ContentTable items={data.contentItems} />
+                                        </div>
                                     </>
                                 )}
                             </>
