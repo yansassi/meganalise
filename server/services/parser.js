@@ -22,47 +22,82 @@ const decodeBuffer = (buffer) => {
  * Normalizes daily metric data
  */
 // Helper to safely parse dates (handles DD/MM/YYYY and other formats)
-// Helper to safely parse dates (handles DD/MM/YYYY, MMM DD, YYYY, and other formats)
+// Helper to safely parse dates (handles DD/MM/YYYY, MMM DD, YYYY, PT-BR months)
 const parseDate = (dateStr) => {
     if (!dateStr) return null;
 
     const str = dateStr.trim();
 
     // 1. DD/MM/YYYY or DD-MM-YYYY
-    // Regex matches 01/01/2020 or 1/1/2020
     const ptBrMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
     if (ptBrMatch) {
         const [_, day, month, year] = ptBrMatch;
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     }
 
-    // 2. YYYY-MM-DD (already ISO-ish)
+    // 2. YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
         return str.split('T')[0];
     }
 
-    // 3. MMM DD, YYYY (e.g. "Jan 11, 2025")
-    const engMatch = str.match(/^([A-Za-z]{3})\s+(\d{1,2}),?\s+(\d{4})/);
-    if (engMatch) {
-        const [_, monthName, day, year] = engMatch;
-        const months = {
-            'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06',
-            'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
-        };
-        const m = months[monthName] || months[monthName.substring(0, 3)];
-        if (m) {
-            return `${year}-${m}-${day.padStart(2, '0')}`;
+    // 3. EN/PT Text formats: "Jan 11, 2025", "11 Jan 2025", "11 de Jan", "11 de Janeiro"
+    // Normalize: remove "de "
+    const cleanStr = str.replace(/\sde\s/gi, ' ').toLowerCase();
+
+    // Regex for "DD Month YYYY" or "Month DD YYYY"
+    // Month can be full name or 3 chars
+    const months = {
+        'jan': '01', 'janeiro': '01', 'feb': '02', 'fev': '02', 'fevereiro': '02',
+        'mar': '03', 'março': '03', 'marco': '03', 'apr': '04', 'abr': '04', 'abril': '04',
+        'may': '05', 'mai': '05', 'maio': '05', 'jun': '06', 'junho': '06',
+        'jul': '07', 'julho': '07', 'aug': '08', 'ago': '08', 'agosto': '08',
+        'sep': '09', 'set': '09', 'setembro': '09', 'oct': '10', 'out': '10', 'outubro': '10',
+        'nov': '11', 'novembro': '11', 'dec': '12', 'dez': '12', 'dezembro': '12'
+    };
+
+    const parts = cleanStr.split(/[\s,]+/);
+
+    // Heuristic: Find month in parts
+    let monthIdx = -1;
+    let day = null;
+    let year = new Date().getFullYear(); // Default to current year if missing
+
+    for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+        if (months[p] || months[p.substring(0, 3)]) {
+            monthIdx = i;
+            break;
         }
     }
 
-    // 4. Try native Date parse for other formats (e.g. "11 Jan 2025")
+    if (monthIdx !== -1) {
+        const monthStr = parts[monthIdx];
+        const month = months[monthStr] || months[monthStr.substring(0, 3)];
+
+        // Look for Day (usually adjacent)
+        // If format "Jan 11", day is after. If "11 Jan", day is before.
+        if (monthIdx > 0 && !isNaN(parts[monthIdx - 1])) {
+            day = parts[monthIdx - 1];
+        } else if (monthIdx < parts.length - 1 && !isNaN(parts[monthIdx + 1])) {
+            day = parts[monthIdx + 1];
+        }
+
+        // Look for Year (4 digits)
+        const yearPart = parts.find(p => /^\d{4}$/.test(p));
+        if (yearPart) year = yearPart;
+
+        if (day && month) {
+            return `${year}-${month}-${day.toString().padStart(2, '0')}`;
+        }
+    }
+
+    // 4. Try native Date parse
     const d = new Date(str);
     if (!isNaN(d.getTime())) {
         return d.toISOString().split('T')[0];
     }
 
-    // Fallback: Return original and hope
-    return str.split('T')[0];
+    return str.replace('T', ' ').split(' ')[0];
 };
 
 const normalizeDailyMetric = (data, metricName) => {
