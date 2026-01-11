@@ -119,12 +119,12 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
                 <div className="flex justify-between items-center p-6 border-b border-gray-100 sticky top-0 bg-white/95 backdrop-blur-xl z-10">
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center 
-                            ${item.platform === 'video' ? 'bg-red-100 text-red-600 dark:bg-red-900/20' : ''}
+                            ${(item.platform === 'video' || item.platform === 'reel') ? 'bg-red-100 text-red-600 dark:bg-red-900/20' : ''}
                             ${item.platform === 'social' ? 'bg-pink-100 text-pink-600 dark:bg-pink-900/20' : ''}
                             ${item.platform === 'story' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/20' : ''}
                         `}>
                             <span className="material-icons-round text-xl">
-                                {item.platform === 'video' ? 'play_arrow' :
+                                {(item.platform === 'video' || item.platform === 'reel') ? 'play_arrow' :
                                     item.platform === 'story' ? 'amp_stories' :
                                         item.platform === 'social' ? 'camera_alt' : 'lens'}
                             </span>

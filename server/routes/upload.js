@@ -12,7 +12,7 @@ const mapPlatformToType = (platform) => {
         case 'story': return 'story';
         case 'video': return 'reel';
         case 'social':
-        default: return 'post';
+        default: return 'social';
     }
 };
 
