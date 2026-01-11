@@ -82,11 +82,11 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
             <div
-                className="glass-card w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl shadow-2xl transform scale-100 transition-all p-0"
+                className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl transform scale-100 transition-all p-0"
                 onClick={e => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/10 sticky top-0 bg-white/80 dark:bg-[#0f172a]/90 backdrop-blur-xl z-10">
+                <div className="flex justify-between items-center p-6 border-b border-gray-100 sticky top-0 bg-white/95 backdrop-blur-xl z-10">
                     <div className="flex items-center gap-3">
                         <div className={`w-10 h-10 rounded-full flex items-center justify-center 
                             ${item.platform === 'video' ? 'bg-red-100 text-red-600 dark:bg-red-900/20' : ''}
@@ -100,8 +100,8 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
                             </span>
                         </div>
                         <div>
-                            <h3 className="text-xl font-bold">Detalhes do Conteúdo</h3>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{item.date} • {item.platform.toUpperCase()}</p>
+                            <h3 className="text-xl font-bold text-[#1F2937]">Detalhes do Conteúdo</h3>
+                            <p className="text-sm text-gray-500">{item.date} • {item.platform.toUpperCase()}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors">
@@ -129,7 +129,7 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
                                     href={item.permalink}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="absolute bottom-3 right-3 p-2 bg-white/90 dark:bg-black/70 rounded-full text-primary shadow-sm hover:scale-110 transition-transform"
+                                    className="absolute bottom-3 right-3 p-2 bg-white/90 rounded-full text-[#2563EB] shadow-sm hover:scale-110 transition-transform"
                                     title="Ver no Instagram"
                                 >
                                     <span className="material-icons-round text-lg">open_in_new</span>
@@ -188,7 +188,7 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
                                     <button
                                         onClick={handleUploadImage}
                                         disabled={isUploading || uploadSuccess}
-                                        className="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-50 flex items-center gap-2"
+                                        className="px-6 py-2 bg-[#2563EB] hover:bg-[#1E40AF] text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-50 flex items-center gap-2"
                                     >
                                         {isUploading ? (
                                             <>
@@ -219,7 +219,7 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
                                 </p>
                                 <button
                                     onClick={() => document.getElementById('imageFileInput').click()}
-                                    className="px-6 py-2 bg-primary hover:bg-primary-dark text-white rounded-xl font-bold text-sm transition-colors"
+                                    className="px-6 py-2 bg-[#2563EB] hover:bg-[#1E40AF] text-white rounded-xl font-bold text-sm transition-colors"
                                 >
                                     Selecionar Arquivo
                                 </button>

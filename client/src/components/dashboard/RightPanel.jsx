@@ -4,8 +4,8 @@ const RightPanel = ({ platformMix = [] }) => {
     return (
         <div className="space-y-8">
             {/* Platform Mix */}
-            <div className="glass-card p-6 rounded-3xl shadow-soft">
-                <h3 className="text-lg font-bold mb-6">Mix de Plataformas</h3>
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-bold text-[#1F2937] mb-6">Mix de Plataformas</h3>
                 <div className="space-y-6">
                     {platformMix.length === 0 ? (
                         <p className="text-sm text-gray-400 text-center py-4">Sem dados disponíveis</p>
@@ -42,10 +42,10 @@ const RightPanel = ({ platformMix = [] }) => {
             </div>
 
             {/* Notifications / Recent */}
-            <div className="bg-primary p-6 rounded-3xl shadow-glow text-white">
+            <div className="bg-[#2563EB] p-6 rounded-2xl shadow-lg text-white">
                 <h3 className="text-lg font-bold mb-2">Dicas Pro</h3>
                 <p className="text-white/80 text-sm mb-4">Otimize seu cronograma de conteúdo para melhor alcance.</p>
-                <button className="w-full py-3 bg-white text-primary font-bold rounded-xl shadow-lg hover:bg-gray-50 transition-colors">
+                <button className="w-full py-3 bg-white text-[#2563EB] font-bold rounded-xl shadow-lg hover:bg-gray-50 transition-colors">
                     Ver Insights
                 </button>
             </div>

@@ -4,7 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 const AudienceView = ({ data }) => {
     if (!data) {
         return (
-            <div className="glass-card p-8 text-center rounded-3xl">
+            <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 text-center">
                 <p className="text-gray-400">Dados de audiência não disponíveis.</p>
             </div>
         );
@@ -49,9 +49,9 @@ const AudienceView = ({ data }) => {
     return (
         <div className="space-y-6 animate-fade-in">
             {/* Age & Gender Section */}
-            <div className="glass-card p-6 rounded-3xl shadow-sm">
-                <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-                    <span className="material-icons-round text-primary bg-primary/10 p-1 rounded-lg">people</span>
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-bold text-[#1F2937] mb-6 flex items-center gap-2">
+                    <span className="material-icons-round text-[#2563EB] bg-blue-50 p-1 rounded-lg">people</span>
                     Faixa Etária e Gênero
                 </h3>
 
@@ -97,9 +97,9 @@ const AudienceView = ({ data }) => {
             {/* Geo Section: Grid of Cities & Countries */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Top Cities */}
-                <div className="glass-card p-6 rounded-3xl shadow-sm">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                        <span className="material-icons-round text-green-500 bg-green-500/10 p-1 rounded-lg">location_city</span>
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-bold text-[#1F2937] mb-4 flex items-center gap-2">
+                        <span className="material-icons-round text-green-500 bg-green-50 p-1 rounded-lg">location_city</span>
                         Principais Cidades
                     </h3>
                     <div className="space-y-4">
@@ -121,9 +121,9 @@ const AudienceView = ({ data }) => {
                 </div>
 
                 {/* Top Countries */}
-                <div className="glass-card p-6 rounded-3xl shadow-sm">
-                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                        <span className="material-icons-round text-purple-500 bg-purple-500/10 p-1 rounded-lg">public</span>
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h3 className="text-lg font-bold text-[#1F2937] mb-4 flex items-center gap-2">
+                        <span className="material-icons-round text-purple-500 bg-purple-50 p-1 rounded-lg">public</span>
                         Principais Países
                     </h3>
                     <div className="space-y-4">
