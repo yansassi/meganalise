@@ -15,7 +15,7 @@ const ContentDashboard = () => {
     const [dateRange, setDateRange] = useState(() => {
         const end = new Date();
         const start = new Date();
-        start.setDate(end.getDate() - 365);
+        start.setDate(end.getDate() - 30);
         return { startDate: start, endDate: end };
     });
 

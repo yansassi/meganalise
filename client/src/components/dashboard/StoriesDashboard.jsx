@@ -15,7 +15,7 @@ const StoriesDashboard = () => {
     const [dateRange, setDateRange] = useState(() => {
         const end = new Date();
         const start = new Date();
-        start.setDate(end.getDate() - 90);
+        start.setDate(end.getDate() - 30);
         return { startDate: start, endDate: end };
     });
 
@@ -57,6 +57,7 @@ const StoriesDashboard = () => {
             imageUrl: c.image_url,
             imageFile: c.image_file, // For uploaded cover
             platform: c.platform_type, // Use actual platform type (story)
+            permalink: c.permalink, // For external link
             manager: 'Time Social',
             date: new Date(c.date).toLocaleDateString('pt-BR'),
             virality: c.virality_score,

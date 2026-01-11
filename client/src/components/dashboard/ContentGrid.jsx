@@ -88,14 +88,28 @@ const ContentGrid = ({ items = [], title = "Conteúdo", limit = 45, showPaginati
                                             <p className="text-white text-[10px] font-medium line-clamp-2">{item.title}</p>
                                         </div>
 
-                                        {/* Type Indicator */}
-                                        <div className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                                        {/* Type Indicator (Top Left) */}
+                                        <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20">
                                             <span className="material-icons-round text-white text-[12px]">
                                                 {(item.platform === 'video' || item.platform === 'reel') ? 'play_arrow' :
                                                     item.platform === 'story' ? 'amp_stories' :
                                                         item.platform === 'social' ? 'camera_alt' : 'image'}
                                             </span>
                                         </div>
+
+                                        {/* External Link (Top Right) */}
+                                        {item.permalink && (
+                                            <a
+                                                href={item.permalink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="absolute top-1 right-1 w-6 h-6 rounded-full bg-white/90 hover:bg-white text-gray-700 hover:text-blue-600 flex items-center justify-center shadow-sm transition-colors z-20"
+                                                title="Abrir link original"
+                                            >
+                                                <span className="material-icons-round text-[14px]">open_in_new</span>
+                                            </a>
+                                        )}
                                     </div>
 
                                     {/* Metrics Footer */}
