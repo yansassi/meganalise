@@ -1,5 +1,6 @@
 const Papa = require('papaparse');
 const { TextDecoder } = require('util');
+const crypto = require('crypto');
 
 /**
  * Helper to decode buffer with BOM detection
@@ -63,17 +64,24 @@ const normalizeDailyMetric = (data, metricName) => {
 
 const findValue = (row, candidates) => {
     const keys = Object.keys(row);
-    // 1. Exact match
+
+    // Normalize string: removing accents and lowering case
+    const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/['"]/g, '');
+
+    // 1. Exact match (case insensitive normalized)
     for (const c of candidates) {
-        if (row[c] !== undefined) return row[c];
+        const normalizedCandidate = normalize(c);
+        for (const key of keys) {
+            if (normalize(key) === normalizedCandidate) return row[key];
+        }
     }
+
     // 2. Fuzzy match
-    for (const key of keys) {
-        const cleanKey = key.replace(/['"]/g, '').trim().toLowerCase();
-        for (const c of candidates) {
-            const cleanCandidate = c.toLowerCase();
-            if (cleanKey === cleanCandidate) return row[key];
-            if (cleanCandidate.length > 4 && cleanKey.includes(cleanCandidate)) return row[key];
+    for (const c of candidates) {
+        const normalizedCandidate = normalize(c);
+        for (const key of keys) {
+            const normalizedKey = normalize(key);
+            if (normalizedKey.includes(normalizedCandidate)) return row[key];
         }
     }
     return undefined;
@@ -93,13 +101,18 @@ const normalizeContentData = (data, isUSFormat = false) => {
         const engagements = likes + shares + comments + saved;
         const virality = reach > 0 ? ((engagements / reach) * 100).toFixed(1) : 0;
         const status = 'Completed';
-        const id = findValue(row, ['Identificação do post', 'Identificador multimídia', 'Identificador', 'Post ID']) || `post-${index}`;
+
 
         let dateFormatted = null;
         let timeFormatted = null;
         const rawDate = findValue(row, ['Horário de publicação', 'Data', 'Date', 'Horario']);
 
-        if (rawDate && rawDate !== 'Total') {
+        // Check if row is a summary row (starts with Total or date is Total)
+        if (rawDate === 'Total' || findValue(row, ['Identificação do post']) === 'Total') {
+            return null; // Skip this row
+        }
+
+        if (rawDate) {
             try {
                 const parts = rawDate.split(' ');
                 const datePart = parts[0];
@@ -145,11 +158,19 @@ const normalizeContentData = (data, isUSFormat = false) => {
             }
         }
 
+        // Robust ID generation
+        let id = findValue(row, ['Identificação do post', 'Identificador multimídia', 'Identificador', 'Post ID', 'ID']);
+        if (!id) {
+            // Fallback: Generate hash from unique-ish content
+            const uniqueString = `${title}-${dateFormatted}-${timeFormatted}-${platform}`;
+            id = `gen-${crypto.createHash('md5').update(uniqueString).digest('hex')}`;
+        }
+
         return {
             id, title, imageUrl: '', permalink, platform, manager: 'Time Social',
             date: dateFormatted, posting_time: timeFormatted, virality, status, reach, likes, shares, comments, saved, views, duration
         };
-    });
+    }).filter(item => item !== null); // Remove skipped rows
 };
 
 // Helper to parse diverse audience/demographics file

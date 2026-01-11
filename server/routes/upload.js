@@ -100,8 +100,8 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                     }
                     savedCount++;
                 } catch (err) {
-                    console.error(`Error saving content item ${item.id}:`, err.message);
-                    errors.push({ id: item.id, error: err.message });
+                    console.error(`Error saving content item ${item.id}:`, err.message, err.data);
+                    errors.push({ id: item.id, error: err.message, details: err.data });
                 }
             }
         } else if (result.type === 'metric') {
