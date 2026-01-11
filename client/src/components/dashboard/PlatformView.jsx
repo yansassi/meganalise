@@ -5,6 +5,8 @@ import { dataService } from '../../services/dataService';
 import StatCards from './StatCards';
 import GrowthChart from './GrowthChart';
 import ContentTable from './ContentTable';
+import StoryReel from './StoryReel';
+import ContentDetailsModal from './ContentDetailsModal';
 import DateRangeFilter from './DateRangeFilter';
 
 import AudienceView from './AudienceView';
@@ -99,6 +101,7 @@ const PlatformView = ({ platform }) => {
     const { country } = useOutletContext();
     const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'audience'
     const [audienceData, setAudienceData] = useState(null);
+    const [selectedStory, setSelectedStory] = useState(null); // State for Story Modal
 
     const [data, setData] = useState({
         stats: [
@@ -355,8 +358,13 @@ const PlatformView = ({ platform }) => {
 
                                 {platform === 'Instagram' ? (
                                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                        <ContentTable items={data.reels || []} title="Reels e Feed" limit={10} />
-                                        <ContentTable items={data.stories || []} title="Stories Recentes" limit={10} />
+                                        <ContentTable items={data.reels || []} title="Reels e Feed" limit={5} />
+                                        <StoryReel
+                                            stories={data.stories || []}
+                                            onItemClick={(story) => {
+                                                setSelectedStory(story);
+                                            }}
+                                        />
                                     </div>
                                 ) : (
                                     <ContentTable items={data.contentItems} />
@@ -374,6 +382,13 @@ const PlatformView = ({ platform }) => {
                     </div>
                 </div>
             )}
+
+            {/* Modal for Story Reel */}
+            <ContentDetailsModal
+                isOpen={!!selectedStory}
+                onClose={() => setSelectedStory(null)}
+                item={selectedStory}
+            />
         </div>
     );
 };
