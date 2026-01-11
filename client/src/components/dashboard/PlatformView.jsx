@@ -292,6 +292,27 @@ const PlatformView = ({ platform }) => {
         });
     };
 
+    const handleContentUpdate = (updatedItem) => {
+        // Update item in local state to reflect changes (e.g. image upload) without reload
+        setData(prev => {
+            const updateList = (list) => list.map(item =>
+                (item.id === updatedItem.id || item.pbId === updatedItem.pbId) ? { ...item, ...updatedItem } : item
+            );
+
+            return {
+                ...prev,
+                stories: updateList(prev.stories),
+                reels: updateList(prev.reels),
+                contentItems: updateList(prev.contentItems)
+            };
+        });
+
+        // Also update selected story to show immediate changes if keep open
+        if (selectedStory && (selectedStory.id === updatedItem.id || selectedStory.pbId === updatedItem.pbId)) {
+            setSelectedStory(prev => ({ ...prev, ...updatedItem }));
+        }
+    };
+
     return (
         <div className="space-y-8 animate-fade-in relative">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
