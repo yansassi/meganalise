@@ -235,12 +235,17 @@ export const dataService = {
     getContentImageUrl(item) {
         if (!item) return null;
 
-        if (item.image_file) {
-            return pb.files.getURL(item, item.image_file);
+        // Check if we have imageFile field (from mapped data) or image_file (from raw PB data)
+        const imageField = item.imageFile || item.image_file;
+
+        if (imageField && item.pbId) {
+            // Construct PocketBase file URL manually
+            // Format: https://auth.meganalise.pro/api/files/COLLECTION_NAME/RECORD_ID/FILENAME
+            return `https://auth.meganalise.pro/api/files/instagram_content/${item.pbId}/${imageField}`;
         }
 
         // Senão, usa URL externa (compatibilidade)
-        return item.image_url || null;
+        return item.imageUrl || item.image_url || null;
     },
 
     /**
