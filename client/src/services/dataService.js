@@ -331,19 +331,23 @@ export const dataService = {
             const keywordsLower = keywords.map(k => k.toLowerCase());
 
             // 2. Fetch Content from Instagram within date range
-            // Note: This fetches purely based on timestamp first to filter efficiently
-            const filter = `timestamp >= "${start_date} 00:00:00" && timestamp <= "${end_date} 23:59:59"`;
+            // Ensure dates are in YYYY-MM-DD format regardless of how they are stored (ISO vs simple date)
+            const startDateStr = start_date.split('T')[0].split(' ')[0];
+            const endDateStr = end_date.split('T')[0].split(' ')[0];
+
+            // Use 'date' field instead of 'timestamp'
+            const filter = `date >= "${startDateStr} 00:00:00" && date <= "${endDateStr} 23:59:59"`;
 
             // Fetching a larger list - might need pagination in real app, strictly capping at 500 for now
             const contentRecords = await pb.collection('instagram_content').getList(1, 500, {
                 filter: filter,
-                sort: '-timestamp'
+                sort: '-date' // sort by date
             });
 
             // 3. Filter by Keywords in Memory
-            // check caption, permalink, or other text fields
+            // check caption (title), permalink, or other text fields
             const matchedContent = contentRecords.items.filter(item => {
-                const textToCheck = (item.caption || '') + ' ' + (item.permalink || '');
+                const textToCheck = (item.title || '') + ' ' + (item.permalink || '');
                 const lowerText = textToCheck.toLowerCase();
                 return keywordsLower.some(k => lowerText.includes(k));
             });
@@ -351,13 +355,15 @@ export const dataService = {
             // 4. Calculate Aggregated Metrics for matched content
             const metrics = {
                 total_posts: matchedContent.length,
-                total_likes: matchedContent.reduce((sum, item) => sum + (item.like_count || 0), 0),
-                total_comments: matchedContent.reduce((sum, item) => sum + (item.comments_count || 0), 0),
-                total_views: matchedContent.reduce((sum, item) => sum + (item.view_count || 0), 0), // if available
+                total_likes: matchedContent.reduce((sum, item) => sum + (item.likes || 0), 0),
+                total_comments: matchedContent.reduce((sum, item) => sum + (item.comments || 0), 0),
+                total_views: matchedContent.reduce((sum, item) => sum + (item.views || 0), 0),
             };
 
-            // Engagement: (Likes + Comments)
-            metrics.total_interactions = metrics.total_likes + metrics.total_comments;
+            // Engagement: (Likes + Comments + Shares + Saved usually) - using Likes + Comments for now
+            // But let's verify what 'interactions' means in other dashboards. Usually (likes+comments+shares+saved).
+            // Let's check item fields.
+            metrics.total_interactions = metrics.total_likes + metrics.total_comments + matchedContent.reduce((sum, item) => sum + (item.shares || 0) + (item.saved || 0), 0);
 
             return {
                 registry,
