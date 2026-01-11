@@ -7,6 +7,9 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadSuccess, setUploadSuccess] = useState(false);
     const [uploadedImageUrl, setUploadedImageUrl] = useState(null); // Track uploaded image URL
+    const [isEditingImage, setIsEditingImage] = useState(false); // Controls visibility of upload area
+
+    const hasExistingImage = Boolean(uploadedImageUrl || (item && dataService.getContentImageUrl(item)));
 
     // Processar arquivo de imagem
     const handleImageFile = (file) => {
@@ -28,6 +31,17 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
         reader.readAsDataURL(file);
     };
 
+    // Reset state when item changes or modal opens
+    useEffect(() => {
+        if (isOpen && item) {
+            setImageFile(null);
+            setImagePreview(null);
+            setUploadSuccess(false);
+            setUploadedImageUrl(null); // Clear local uploaded URL so we use the prop one unless new upload happens
+            setIsEditingImage(false);
+        }
+    }, [isOpen, item]);
+
     // Handler para Ctrl+V
     useEffect(() => {
         if (!isOpen) return;
@@ -40,6 +54,8 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
                 if (item.type.indexOf('image') !== -1) {
                     const file = item.getAsFile();
                     handleImageFile(file);
+                    // Automatically enter edit mode if pasting
+                    setIsEditingImage(true);
                     e.preventDefault();
                     break;
                 }
@@ -86,12 +102,14 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
             setImageFile(null);
             setImagePreview(null);
 
-            // Reset success message after 2 seconds
+            // Do not clear the image immediately if successful, just stop uploading status
+            // The "Salvo" button state persists until reset or timeout
             setTimeout(() => {
                 setUploadSuccess(false);
+                setIsEditingImage(false); // Hide the upload area after success
                 // Force modal to refresh by closing and reopening would be ideal
                 // But for now, the image should appear on next open
-            }, 2000);
+            }, 1000);
         } catch (error) {
             console.error('Error uploading image:', error);
             alert('Erro ao fazer upload da imagem. Tente novamente.');
@@ -202,72 +220,108 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
 
                     {/* Upload de Capa */}
                     <div className="border border-gray-200 dark:border-white/10 rounded-2xl p-6">
-                        <div className="flex items-center gap-2 mb-4">
-                            <span className="material-icons-round text-purple-500">add_photo_alternate</span>
-                            <h4 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wider">Adicionar Capa</h4>
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-2">
+                                <span className="material-icons-round text-purple-500">add_photo_alternate</span>
+                                <h4 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wider">Capa do Conteúdo</h4>
+                            </div>
+
+                            {hasExistingImage && !isEditingImage && (
+                                <button
+                                    onClick={() => setIsEditingImage(true)}
+                                    className="text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                                >
+                                    <span className="material-icons-round text-sm">edit</span>
+                                    Trocar prévia
+                                </button>
+                            )}
                         </div>
 
-                        {imagePreview ? (
-                            <div className="space-y-4">
-                                <div className="relative aspect-square w-full max-w-xs mx-auto rounded-2xl overflow-hidden shadow-lg">
-                                    <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                        {(isEditingImage || !hasExistingImage) ? (
+                            imagePreview ? (
+                                <div className="space-y-4 animate-fade-in">
+                                    <div className="relative aspect-square w-full max-w-xs mx-auto rounded-2xl overflow-hidden shadow-lg">
+                                        <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex gap-3 justify-center">
+                                        <button
+                                            onClick={() => {
+                                                handleCancelUpload();
+                                                if (hasExistingImage) setIsEditingImage(false);
+                                            }}
+                                            disabled={isUploading}
+                                            className="px-4 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 rounded-xl font-bold text-sm transition-colors disabled:opacity-50"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button
+                                            onClick={handleUploadImage}
+                                            disabled={isUploading || uploadSuccess}
+                                            className="px-6 py-2 bg-[#2563EB] hover:bg-[#1E40AF] text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-50 flex items-center gap-2"
+                                        >
+                                            {isUploading ? (
+                                                <>
+                                                    <span className="material-icons-round text-sm animate-spin">sync</span>
+                                                    Enviando...
+                                                </>
+                                            ) : uploadSuccess ? (
+                                                <>
+                                                    <span className="material-icons-round text-sm">check_circle</span>
+                                                    Salvo!
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="material-icons-round text-sm">cloud_upload</span>
+                                                    Salvar Imagem
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex gap-3 justify-center">
+                            ) : (
+                                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-8 text-center hover:border-primary dark:hover:border-primary transition-colors animate-fade-in">
+                                    <div className="w-16 h-16 bg-purple-50 dark:bg-purple-900/20 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <span className="material-icons-round text-3xl">image</span>
+                                    </div>
+                                    <p className="text-gray-600 dark:text-gray-300 mb-2 font-medium">
+                                        Cole uma imagem (Ctrl+V) ou
+                                    </p>
                                     <button
-                                        onClick={handleCancelUpload}
-                                        disabled={isUploading}
-                                        className="px-4 py-2 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 rounded-xl font-bold text-sm transition-colors disabled:opacity-50"
+                                        onClick={() => document.getElementById('imageFileInput').click()}
+                                        className="px-6 py-2 bg-[#2563EB] hover:bg-[#1E40AF] text-white rounded-xl font-bold text-sm transition-colors"
                                     >
-                                        Cancelar
+                                        Selecionar Arquivo
                                     </button>
-                                    <button
-                                        onClick={handleUploadImage}
-                                        disabled={isUploading || uploadSuccess}
-                                        className="px-6 py-2 bg-[#2563EB] hover:bg-[#1E40AF] text-white rounded-xl font-bold text-sm transition-colors disabled:opacity-50 flex items-center gap-2"
-                                    >
-                                        {isUploading ? (
-                                            <>
-                                                <span className="material-icons-round text-sm animate-spin">sync</span>
-                                                Enviando...
-                                            </>
-                                        ) : uploadSuccess ? (
-                                            <>
-                                                <span className="material-icons-round text-sm">check_circle</span>
-                                                Salvo!
-                                            </>
-                                        ) : (
-                                            <>
-                                                <span className="material-icons-round text-sm">cloud_upload</span>
-                                                Salvar Imagem
-                                            </>
-                                        )}
-                                    </button>
+                                    <input
+                                        id="imageFileInput"
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => {
+                                            if (e.target.files[0]) {
+                                                handleImageFile(e.target.files[0]);
+                                                setIsEditingImage(true);
+                                            }
+                                        }}
+                                        className="hidden"
+                                    />
+                                    <p className="text-xs text-gray-400 mt-3">
+                                        Máximo 5MB • JPG, PNG ou WebP
+                                    </p>
+
+                                    {hasExistingImage && (
+                                        <button
+                                            onClick={() => setIsEditingImage(false)}
+                                            className="mt-4 text-xs text-gray-400 hover:text-gray-600 underline"
+                                        >
+                                            Cancelar troca
+                                        </button>
+                                    )}
                                 </div>
-                            </div>
+                            )
                         ) : (
-                            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-8 text-center hover:border-primary dark:hover:border-primary transition-colors">
-                                <div className="w-16 h-16 bg-purple-50 dark:bg-purple-900/20 text-purple-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <span className="material-icons-round text-3xl">image</span>
-                                </div>
-                                <p className="text-gray-600 dark:text-gray-300 mb-2 font-medium">
-                                    Cole uma imagem (Ctrl+V) ou
-                                </p>
-                                <button
-                                    onClick={() => document.getElementById('imageFileInput').click()}
-                                    className="px-6 py-2 bg-[#2563EB] hover:bg-[#1E40AF] text-white rounded-xl font-bold text-sm transition-colors"
-                                >
-                                    Selecionar Arquivo
-                                </button>
-                                <input
-                                    id="imageFileInput"
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={(e) => e.target.files[0] && handleImageFile(e.target.files[0])}
-                                    className="hidden"
-                                />
-                                <p className="text-xs text-gray-400 mt-3">
-                                    Máximo 5MB • JPG, PNG ou WebP
-                                </p>
+                            <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-white/5 rounded-xl border border-gray-100 dark:border-white/10 opacity-75">
+                                <span className="material-icons-round text-green-500">check_circle</span>
+                                <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Capa definida com sucesso</span>
                             </div>
                         )}
                     </div>
