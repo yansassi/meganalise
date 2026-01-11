@@ -40,8 +40,10 @@ const ContentDashboard = () => {
         dbData.content.forEach(c => {
             const item = {
                 id: c.original_id,
+                pbId: c.id, // PocketBase ID for file URL
                 title: c.title,
                 imageUrl: c.image_url,
+                imageFile: c.image_file, // For uploaded cover
                 platform: c.platform_type,
                 manager: 'Time Social',
                 date: new Date(c.date).toLocaleDateString('pt-BR'),
