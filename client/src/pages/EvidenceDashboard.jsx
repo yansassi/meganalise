@@ -16,12 +16,112 @@ const MetricCard = ({ title, value, icon, color }) => (
     </div>
 );
 
+const EditRegistryModal = ({ registry, onClose, onSave }) => {
+    const [formData, setFormData] = useState({
+        title: registry.title,
+        start_date: registry.start_date.split('T')[0], // Extract YYYY-MM-DD
+        end_date: registry.end_date.split('T')[0],
+        keywords: registry.keywords.join(', ')
+    });
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        const keywordsList = formData.keywords.split(',').map(k => k.trim()).filter(k => k);
+        onSave({
+            ...formData,
+            keywords: keywordsList
+        });
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+            <div className="bg-white dark:bg-card-dark w-full max-w-lg rounded-3xl shadow-2xl p-8 animate-scale-in">
+                <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">Editar Registro</h2>
+
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Título</label>
+                        <input
+                            type="text"
+                            name="title"
+                            required
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium"
+                            value={formData.title}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Data Início</label>
+                            <input
+                                type="date"
+                                name="start_date"
+                                required
+                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 outline-none transition-all font-medium text-slate-600"
+                                value={formData.start_date}
+                                onChange={handleChange}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Data Fim</label>
+                            <input
+                                type="date"
+                                name="end_date"
+                                required
+                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 outline-none transition-all font-medium text-slate-600"
+                                value={formData.end_date}
+                                onChange={handleChange}
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Palavras-chave</label>
+                        <input
+                            type="text"
+                            name="keywords"
+                            required
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium"
+                            value={formData.keywords}
+                            onChange={handleChange}
+                        />
+                    </div>
+
+                    <div className="flex gap-3 pt-4">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-blue-500/30 transition-all"
+                        >
+                            Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 export default function EvidenceDashboard() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
     const [error, setError] = useState(null);
+
+    const [showEditModal, setShowEditModal] = useState(false);
 
     useEffect(() => {
         const loadData = async () => {
@@ -37,6 +137,21 @@ export default function EvidenceDashboard() {
         };
         loadData();
     }, [id]);
+
+    const handleUpdate = async (updatedData) => {
+        try {
+            // Reload data to reflect changes
+            setLoading(true);
+            await dataService.saveEvidenceRegistry({ ...updatedData, id });
+            const dashboardData = await dataService.getEvidenceDashboardData(id);
+            setData(dashboardData);
+            setShowEditModal(false);
+        } catch (err) {
+            alert('Erro ao atualizar: ' + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     if (loading) return <div className="p-10 text-center text-slate-400">Carregando dashboard...</div>;
     if (error) return <div className="p-10 text-center text-red-500">Erro: {error}</div>;
@@ -90,6 +205,13 @@ export default function EvidenceDashboard() {
                 </div>
                 <div className="flex gap-2">
                     <button
+                        onClick={() => setShowEditModal(true)}
+                        className="bg-blue-50 hover:bg-blue-100 text-blue-600 px-4 py-2 rounded-xl font-bold text-sm transition-colors flex items-center gap-2"
+                    >
+                        <span className="material-icons-round">edit</span>
+                        Editar
+                    </button>
+                    <button
                         onClick={() => window.print()}
                         className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl font-bold text-sm transition-colors flex items-center gap-2"
                     >
@@ -98,6 +220,15 @@ export default function EvidenceDashboard() {
                     </button>
                 </div>
             </div>
+
+            {/* Edit Modal */}
+            {showEditModal && (
+                <EditRegistryModal
+                    registry={registry}
+                    onClose={() => setShowEditModal(false)}
+                    onSave={handleUpdate}
+                />
+            )}
 
             {/* Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
