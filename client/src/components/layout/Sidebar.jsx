@@ -31,6 +31,7 @@ const Sidebar = ({ country }) => {
       path: '/platform/tiktok',
       submenu: [
         { name: 'Geral', path: '/platform/tiktok' },
+        { name: 'Conteúdo', path: '/platform/tiktok/content' },
       ]
     },
     {

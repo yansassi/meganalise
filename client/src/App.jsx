@@ -10,6 +10,7 @@ import ContentDashboard from './components/dashboard/ContentDashboard';
 import InstagramAudienceTab from './components/dashboard/InstagramAudienceTab';
 import Evidence from './pages/Evidence';
 import EvidenceDashboard from './pages/EvidenceDashboard';
+import TikTokContentDashboard from './components/dashboard/TikTokContentDashboard';
 
 
 // Dashboard retrieves country from Outlet context
@@ -48,6 +49,7 @@ function App() {
               <Route path="platform/instagram/audience" element={<InstagramAudienceTab />} />
               <Route path="/upload" element={<UploadMetrics />} />
               <Route path="platform/tiktok" element={<PlatformView platform="TikTok" />} />
+              <Route path="platform/tiktok/content" element={<TikTokContentDashboard />} />
               <Route path="platform/facebook" element={<PlatformView platform="Facebook" />} />
               <Route path="evidence" element={<Evidence />} />
               <Route path="evidence/:id" element={<EvidenceDashboard />} />
