@@ -435,21 +435,51 @@ const PlatformView = ({ platform }) => {
                                     </div>
                                 ) : (
                                     <>
-                                        {data.chartData.length > 0 && (
-                                            <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
-                                                <GrowthChart data={data.chartData} />
-                                            </div>
-                                        )}
+                                        {platform === 'TikTok' ? (
+                                            /* TikTok specific layout */
+                                            <div className="space-y-12">
+                                                {/* Retention Chart */}
+                                                {data.retentionData.length > 0 && (
+                                                    <div className="w-full">
+                                                        <RetentionChart data={data.retentionData} />
+                                                    </div>
+                                                )}
 
-                                        {platform === 'TikTok' && data.retentionData.length > 0 && (
-                                            <div className="w-full">
-                                                <RetentionChart data={data.retentionData} />
-                                            </div>
-                                        )}
+                                                {/* Content Reel (Grid View) */}
+                                                <section className="w-full overflow-hidden">
+                                                    <MediaReel
+                                                        title="Publicações Recentes"
+                                                        items={(data.contentItems || []).slice(0, 25)}
+                                                        onItemClick={(item) => setSelectedStory(item)}
+                                                    />
+                                                </section>
 
-                                        <div className="w-full">
-                                            <ContentTable items={data.contentItems} />
-                                        </div>
+                                                {/* Growth Chart */}
+                                                {data.chartData.length > 0 && (
+                                                    <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
+                                                        <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Crescimento</h3>
+                                                        <GrowthChart data={data.chartData} />
+                                                    </div>
+                                                )}
+
+                                                {/* Content Table (Detailed View) */}
+                                                <div className="w-full">
+                                                    <ContentTable items={data.contentItems} />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            /* Generic/Other Platform Fallback */
+                                            <>
+                                                {data.chartData.length > 0 && (
+                                                    <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
+                                                        <GrowthChart data={data.chartData} />
+                                                    </div>
+                                                )}
+                                                <div className="w-full">
+                                                    <ContentTable items={data.contentItems} />
+                                                </div>
+                                            </>
+                                        )}
                                     </>
                                 )}
                             </>
