@@ -347,15 +347,36 @@ export const dataService = {
             }
 
             // Fetch matched records directly from DB
-            // This solves the issue of "fetching 500 newest then filtering" which missed older matching posts
+            // This retrieves all items containing the substring (e.g. "realmente" for "realme")
             const contentRecords = await pb.collection('instagram_content').getList(1, 500, {
                 filter: filter,
                 sort: '-date'
             });
 
-            const matchedContent = contentRecords.items;
+            // 4. Refine matches with Whole Word check (in memory)
+            // PocketBase '~' operator is a simple "LIKE", so "realme" matches "realmente".
+            // We strictly filter for whole words here.
 
-            // 4. Calculate Aggregated Metrics for matched content
+            let refinedContent = contentRecords.items;
+
+            if (keywords.length > 0) {
+                refinedContent = contentRecords.items.filter(item => {
+                    if (!item.title) return false;
+                    const titleLower = item.title.toLowerCase();
+
+                    // Check if ANY keyword matches as a whole word
+                    return keywords.some(keyword => {
+                        const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex chars
+                        // Regex: \bkeyword\b (Boundaries)
+                        const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
+                        return regex.test(item.title);
+                    });
+                });
+            }
+
+            const matchedContent = refinedContent;
+
+            // 5. Calculate Aggregated Metrics for matched content
             const metrics = {
                 total_posts: matchedContent.length,
                 total_likes: matchedContent.reduce((sum, item) => sum + (item.likes || 0), 0),
