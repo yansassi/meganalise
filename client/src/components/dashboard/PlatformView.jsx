@@ -144,15 +144,19 @@ const PlatformView = ({ platform }) => {
         const followersParams = { start: null, end: null };
         const chartMap = {};
 
+        const followersData = [];
+
         dbData.metrics.forEach(m => {
             if (m.metric === 'reach') reach += m.value;
-            if (m.metric === 'impressions') impressions += m.value; // Sum impressions
+            if (m.metric === 'impressions') impressions += m.value;
             if (m.metric === 'interactions') interactions += m.value;
-            // logic for net followers: find value at start and end of period
+
             if (m.metric === 'followers') {
                 const d = new Date(m.date).getTime();
                 if (!followersParams.start || d < followersParams.start.date) followersParams.start = { date: d, value: m.value };
                 if (!followersParams.end || d > followersParams.end.date) followersParams.end = { date: d, value: m.value };
+
+                followersData.push({ date: m.date, value: m.value });
             }
             if (m.metric === 'website_clicks') websiteClicks += m.value;
             if (m.metric === 'profile_visits') profileVisits += m.value;
@@ -162,15 +166,37 @@ const PlatformView = ({ platform }) => {
             }
         });
 
-        // Calculate Net Follower Growth
+        // Compute Follower Growth (Delta)
+        const followerGrowthMap = {};
+        followersData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        for (let i = 1; i < followersData.length; i++) {
+            const current = followersData[i];
+            const prev = followersData[i - 1];
+            // Only calculate diff if dates are consecutive? Or just diff between available points.
+            // Assuming daily data points.
+            const diff = current.value - prev.value;
+            followerGrowthMap[current.date] = diff;
+        }
+
+        // Calculate Net Follower Growth Total
         let netFollowers = 0;
         if (followersParams.start && followersParams.end) {
             netFollowers = followersParams.end.value - followersParams.start.value;
         }
 
-        const chartData = Object.keys(chartMap).sort().map(date => ({
+        // Prepare Chart Data: Prioritize Follower Growth, fallback to Reach
+        let finalChartMap = chartMap;
+        let isGrowthData = false;
+
+        if (Object.keys(followerGrowthMap).length > 0) {
+            finalChartMap = followerGrowthMap;
+            isGrowthData = true;
+        }
+
+        const chartData = Object.keys(finalChartMap).sort().map(date => ({
             name: date,
-            value: chartMap[date]
+            value: finalChartMap[date]
         }));
 
         let reels = [];

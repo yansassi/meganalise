@@ -272,7 +272,9 @@ const parseInstagramCSV = async (buffer, fileName) => {
         const line = lines[i].toLowerCase();
         if (line.includes('"data"') || line.includes('data,') || line.includes('data;') ||
             line.includes('"identificador') || line.includes('identificador') ||
-            line.includes('alcance,') || line.includes('alcance;')) {
+            line.includes('"identificação') || line.includes('identificação') ||
+            line.includes('alcance,') || line.includes('alcance;') ||
+            line.includes('link permanente') || line.includes('permalink')) {
             headerIndex = i;
             break;
         }

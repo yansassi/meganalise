@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
 const GrowthChart = ({ data = [] }) => {
     return (
@@ -39,7 +39,11 @@ const GrowthChart = ({ data = [] }) => {
                                 boxShadow: '0 10px 40px -10px rgba(0,0,0,0.1)'
                             }}
                         />
-                        <Bar dataKey="value" fill="#6C5DD3" radius={[8, 8, 8, 8]} className="hover:opacity-80 transition-opacity" />
+                        <Bar dataKey="value" radius={[4, 4, 4, 4]}>
+                            {data.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.value >= 0 ? '#6C5DD3' : '#EF4444'} />
+                            ))}
+                        </Bar>
                     </BarChart>
                 </ResponsiveContainer>
             </div>
