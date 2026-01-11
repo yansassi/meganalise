@@ -6,6 +6,7 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
     const [imagePreview, setImagePreview] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadSuccess, setUploadSuccess] = useState(false);
+    const [uploadedImageUrl, setUploadedImageUrl] = useState(null); // Track uploaded image URL
 
     // Processar arquivo de imagem
     const handleImageFile = (file) => {
@@ -57,12 +58,27 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
         try {
             // Use pbId (PocketBase internal ID) instead of id (original_id)
             const recordId = item.pbId || item.id;
-            await dataService.updateContentImage(recordId, imageFile);
+            const result = await dataService.updateContentImage(recordId, imageFile);
+
+            // Update item with new image_file field
+            if (result && result.image_file) {
+                item.imageFile = result.image_file;
+                item.pbId = result.id; // Ensure pbId is set
+
+                // Generate the uploaded image URL immediately
+                const newImageUrl = `https://auth.meganalise.pro/api/files/instagram_content/${result.id}/${result.image_file}`;
+                setUploadedImageUrl(newImageUrl);
+            }
+
             setUploadSuccess(true);
+            setImageFile(null);
+            setImagePreview(null);
+
+            // Reset success message after 2 seconds
             setTimeout(() => {
-                setImageFile(null);
-                setImagePreview(null);
                 setUploadSuccess(false);
+                // Force modal to refresh by closing and reopening would be ideal
+                // But for now, the image should appear on next open
             }, 2000);
         } catch (error) {
             console.error('Error uploading image:', error);
@@ -117,8 +133,13 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
                     <div className="flex flex-col md:flex-row gap-6">
                         {/* Image/Preview */}
                         <div className="w-full md:w-1/3 aspect-[9/16] md:aspect-square bg-gray-100 dark:bg-white/5 rounded-2xl overflow-hidden relative shadow-inner flex-shrink-0">
-                            {dataService.getContentImageUrl(item) ? (
-                                <img src={dataService.getContentImageUrl(item)} alt={item.title} className="w-full h-full object-cover" />
+                            {(uploadedImageUrl || dataService.getContentImageUrl(item)) ? (
+                                <img
+                                    src={uploadedImageUrl || dataService.getContentImageUrl(item)}
+                                    alt={item.title}
+                                    className="w-full h-full object-cover"
+                                    key={uploadedImageUrl || dataService.getContentImageUrl(item)} // Force re-render on URL change
+                                />
                             ) : (
                                 <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 p-4 text-center">
                                     <span className="material-icons-round text-4xl mb-2">image</span>
