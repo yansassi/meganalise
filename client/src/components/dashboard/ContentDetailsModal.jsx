@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { dataService } from '../../services/dataService';
 
-const ContentDetailsModal = ({ isOpen, onClose, item }) => {
+const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState(null);
     const [isUploading, setIsUploading] = useState(false);
@@ -68,6 +68,18 @@ const ContentDetailsModal = ({ isOpen, onClose, item }) => {
                 // Generate the uploaded image URL immediately
                 const newImageUrl = `https://auth.meganalise.pro/api/files/instagram_content/${result.id}/${result.image_file}`;
                 setUploadedImageUrl(newImageUrl);
+
+                // Propagate update to parent if callback exists
+                if (onUpdate) {
+                    onUpdate({
+                        ...item,
+                        imageFile: result.image_file,
+                        pbId: result.id,
+                        // Ensure we pass the updated image url logic if needed, 
+                        // but parent usually just needs to know the item changed or rerender.
+                        // Actually, better to pass the exact mutated item structure expected by parent
+                    });
+                }
             }
 
             setUploadSuccess(true);

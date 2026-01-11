@@ -2,25 +2,25 @@ import React from 'react';
 import { dataService } from '../../services/dataService';
 import { formatNumber } from '../../utils/formatters';
 
-const StoryReel = ({ stories = [], onItemClick }) => {
+const MediaReel = ({ items = [], title = "Conteúdo Recente", onItemClick }) => {
     return (
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 animate-slide-right">
-            <h3 className="text-lg font-bold text-[#1F2937] tracking-tight mb-6">Stories Recentes</h3>
+        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100 animate-slide-right w-full">
+            <h3 className="text-lg font-bold text-[#1F2937] tracking-tight mb-6">{title}</h3>
 
-            {stories.length === 0 ? (
+            {items.length === 0 ? (
                 <div className="text-center py-8 text-gray-400">
                     <span className="material-icons-round text-4xl mb-2">amp_stories</span>
-                    <p>Nenhum story encontrado no período.</p>
+                    <p>Nenhum conteúdo encontrado no período.</p>
                 </div>
             ) : (
                 <div className="flex gap-6 overflow-x-auto pb-4 snap-x custom-scrollbar">
-                    {stories.map((story) => {
-                        const imageUrl = dataService.getContentImageUrl(story);
+                    {items.map((item) => {
+                        const imageUrl = dataService.getContentImageUrl(item);
 
                         return (
                             <div
-                                key={story.id}
-                                onClick={() => onItemClick(story)}
+                                key={item.id}
+                                onClick={() => onItemClick(item)}
                                 className="flex-shrink-0 w-[140px] group cursor-pointer snap-start"
                             >
                                 {/* Card Container */}
@@ -30,7 +30,7 @@ const StoryReel = ({ stories = [], onItemClick }) => {
                                     {imageUrl ? (
                                         <img
                                             src={imageUrl}
-                                            alt={story.title}
+                                            alt={item.title}
                                             className="w-full h-full object-cover"
                                             loading="lazy"
                                         />
@@ -45,20 +45,27 @@ const StoryReel = ({ stories = [], onItemClick }) => {
 
                                     {/* Overlay Gradient */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
-                                        <p className="text-white text-xs font-medium line-clamp-2">{story.title}</p>
+                                        <p className="text-white text-xs font-medium line-clamp-2">{item.title}</p>
                                     </div>
 
-                                    {/* Active Story Indicator (if needed) */}
-                                    {/* <div className="absolute top-2 right-2 w-2 h-2 bg-green-500 rounded-full border border-white"></div> */}
+                                    {/* Type Indicator */}
+                                    <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                                        <span className="material-icons-round text-white text-[14px]">
+                                            {item.platform === 'video' || item.platform === 'reel' ? 'play_arrow' :
+                                                item.platform === 'story' ? 'amp_stories' : 'image'}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 {/* Metrics Footer */}
-                                <div className="mt-3 flex items-center justify-center gap-1.5 text-gray-500">
-                                    <span className="material-icons-round text-sm">visibility</span>
-                                    <span className="text-sm font-bold text-gray-700">{formatNumber(story.views || 0)}</span>
+                                <div className="mt-3 flex items-center justify-center gap-4 text-gray-500 text-xs">
+                                    <div className="flex items-center gap-1">
+                                        <span className="material-icons-round text-[14px]">visibility</span>
+                                        <span className="font-bold text-gray-700">{formatNumber(item.views || item.reach || 0)}</span>
+                                    </div>
                                 </div>
-                                <div className="text-center">
-                                    <span className="text-[10px] text-gray-400 font-medium">{story.date}</span>
+                                <div className="text-center mt-1">
+                                    <span className="text-[10px] text-gray-400 font-medium">{item.date}</span>
                                 </div>
                             </div>
                         );
@@ -69,4 +76,4 @@ const StoryReel = ({ stories = [], onItemClick }) => {
     );
 };
 
-export default StoryReel;
+export default MediaReel;

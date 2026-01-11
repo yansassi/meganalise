@@ -5,7 +5,7 @@ import { dataService } from '../../services/dataService';
 import StatCards from './StatCards';
 import GrowthChart from './GrowthChart';
 import ContentTable from './ContentTable';
-import StoryReel from './StoryReel';
+import MediaReel from './MediaReel'; // Updated import
 import ContentDetailsModal from './ContentDetailsModal';
 import DateRangeFilter from './DateRangeFilter';
 
@@ -354,20 +354,47 @@ const PlatformView = ({ platform }) => {
                         {activeTab === 'overview' && data.isLoaded && (
                             <>
                                 <StatCards stats={data.stats} />
-                                {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
 
                                 {platform === 'Instagram' ? (
-                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                        <ContentTable items={data.reels || []} title="Reels e Feed" limit={5} />
-                                        <StoryReel
-                                            stories={data.stories || []}
-                                            onItemClick={(story) => {
-                                                setSelectedStory(story);
-                                            }}
-                                        />
+                                    <div className="space-y-12">
+                                        {/* 1. Stories Reel */}
+                                        <section>
+                                            <MediaReel
+                                                title="Stories Recentes"
+                                                items={data.stories || []}
+                                                onItemClick={(story) => setSelectedStory(story)}
+                                            />
+                                        </section>
+
+                                        {/* 2. Growth Chart (Reach/Views context) */}
+                                        <section>
+                                            <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Alcance</h3>
+                                            {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
+                                        </section>
+
+                                        {/* 3. Feed/Reels Reel */}
+                                        <section>
+                                            <MediaReel
+                                                title="Reels e Feed"
+                                                items={data.reels || []}
+                                                onItemClick={(item) => setSelectedStory(item)}
+                                            />
+                                        </section>
+
+                                        {/* 4. Growth Chart (Interactions context - duplicated for now, ideal would be different metrics) */}
+                                        {/* For now user asked for "analise de crescimento dos conteúdo", we can reuse the chart or show a different one if we had data prepared */}
+                                        {/* We will reuse GrowthChart but maybe we can filter for Interactions if we compute it. */}
+                                        {/* Currently GrowthChart generic. Let's show it again as requested "em baixo analise de crescimento dos conteúdo" */}
+                                        <section>
+                                            <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Crescimento (Interações)</h3>
+                                            {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
+                                        </section>
                                     </div>
                                 ) : (
-                                    <ContentTable items={data.contentItems} />
+                                    <>
+                                        {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
+                                        <ContentTable items={data.contentItems} />
+                                    </>
                                 )}
                             </>
                         )}
@@ -383,11 +410,12 @@ const PlatformView = ({ platform }) => {
                 </div>
             )}
 
-            {/* Modal for Story Reel */}
+            {/* Modal for Story/Content Reel */}
             <ContentDetailsModal
                 isOpen={!!selectedStory}
                 onClose={() => setSelectedStory(null)}
                 item={selectedStory}
+                onUpdate={handleContentUpdate}
             />
         </div>
     );
