@@ -22,20 +22,47 @@ const decodeBuffer = (buffer) => {
  * Normalizes daily metric data
  */
 // Helper to safely parse dates (handles DD/MM/YYYY and other formats)
+// Helper to safely parse dates (handles DD/MM/YYYY, MMM DD, YYYY, and other formats)
 const parseDate = (dateStr) => {
     if (!dateStr) return null;
 
-    // Check for DD/MM/YYYY or DD-MM-YYYY format
+    const str = dateStr.trim();
+
+    // 1. DD/MM/YYYY or DD-MM-YYYY
     // Regex matches 01/01/2020 or 1/1/2020
-    const ptBrMatch = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+    const ptBrMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
     if (ptBrMatch) {
         const [_, day, month, year] = ptBrMatch;
-        // Return ISO format YYYY-MM-DD
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     }
 
-    // Fallback to standard parser (handles YYYY-MM-DD, ISO, etc)
-    return dateStr.split('T')[0];
+    // 2. YYYY-MM-DD (already ISO-ish)
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+        return str.split('T')[0];
+    }
+
+    // 3. MMM DD, YYYY (e.g. "Jan 11, 2025")
+    const engMatch = str.match(/^([A-Za-z]{3})\s+(\d{1,2}),?\s+(\d{4})/);
+    if (engMatch) {
+        const [_, monthName, day, year] = engMatch;
+        const months = {
+            'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06',
+            'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+        };
+        const m = months[monthName] || months[monthName.substring(0, 3)];
+        if (m) {
+            return `${year}-${m}-${day.padStart(2, '0')}`;
+        }
+    }
+
+    // 4. Try native Date parse for other formats (e.g. "11 Jan 2025")
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) {
+        return d.toISOString().split('T')[0];
+    }
+
+    // Fallback: Return original and hope
+    return str.split('T')[0];
 };
 
 const normalizeDailyMetric = (data, metricName) => {
