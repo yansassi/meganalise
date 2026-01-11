@@ -127,7 +127,7 @@ const PlatformView = ({ platform }) => {
 
     const loadFromDatabase = async () => {
         const dbData = await dataService.getDashboardData(country, platform, dateRange.startDate, dateRange.endDate);
-        const audience = await dataService.getAudienceDemographics(country);
+        const audience = await dataService.getAudienceDemographics(country, platform);
         setAudienceData(audience);
 
         if (dbData.metrics.length > 0 || dbData.content.length > 0) {
@@ -151,6 +151,30 @@ const PlatformView = ({ platform }) => {
             if (m.metric === 'impressions') impressions += m.value;
             if (m.metric === 'interactions') interactions += m.value;
 
+            // TikTok Specific Mappings
+            if (m.metric === 'video_views') impressions += m.value; // Map Video Views to Impressions
+            if (m.metric === 'profile_views') profileVisits += m.value;
+            if (m.metric === 'likes' || m.metric === 'comments' || m.metric === 'shares') {
+                interactions += m.value;
+            }
+            if (m.metric === 'followers_total') {
+                // For 'followers_total', it's a cumulative value, not daily gain (usually).
+                // Existing logic for 'followers' assumes daily GAIN if the file was "Seguidores.csv" (which was empty/unknown).
+                // But for TikTok FollowerHistory, we have 'followers_total' and 'followers_change'.
+                const d = new Date(m.date).getTime();
+                if (!followersParams.start || d < followersParams.start.date) followersParams.start = { date: d, value: m.value };
+                if (!followersParams.end || d > followersParams.end.date) followersParams.end = { date: d, value: m.value };
+
+                // If we want to show growth chart based on total, we keep this.
+                // But wait, existing logic (line 159) pushes to followersData.
+                followersData.push({ date: m.date, value: m.value });
+            }
+            if (m.metric === 'followers_change') {
+                // Explicit daily change
+                // We can use this for the bar chart if available
+            }
+
+
             if (m.metric === 'followers') {
                 const d = new Date(m.date).getTime();
                 if (!followersParams.start || d < followersParams.start.date) followersParams.start = { date: d, value: m.value };
@@ -161,7 +185,7 @@ const PlatformView = ({ platform }) => {
             if (m.metric === 'website_clicks') websiteClicks += m.value;
             if (m.metric === 'profile_visits') profileVisits += m.value;
 
-            if (m.metric === 'reach') {
+            if (m.metric === 'reach' || m.metric === 'video_views') {
                 chartMap[m.date] = (chartMap[m.date] || 0) + m.value;
             }
         });

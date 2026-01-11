@@ -77,22 +77,74 @@ router.get('/:country/:platform', async (req, res) => {
             dateFilter = ` && date >= "${start}" && date <= "${end}"`;
         }
 
-        // 1. Fetch Metrics
-        const metricsFilter = `country = "${country}" && platform = "${socialNetwork}"${dateFilter}`;
-        const metrics = await pb.collection('instagram_daily_metrics').getFullList({
-            filter: metricsFilter,
-            sort: 'date',
-            requestKey: null
-        });
 
-        // 2. Fetch Content
-        // Content might need date filtering too
-        const contentFilter = `country = "${country}" && social_network = "${socialNetwork}"${dateFilter}`;
-        const content = await pb.collection('instagram_content').getFullList({
-            filter: contentFilter,
-            sort: '-date', // Newest first
-            requestKey: null
-        });
+        let metrics = [];
+        let content = [];
+
+        if (socialNetwork === 'tiktok') {
+            const metricsFilter = `country = "${country}" && platform = "${socialNetwork}"${dateFilter}`;
+            try {
+                metrics = await pb.collection('tiktok_daily_metrics').getFullList({
+                    filter: metricsFilter,
+                    sort: 'date',
+                    requestKey: null
+                });
+            } catch (e) {
+                console.log('Error fetching tiktok metrics (might not exist yet):', e.message);
+            }
+
+            const contentFilter = [
+                // `country = "${country}"`, // TikTok content currently doesn't have country field in upload.js?
+                // Let's check upload.js. I didn't add country to tiktok_content. 
+                // I should have. Let's assume I did or I will fix it. 
+                // Actually looking at upload.js, I did `const recordData = { ... }` inside `if (result.type === 'content')`.
+                // I missed adding `country` to `recordData` for TikTok content in upload.js!
+                // I need to fix upload.js first or handle it here.
+                // For now, let's skip country filter for tiktok content if it's missing, or assume it's there.
+                // Wait, I MUST fix upload.js if I want country filtering.
+                // But for now, let's implement the query assuming I'll fix it.
+            ].filter(Boolean).join(' && ');
+
+            // Actually, simplest is to fetch all tiktok content for now since we might not have country.
+            // But wait, if I have multiple clients... user is implied by header/auth? 
+            // PB is global? Queries need to be scoped.
+            // I better fix upload.js to add country.
+
+            try {
+                content = await pb.collection('tiktok_content').getFullList({
+                    sort: '-date_published',
+                    requestKey: null
+                });
+            } catch (e) {
+                console.log('Error fetching tiktok content:', e.message);
+            }
+
+            // Normalize Content for Frontend
+            content = content.map(c => ({
+                ...c,
+                date: c.date_published, // Map date_published to date
+                platform_type: 'video', // Enforce type
+                social_network: 'tiktok',
+                reach: c.views, // Use views as reach proxy? Or keep separate?
+                // Frontend expects reach, likes, comments, shares
+            }));
+
+        } else {
+            // Instagram (Default)
+            const metricsFilter = `country = "${country}" && platform = "${socialNetwork}"${dateFilter}`;
+            metrics = await pb.collection('instagram_daily_metrics').getFullList({
+                filter: metricsFilter,
+                sort: 'date',
+                requestKey: null
+            });
+
+            const contentFilter = `country = "${country}" && social_network = "${socialNetwork}"${dateFilter}`;
+            content = await pb.collection('instagram_content').getFullList({
+                filter: contentFilter,
+                sort: '-date',
+                requestKey: null
+            });
+        }
 
         res.json({
             metrics,

@@ -40,9 +40,9 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
             <div className="glass-card p-8 rounded-3xl hover:shadow-premium transition-all duration-300 overflow-hidden flex flex-col h-full animate-slide-right">
                 {title && (
                     <div className="flex items-center justify-between mb-8">
-                        <h3 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h3>
+                        <h3 className="text-xl font-bold text-[#2D3748] dark:text-white tracking-tight">{title}</h3>
                         {!showPagination && limit && items.length > limit && (
-                            <button className="text-primary text-sm font-bold hover:underline transition-all hover:text-primary-dark">Ver Todos</button>
+                            <button className="text-emerald-600 dark:text-emerald-400 text-sm font-bold hover:underline transition-all hover:text-emerald-700 dark:hover:text-emerald-300">Ver Todos</button>
                         )}
                     </div>
                 )}
@@ -50,7 +50,7 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                 <div className="overflow-x-auto flex-1 custom-scrollbar">
                     <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="text-gray-600 text-xs uppercase font-extrabold tracking-wider border-b border-gray-200 dark:border-gray-700">
+                            <tr className="text-[#9CA3AF] dark:text-purple-200/70 text-xs uppercase font-extrabold tracking-wider border-b border-purple-100 dark:border-white/10">
                                 <th className="pb-4 pl-4 pt-4 whitespace-nowrap">Conteúdo</th>
                                 <th className="pb-4 px-4 pt-4 whitespace-nowrap text-center">Plataforma</th>
                                 <th className="pb-4 px-4 pt-4 whitespace-nowrap text-right">Alcance</th>
@@ -71,7 +71,7 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                                         key={item.id}
                                         onClick={() => setSelectedItem(item)}
                                         style={{ animationDelay: `${index * 50}ms` }}
-                                        className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b last:border-0 border-gray-100 dark:border-gray-800 cursor-pointer animate-entrance"
+                                        className="group hover:bg-purple-50 dark:hover:bg-white/5 transition-colors border-b last:border-0 border-purple-100 dark:border-white/5 cursor-pointer animate-entrance"
                                     >
                                         <td className="py-4 pl-4 max-w-[300px]">
                                             <div className="flex items-center gap-4">
@@ -83,15 +83,15 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                                                     />
                                                 )}
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold text-gray-800 dark:text-white line-clamp-2" title={item.title}>{item.title}</span>
+                                                    <span className="font-bold text-[#2D3748] dark:text-white line-clamp-2" title={item.title}>{item.title}</span>
                                                     <div className="flex items-center gap-2 mt-1">
-                                                        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{item.date}</span>
+                                                        <span className="text-xs text-[#9CA3AF] dark:text-purple-200/60 font-medium">{item.date}</span>
                                                         {item.permalink && (
                                                             <a
                                                                 href={item.permalink}
                                                                 target="_blank"
                                                                 rel="noopener noreferrer"
-                                                                className="text-primary hover:text-primary-dark transition-colors z-10"
+                                                                className="text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors z-10"
                                                                 onClick={(e) => e.stopPropagation()}
                                                             >
                                                                 <span className="material-icons-round text-[14px]">open_in_new</span>
@@ -117,18 +117,18 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="py-4 px-4 text-right font-semibold text-gray-700 dark:text-gray-300">
+                                        <td className="py-4 px-4 text-right font-semibold text-[#475569] dark:text-purple-100">
                                             {item.reach ? formatNumber(item.reach) : '-'}
                                         </td>
-                                        <td className="py-4 px-4 text-right font-semibold text-gray-700 dark:text-gray-300">
+                                        <td className="py-4 px-4 text-right font-semibold text-[#475569] dark:text-purple-100">
                                             {item.views ? formatNumber(item.views) : '-'}
                                         </td>
-                                        <td className="py-4 px-4 text-right font-semibold text-gray-700 dark:text-gray-300">
+                                        <td className="py-4 px-4 text-right font-semibold text-[#475569] dark:text-purple-100">
                                             {item.saved ? formatNumber(item.saved) : '-'}
                                         </td>
                                         <td className="py-4 px-4 text-right">
-                                            <span className="font-extrabold text-gray-800 dark:text-white">{item.virality}</span>
-                                            <span className="text-gray-400 text-xs ml-0.5">/100</span>
+                                            <span className="font-extrabold text-[#2D3748] dark:text-white">{item.virality}</span>
+                                            <span className="text-[#9CA3AF] dark:text-purple-200/60 text-xs ml-0.5">/100</span>
                                         </td>
                                         <td className="py-4 pr-4 text-right">
                                             <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider

@@ -1,55 +1,72 @@
 @import "tailwindcss";
 
 @theme {
+  /* Company Brand Colors - Preserved for Sidebar */
   --color-primary: #0058c1;
   --color-primary-dark: #004e9a;
   --color-secondary: #ed3030;
   --color-secondary-dark: #c92a2a;
 
   --color-sidebar-bg: #0F172A;
-  /* Deep Dark for high contrast */
 
-  --color-background-light: #F8FAFC;
-  --color-card-light: #FFFFFF;
+  /* New Accent Colors - Completely Different */
+  --color-emerald: #10B981;
+  --color-emerald-dark: #059669;
+  --color-fuchsia: #D946EF;
+  --color-fuchsia-dark: #C026D3;
+  --color-sky: #0EA5E9;
+  --color-sky-dark: #0284C7;
+  --color-orange: #FB923C;
+  --color-orange-dark: #F97316;
 
-  /* Premium Midnight Theme Palette */
-  --color-primary: #0058c1;
-  --color-primary-dark: #004e9a;
+  /* New Background Colors - Lavender-Mint Theme */
+  --color-bg-light-start: #F8F9FF;
+  --color-bg-light-end: #F0FDF9;
+  --color-bg-dark-start: #312E81;
+  --color-bg-dark-end: #4C1D95;
 
-  --color-bg-gradient-start: #0f172a;
-  --color-bg-gradient-mid: #1e3a8a;
-  --color-bg-gradient-end: #0f172a;
+  /* New Text Colors - Purple-Gray Tones */
+  --color-text-primary: #2D3748;
+  --color-text-secondary: #475569;
+  --color-text-muted: #9CA3AF;
 
-  /* Glass Effect Tokens */
-  --color-glass-surface: rgba(255, 255, 255, 0.7);
-  --color-glass-surface-dark: rgba(15, 23, 42, 0.6);
-  --color-glass-border: rgba(255, 255, 255, 0.5);
-  --color-glass-border-dark: rgba(255, 255, 255, 0.08);
+  /* Glass Effect Tokens - Lavender Tinted */
+  --color-glass-surface: rgba(248, 249, 255, 0.85);
+  --color-glass-surface-dark: rgba(49, 46, 129, 0.7);
+  --color-glass-border: rgba(248, 249, 255, 0.6);
+  --color-glass-border-dark: rgba(255, 255, 255, 0.1);
 
-  --shadow-neon: 0 0 20px rgba(0, 88, 193, 0.2);
-  --shadow-premium: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 0 15px rgba(0, 0, 0, 0.1);
+  --shadow-neon: 0 0 20px rgba(16, 185, 129, 0.25);
+  --shadow-premium: 0 20px 40px -10px rgba(49, 46, 129, 0.2), 0 0 15px rgba(217, 70, 239, 0.1);
 }
 
 @layer base {
   body {
-    @apply font-sans text-slate-800 transition-colors duration-300;
-    /* Rich Gradient Background */
-    background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%);
+    @apply font-sans transition-colors duration-300;
+    color: var(--color-text-primary);
+    /* Lavender-Mint Gradient Background */
+    background: linear-gradient(135deg, #F8F9FF 0%, #F0FDF9 100%);
   }
 
   .dark body {
-    background: linear-gradient(135deg, #0f172a 0%, #172554 50%, #0f172a 100%);
+    /* Indigo-Purple Gradient Background */
+    background: linear-gradient(135deg, #312E81 0%, #4C1D95 50%, #312E81 100%);
     background-attachment: fixed;
+    color: #F8F9FF;
   }
 }
 
 /* --- GLASSMORPHISM UTILITIES --- */
 .glass-card {
-  @apply bg-white/80 dark:bg-[#0f172a]/60 backdrop-blur-xl border border-white/60 dark:border-white/10;
-  box-shadow: var(--shadow-card);
+  background: var(--color-glass-surface);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--color-glass-border);
+  box-shadow: var(--shadow-premium);
 }
 
 .dark .glass-card {
+  background: var(--color-glass-surface-dark);
+  border-color: var(--color-glass-border-dark);
   box-shadow: var(--shadow-neon);
 }
 
@@ -72,10 +89,10 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #C4B5FD;
   border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #A78BFA;
 }

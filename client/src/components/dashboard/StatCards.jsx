@@ -6,43 +6,43 @@ const StatCards = ({ stats = [] }) => {
         switch (color) {
             case 'blue':
                 return {
-                    container: 'bg-gradient-to-br from-blue-600 to-blue-700 shadow-blue-200',
+                    container: 'bg-gradient-to-br from-emerald-500 to-emerald-600',
                     text: 'text-white',
-                    subText: 'text-blue-100',
+                    subText: 'text-emerald-50',
                     iconBg: 'bg-white/20 text-white',
                     trendTag: 'bg-white/20 text-white'
                 };
             case 'purple':
                 return {
-                    container: 'bg-gradient-to-br from-purple-600 to-purple-700 shadow-purple-200',
+                    container: 'bg-gradient-to-br from-fuchsia-500 to-fuchsia-600',
                     text: 'text-white',
-                    subText: 'text-purple-100',
+                    subText: 'text-fuchsia-50',
                     iconBg: 'bg-white/20 text-white',
                     trendTag: 'bg-white/20 text-white'
                 };
             case 'orange':
                 return {
-                    container: 'bg-gradient-to-br from-orange-500 to-orange-600 shadow-orange-200',
+                    container: 'bg-gradient-to-br from-orange-400 to-orange-500',
                     text: 'text-white',
-                    subText: 'text-orange-100',
+                    subText: 'text-orange-50',
                     iconBg: 'bg-white/20 text-white',
                     trendTag: 'bg-white/20 text-white'
                 };
             case 'green':
                 return {
-                    container: 'bg-gradient-to-br from-emerald-500 to-emerald-600 shadow-emerald-200',
+                    container: 'bg-gradient-to-br from-sky-500 to-sky-600',
                     text: 'text-white',
-                    subText: 'text-emerald-100',
+                    subText: 'text-sky-50',
                     iconBg: 'bg-white/20 text-white',
                     trendTag: 'bg-white/20 text-white'
                 };
             default: // Glass / Neutral Theme
                 return {
                     container: 'glass-card',
-                    text: 'text-slate-800 dark:text-white',
-                    subText: 'text-slate-500 dark:text-blue-200/70',
-                    iconBg: 'bg-slate-100 dark:bg-white/10 text-primary',
-                    trendTag: 'bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-blue-100'
+                    text: 'text-[#2D3748] dark:text-white',
+                    subText: 'text-[#475569] dark:text-purple-200/70',
+                    iconBg: 'bg-purple-50 dark:bg-white/10 text-emerald-600',
+                    trendTag: 'bg-purple-50 dark:bg-white/10 text-[#475569] dark:text-purple-100'
                 };
         }
     };

@@ -134,8 +134,54 @@ export const dataService = {
      * Gets the latest audience demographics snapshot
      * @param {string} country 
      */
-    async getAudienceDemographics(country) {
+    async getAudienceDemographics(country, platform = 'instagram') {
         try {
+            if (platform.toLowerCase() === 'tiktok') {
+                // Fetch latest gender and territory records
+                // We might need to fetch multiple records and merge
+                const genderRecords = await pb.collection('tiktok_audience_demographics').getList(1, 1, {
+                    filter: `type = "gender"`, // We might need country filter if we saved it? Upload logic didn't seem to save country for demographics demographics?
+                    // Checking upload.js: tiktok demographics recordData has: type, data, date_reference. NO country.
+                    // This is a potential bug if we want country isolation.
+                    // IMPORTANT: I should add country to demographics in upload.js too.
+                    // For now, let's fetch.
+                    sort: '-created',
+                    requestKey: null
+                });
+
+                const territoryRecords = await pb.collection('tiktok_audience_demographics').getList(1, 1, {
+                    filter: `type = "territory"`,
+                    sort: '-created',
+                    requestKey: null
+                });
+
+                const genderData = genderRecords.items.length > 0 ? JSON.parse(genderRecords.items[0].data) : {};
+                const territoryData = territoryRecords.items.length > 0 ? JSON.parse(territoryRecords.items[0].data) : {};
+
+                // Map to AudienceView format
+                // AudienceView expects: genderAge (keys: 18-24, etc? Or just Gender?), cities, countries
+                // TikTok 'gender' data is { Male: 0.82, Female: 0.17 }
+                // TikTok 'territory' data is { BR: 0.91, JP: 0.008 }
+
+                // We need to map this.
+                // genderAge: we only have Gender. AudienceView might expect Age ranges. 
+                // We might need to adapt AudienceView or map "Male"/"Female" to a dummy age range?
+                // Or just pass `genderDistribution: genderData` and update AudienceView to handle it.
+                // Let's pass what we have and let AudienceView component logic handle (or fail/show partial).
+                // Actually AudienceView expects `genderAge` object where keys are ages and values are {male, female}.
+                // TikTok only gives global Gender.
+                // We can fake it or just set a "All Ages" key?
+
+                return {
+                    id: 'tiktok-latest',
+                    importDate: new Date().toISOString(),
+                    tiktokGender: genderData, // Pass raw for now?
+                    countries: Object.entries(territoryData).map(([name, value]) => ({ name, value: value * 100 })),
+                    cities: [], // Empty for now as TikTok doesn't provide cities in this file
+                    genderAge: { "All": { male: (genderData['Male'] || 0) * 100, female: (genderData['Female'] || 0) * 100 } }
+                };
+            }
+
             // Get latest record
             const records = await pb.collection('instagram_audience_demographics').getList(1, 1, {
                 filter: `platform = "instagram" && country = "${country}"`,

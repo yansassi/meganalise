@@ -350,4 +350,147 @@ const parseInstagramCSV = async (buffer, fileName) => {
     });
 };
 
-module.exports = { parseInstagramCSV };
+
+const normalizeTikTokDailyMetric = (data, metricMapping) => {
+    return data.map(row => {
+        const dateKey = Object.keys(row).find(k => k.toLowerCase() === 'date' || k.toLowerCase() === 'data');
+        if (!dateKey) return null;
+
+        const dateVal = row[dateKey];
+        if (!dateVal) return null;
+
+        const metrics = [];
+        for (const [csvKey, dbMetricName] of Object.entries(metricMapping)) {
+            const rowKey = Object.keys(row).find(k => k.toLowerCase() === csvKey.toLowerCase());
+            if (rowKey && row[rowKey] !== undefined) {
+                metrics.push({
+                    date: parseDate(dateVal),
+                    metric: dbMetricName,
+                    value: parseInt(row[rowKey] || 0, 10)
+                });
+            }
+        }
+        return metrics;
+    }).flat().filter(item => item && item.date);
+};
+
+const parseTikTokCSV = async (buffer, fileName) => {
+    const csvText = decodeBuffer(buffer);
+    const lines = csvText.split(/\r\n|\n/);
+    const fileNameLower = fileName.toLowerCase();
+
+    // Simple heuristic: TikTok CSVs provided usually have headers on line 1 or 2
+    // Overview.csv has "Date","Video Views"...
+
+    return new Promise((resolve, reject) => {
+        Papa.parse(csvText, {
+            header: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+                const data = results.data;
+                const headers = results.meta.fields || [];
+                const headersLower = headers.map(h => h.toLowerCase());
+
+                // 1. Content
+                if (headersLower.includes('video link') && headersLower.includes('video title')) {
+                    const contentData = data.map(row => {
+                        const link = row['Video link'] || '';
+                        const idMatch = link.match(/\/video\/(\d+)/);
+                        const original_id = idMatch ? idMatch[1] : link;
+
+                        return {
+                            original_id,
+                            title: row['Video title'],
+                            permalink: link,
+                            post_time: row['Post time'],
+                            date_published: row['Time'], // "8 de janeiro" - assumes current year/ref? 
+                            // Note: "Time" in Content.csv seems to be query time, "Post time" is publication.
+                            // Post time format "14 de outubro". We might need to guess year.
+                            likes: parseInt(row['Total likes'] || 0, 10),
+                            comments: parseInt(row['Total comments'] || 0, 10),
+                            shares: parseInt(row['Total shares'] || 0, 10),
+                            views: parseInt(row['Total views'] || 0, 10),
+                            platform: 'tiktok'
+                        };
+                    });
+                    resolve({ type: 'content', data: contentData });
+                    return;
+                }
+
+                // 2. Overview (Daily Metrics)
+                if (headersLower.includes('video views') && headersLower.includes('profile views')) {
+                    const mapping = {
+                        'Video Views': 'video_views',
+                        'Profile Views': 'profile_views',
+                        'Likes': 'likes',
+                        'Comments': 'comments',
+                        'Shares': 'shares'
+                    };
+                    resolve({ type: 'metric', data: normalizeTikTokDailyMetric(data, mapping) });
+                    return;
+                }
+
+                // 3. Viewers
+                if (headersLower.includes('total viewers') && headersLower.includes('new viewers')) {
+                    const mapping = {
+                        'Total Viewers': 'total_viewers',
+                        'New Viewers': 'new_viewers',
+                        'Returning Viewers': 'returning_viewers'
+                    };
+                    resolve({ type: 'metric', data: normalizeTikTokDailyMetric(data, mapping) });
+                    return;
+                }
+
+                // 4. Follower History
+                if (headersLower.includes('followers') && headersLower.includes('difference in followers from previous day')) {
+                    const mapping = {
+                        'Followers': 'followers_total',
+                        'Difference in followers from previous day': 'followers_change'
+                    };
+                    resolve({ type: 'metric', data: normalizeTikTokDailyMetric(data, mapping) });
+                    return;
+                }
+
+                // 5. Demographics (Gender)
+                if (headersLower.includes('gender') && headersLower.includes('distribution')) { // FollowerGender
+                    const genderData = {};
+                    data.forEach(row => {
+                        if (row['Gender'] && row['Distribution']) {
+                            genderData[row['Gender']] = parseFloat(row['Distribution']);
+                        }
+                    });
+                    resolve({ type: 'demographics', subtype: 'gender', data: genderData });
+                    return;
+                }
+
+                // 6. Demographics (Territory) - FollowerTopTerritories
+                if (fileNameLower.includes('territor') || (headersLower.includes('top territories') && headersLower.includes('distribution'))) {
+                    const territoryData = {};
+                    data.forEach(row => {
+                        const key = row['Top territories'] || row['Top Territories'];
+                        if (key && row['Distribution']) {
+                            territoryData[key] = parseFloat(row['Distribution']);
+                        }
+                    });
+                    resolve({ type: 'demographics', subtype: 'territory', data: territoryData });
+                    return;
+                }
+
+                // 7. Activity - FollowerActivity
+                if (headersLower.includes('hour') && headersLower.includes('active followers')) {
+                    // This is hourly data. We might want to compress it or store as is?
+                    // Proposal: Store as one JSON record per day? OR return 'activity' type.
+                    // Let's resolve as 'activity'
+                    resolve({ type: 'activity', data: data });
+                    return;
+                }
+
+                console.warn('Unknown TikTok CSV format:', fileName);
+                resolve({ type: 'unknown', data: [] });
+            },
+            error: (err) => reject(err)
+        });
+    });
+};
+
+module.exports = { parseInstagramCSV, parseTikTokCSV };

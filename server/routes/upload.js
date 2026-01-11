@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const { pb } = require('../services/db');
-const { parseInstagramCSV } = require('../services/parser');
+const { parseInstagramCSV, parseTikTokCSV } = require('../services/parser');
 
 const router = express.Router();
 const upload = multer(); // Memory storage
@@ -163,6 +163,130 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
 
     } catch (error) {
         console.error('Upload handler error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/tiktok', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+
+        const { country } = req.body; // or default?
+        const buffer = req.file.buffer;
+        const filename = req.file.originalname;
+
+        console.log(`Processing TikTok file: ${filename}`);
+
+        const result = await parseTikTokCSV(buffer, filename);
+        let savedCount = 0;
+        let errors = [];
+
+        if (result.type === 'unknown') {
+            return res.status(400).json({ error: 'Unknown TikTok file format' });
+        }
+
+        if (result.type === 'content') {
+            for (const item of result.data) {
+                try {
+                    const existing = await pb.collection('tiktok_content').getList(1, 1, {
+                        filter: `original_id = "${item.original_id}"`,
+                        requestKey: null
+                    });
+
+                    const recordData = {
+                        original_id: item.original_id,
+                        title: item.title,
+                        permalink: item.permalink,
+                        post_time: item.post_time, // String from CSV
+                        // We should try to parse item.post_time to a real date object if possible, 
+                        // but sticking to string if format is weird is safer for now.
+                        likes: item.likes,
+                        comments: item.comments,
+                        shares: item.shares,
+                        views: item.views,
+                        country: country, // Added country
+                        date_published: new Date().toISOString() // Placeholder or parse item.date_published
+                    };
+
+                    if (existing.items.length > 0) {
+                        await pb.collection('tiktok_content').update(existing.items[0].id, recordData, { requestKey: null });
+                    } else {
+                        await pb.collection('tiktok_content').create(recordData, { requestKey: null });
+                    }
+                    savedCount++;
+                } catch (e) {
+                    console.error('Error saving tiktok content:', e.message);
+                    errors.push(e.message);
+                }
+            }
+        } else if (result.type === 'metric') {
+            // result.data is array of objects { date, metric, value }
+            for (const item of result.data) {
+                try {
+                    const existing = await pb.collection('tiktok_daily_metrics').getList(1, 1, {
+                        filter: `date = "${item.date} 00:00:00.000Z" && metric = "${item.metric}"`,
+                        requestKey: null
+                    });
+
+                    const recordData = {
+                        date: new Date(item.date).toISOString(),
+                        metric: item.metric,
+                        value: item.value,
+                        platform: 'tiktok'
+                    };
+
+                    if (existing.items.length > 0) {
+                        await pb.collection('tiktok_daily_metrics').update(existing.items[0].id, recordData, { requestKey: null });
+                    } else {
+                        await pb.collection('tiktok_daily_metrics').create(recordData, { requestKey: null });
+                    }
+                    savedCount++;
+                } catch (e) {
+                    console.error('Error saving tiktok metric:', e.message);
+                    errors.push(e.message);
+                }
+            }
+        } else if (result.type === 'demographics') {
+            // result.subtype = 'gender' | 'territory'
+            // result.data = object
+            try {
+                const recordData = {
+                    type: result.subtype,
+                    data: JSON.stringify(result.data),
+                    date_reference: new Date().toISOString()
+                };
+                // We can append or update today's record? Let's create new for history.
+                await pb.collection('tiktok_audience_demographics').create(recordData, { requestKey: null });
+                savedCount = 1;
+            } catch (e) {
+                console.error('Error saving demographics:', e.message);
+                errors.push(e.message);
+            }
+        } else if (result.type === 'activity') {
+            // result.data is raw rows array
+            // Maybe store as a big blob for the day? Or ignore?
+            // "Active followers" per hour.
+            // Let's store as a metric with json value? Or new collection?
+            // User plan said: "tiktok_audience_activity" or JSON in demographics.
+            // Let's try to put in tiktok_audience_demographics with type='activity'
+            try {
+                const recordData = {
+                    type: 'activity',
+                    data: JSON.stringify(result.data),
+                    date_reference: new Date().toISOString()
+                };
+                await pb.collection('tiktok_audience_demographics').create(recordData, { requestKey: null });
+                savedCount = 1;
+            } catch (e) {
+                console.error('Error saving activity:', e.message);
+                errors.push(e.message);
+            }
+        }
+
+        res.json({ success: true, saved: savedCount, errors: errors.length ? errors : undefined });
+
+    } catch (error) {
+        console.error('TikTok Upload parse error:', error);
         res.status(500).json({ error: error.message });
     }
 });
