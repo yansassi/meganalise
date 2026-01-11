@@ -336,21 +336,24 @@ export const dataService = {
             const endDateStr = end_date.split('T')[0].split(' ')[0];
 
             // Use 'date' field instead of 'timestamp'
-            const filter = `date >= "${startDateStr} 00:00:00" && date <= "${endDateStr} 23:59:59"`;
+            // 3. Construct Filter
+            // Combine Date range AND Keywords
+            let filter = `date >= "${startDateStr} 00:00:00" && date <= "${endDateStr} 23:59:59"`;
 
-            // Fetching a larger list - might need pagination in real app, strictly capping at 500 for now
+            if (keywords.length > 0) {
+                // (title ~ "k1" || title ~ "k2" || ...)
+                const keywordConditions = keywords.map(k => `title ~ "${k}"`).join(' || ');
+                filter += ` && (${keywordConditions})`;
+            }
+
+            // Fetch matched records directly from DB
+            // This solves the issue of "fetching 500 newest then filtering" which missed older matching posts
             const contentRecords = await pb.collection('instagram_content').getList(1, 500, {
                 filter: filter,
-                sort: '-date' // sort by date
+                sort: '-date'
             });
 
-            // 3. Filter by Keywords in Memory
-            // check caption (title), permalink, or other text fields
-            const matchedContent = contentRecords.items.filter(item => {
-                const textToCheck = (item.title || '') + ' ' + (item.permalink || '');
-                const lowerText = textToCheck.toLowerCase();
-                return keywordsLower.some(k => lowerText.includes(k));
-            });
+            const matchedContent = contentRecords.items;
 
             // 4. Calculate Aggregated Metrics for matched content
             const metrics = {
