@@ -234,7 +234,6 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                     const recordData = {
                         date: new Date(item.date).toISOString(),
                         metric: item.metric,
-                        metric: item.metric,
                         value: item.value,
                         platform: 'tiktok',
                         country: country // Added country isolation

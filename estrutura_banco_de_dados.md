@@ -12,10 +12,13 @@ Estas são as coleções principais utilizadas pela lógica de negócio da aplic
 | **`platforms`** | `base` | `id`, `name` (text), `idiom` (text), `icon` (file), `theme_color` (text), `created` |
 | **`metrics_daily_log`** | `base` | `id`, `platform` (relation), `value` (number), `metric_name` (text), `date` (autodate) |
 | **`content_items`** | `base` | `id`, `platform` (relation), `original_id` (text), `thumbnail` (text), `created`, `updated` |
-| **`instagram_daily_metrics`** | `base` | `id`, `platform` (select), `date` (date), `metric_category` (text), `created`, `updated` |
-| **`instagram_content`** | `base` | `id`, `original_id` (text), `title` (text), `image_url` (text), `permalink` (text), `created`, `updated` |
+| **`instagram_daily_metrics`** | `base` | `id`, `platform` (select), `date` (date), `metric_category` (text), `country` (text), `created`, `updated` |
+| **`instagram_content`** | `base` | `id`, `original_id` (text), `title` (text), `image_url` (text), `permalink` (text), `date` (date), `author` (text), `created`, `updated` |
 | **`instagram_audience_demographics`** | `base` | `id`, `platform` (text), `import_date` (date), `gender_age` (select), `created`, `updated` |
 | **`evidence_registries`** | `base` | `id`, `title` (text), `start_date` (date), `end_date` (date), `keywords` (json), `country` (text), `type` (text), `created`, `updated` |
+| **`tiktok_daily_metrics`** | `base` | `id`, `date` (date), `metric` (text), `value` (number), `country` (text), `platform` (text), `created`, `updated` |
+| **`tiktok_content`** | `base` | `id`, `original_id` (text), `title` (text), `permalink` (text), `image_file` (file), `author` (text), `date` (date), `created`, `updated` |
+| **`tiktok_audience_demographics`** | `base` | `id`, `data` (json), `date_reference` (date), `country` (text), `type` (text), `created`, `updated` |
 
 ---
 
