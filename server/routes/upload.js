@@ -207,7 +207,8 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                         shares: item.shares,
                         views: item.views,
                         country: country, // Added country
-                        date_published: item.date_published ? new Date(item.date_published).toISOString() : new Date().toISOString()
+                        date: item.date_published ? new Date(item.date_published).toISOString() : new Date().toISOString(), // Standardize to 'date'
+                        author: item.author || '' // Standardize to 'author', default empty if parser doesn't find it
                     };
 
                     if (existing.items.length > 0) {
