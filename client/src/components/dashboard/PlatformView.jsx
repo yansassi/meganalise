@@ -98,11 +98,14 @@ const UploadModal = ({ isOpen, onClose, onUpload }) => {
     );
 };
 
+import ReachInsightsModal from './ReachInsightsModal';
+
 const PlatformView = ({ platform }) => {
     const { country } = useOutletContext();
     const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'audience'
     const [audienceData, setAudienceData] = useState(null);
     const [selectedStory, setSelectedStory] = useState(null); // State for Story Modal
+    const [showReachModal, setShowReachModal] = useState(false); // State for Reach Modal
 
     const [data, setData] = useState({
         stats: [
@@ -370,6 +373,12 @@ const PlatformView = ({ platform }) => {
         }
     };
 
+    const handleStatCardClick = (stat) => {
+        if (stat.label === 'Alcance Total') {
+            setShowReachModal(true);
+        }
+    };
+
     return (
         <div className="space-y-8 animate-fade-in relative">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -435,7 +444,10 @@ const PlatformView = ({ platform }) => {
                             <>
                                 {/* Stats Grid - Should use grid layout from component */}
                                 <div className="w-full">
-                                    <StatCards stats={data.stats} />
+                                    <StatCards
+                                        stats={data.stats}
+                                        onCardClick={handleStatCardClick}
+                                    />
                                 </div>
 
                                 {platform === 'Instagram' ? (
@@ -543,6 +555,13 @@ const PlatformView = ({ platform }) => {
                 onClose={() => setSelectedStory(null)}
                 item={selectedStory}
                 onUpdate={handleContentUpdate}
+            />
+
+            {/* Modal for Reach Insights */}
+            <ReachInsightsModal
+                isOpen={showReachModal}
+                onClose={() => setShowReachModal(false)}
+                contentItems={data.contentItems}
             />
         </div>
     );
