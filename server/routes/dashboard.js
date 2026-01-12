@@ -112,8 +112,8 @@ router.get('/:country/:platform', async (req, res) => {
 
             try {
                 content = await pb.collection('tiktok_content').getFullList({
-                    filter: `country = "${country}"${dateFilter.replace(/date/g, 'date_published')}`,
-                    sort: '-date_published',
+                    filter: `country = "${country}"${dateFilter}`,
+                    sort: '-date',
                     requestKey: null
                 });
             } catch (e) {
@@ -123,7 +123,7 @@ router.get('/:country/:platform', async (req, res) => {
             // Normalize Content for Frontend
             content = content.map(c => ({
                 ...c,
-                date: c.date_published, // Map date_published to date
+                date: c.date, // Standardized date field
                 platform_type: 'video', // Enforce type
                 social_network: 'tiktok',
                 reach: c.views, // Use views as reach proxy? Or keep separate?
