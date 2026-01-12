@@ -480,24 +480,33 @@ const parseTikTokCSV = async (buffer, fileName) => {
                 const headersLower = headers.map(h => h.toLowerCase());
 
                 // 1. Content
-                if (headersLower.includes('video link') && headersLower.includes('video title')) {
+                // 1. Content
+                const linkHeader = headers.find(h => h.toLowerCase() === 'video link' || h.toLowerCase() === 'link do vídeo' || h.toLowerCase() === 'link do video');
+                const titleHeader = headers.find(h => h.toLowerCase() === 'video title' || h.toLowerCase() === 'título do vídeo' || h.toLowerCase() === 'titulo do video');
+
+                if (linkHeader && titleHeader) {
                     const contentData = data.map(row => {
-                        const link = row['Video link'] || '';
+                        const link = row[linkHeader] || '';
                         const idMatch = link.match(/\/video\/(\d+)/);
                         const original_id = idMatch ? idMatch[1] : link;
 
+                        // Find other headers dynamically
+                        const postTimeHeader = headers.find(h => h.toLowerCase() === 'post time' || h.toLowerCase() === 'tempo de publicação' || h.toLowerCase() === 'tempo de publicacao' || h.toLowerCase() === 'time');
+                        const likesHeader = headers.find(h => h.toLowerCase() === 'total likes' || h.toLowerCase() === 'curtidas' || h.toLowerCase() === 'total curtidas');
+                        const commentsHeader = headers.find(h => h.toLowerCase() === 'total comments' || h.toLowerCase() === 'comentários' || h.toLowerCase() === 'total comentários' || h.toLowerCase() === 'comentarios');
+                        const sharesHeader = headers.find(h => h.toLowerCase() === 'total shares' || h.toLowerCase() === 'compartilhamentos' || h.toLowerCase() === 'total compartilhamentos');
+                        const viewsHeader = headers.find(h => h.toLowerCase() === 'total views' || h.toLowerCase() === 'visualizações' || h.toLowerCase() === 'total visualizações' || h.toLowerCase() === 'visualizacoes');
+
                         return {
                             original_id,
-                            title: row['Video title'],
+                            title: row[titleHeader],
                             permalink: link,
-                            post_time: row['Post time'],
-                            date_published: parseDate(row['Post time'] || row['Time']),
-                            // Note: "Time" in Content.csv seems to be query time, "Post time" is publication.
-                            // Post time format "14 de outubro". We might need to guess year.
-                            likes: parseInt(row['Total likes'] || 0, 10),
-                            comments: parseInt(row['Total comments'] || 0, 10),
-                            shares: parseInt(row['Total shares'] || 0, 10),
-                            views: parseInt(row['Total views'] || 0, 10),
+                            post_time: postTimeHeader ? row[postTimeHeader] : null,
+                            date_published: parseDate(postTimeHeader ? row[postTimeHeader] : null),
+                            likes: parseInt(row[likesHeader] || 0, 10),
+                            comments: parseInt(row[commentsHeader] || 0, 10),
+                            shares: parseInt(row[sharesHeader] || 0, 10),
+                            views: parseInt(row[viewsHeader] || 0, 10),
                             platform: 'tiktok'
                         };
                     });
