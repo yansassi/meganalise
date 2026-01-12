@@ -99,6 +99,16 @@ const parseDate = (dateStr) => {
         if (yearPart) year = yearPart;
 
         if (day && month) {
+            // If year was not explicitly found in the string, apply future-date heuristic
+            if (!yearPart) {
+                const currentYear = new Date().getFullYear();
+                const tempDate = new Date(currentYear, parseInt(month) - 1, parseInt(day));
+                // If the date in current year is in the future (e.g., "Jan 25" when today is "Jan 12"),
+                // assume it belongs to the previous year.
+                if (tempDate > new Date()) {
+                    year = currentYear - 1;
+                }
+            }
             return `${year}-${month}-${day.toString().padStart(2, '0')}`;
         }
     }
