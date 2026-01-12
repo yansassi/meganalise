@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatNumber } from '../../utils/formatters';
 
-const StatCards = ({ stats = [] }) => {
+const StatCards = ({ stats = [], onCardClick }) => {
     const getCardStyles = (color) => {
         switch (color) {
             case 'green':
@@ -55,8 +55,9 @@ const StatCards = ({ stats = [] }) => {
                 return (
                     <div
                         key={stat.label}
+                        onClick={() => onCardClick && onCardClick(stat)}
                         style={{ animationDelay: `${index * 100}ms` }}
-                        className={`animate-entrance ${styles.container} rounded-2xl p-5 shadow-lg relative overflow-hidden group min-h-[140px] flex flex-col justify-between transition-transform hover:-translate-y-1 duration-300`}
+                        className={`animate-entrance ${styles.container} ${onCardClick ? 'cursor-pointer hover:scale-[1.03] active:scale-95' : 'hover:-translate-y-1'} rounded-2xl p-5 shadow-lg relative overflow-hidden group min-h-[140px] flex flex-col justify-between transition-transform duration-300`}
                     >
                         {/* Decorative large icon for colored cards */}
                         {styles.decorativeIcon && (
