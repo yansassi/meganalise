@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDate } from '../../utils/formatters';
 import { useOutletContext } from 'react-router-dom';
 import { dataService } from '../../services/dataService';
 import StatCards from './StatCards';
@@ -6,17 +7,11 @@ import ContentGrid from './ContentGrid';
 import DateRangeFilter from './DateRangeFilter';
 
 const StoriesDashboard = () => {
-    const { country } = useOutletContext();
+    const { country, dateRange, setDateRange } = useOutletContext();
     const [data, setData] = useState({
         stats: [],
         contentItems: [],
         isLoaded: false
-    });
-    const [dateRange, setDateRange] = useState(() => {
-        const end = new Date();
-        const start = new Date();
-        start.setDate(end.getDate() - 30);
-        return { startDate: start, endDate: end };
     });
 
     useEffect(() => {
@@ -59,7 +54,7 @@ const StoriesDashboard = () => {
             platform: c.platform_type, // Use actual platform type (story)
             permalink: c.permalink, // For external link
             manager: 'Time Social',
-            date: new Date(c.date).toLocaleDateString('pt-BR'),
+            date: formatDate(c.date),
             virality: c.virality_score,
             status: c.status,
             reach: c.reach,
@@ -89,7 +84,7 @@ const StoriesDashboard = () => {
                         {country === 'BR' ? '🇧🇷' : '🇵🇾'}
                     </span>
                 </div>
-                <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" />
+                <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" initialRange={dateRange} />
             </div>
 
             <StatCards stats={data.stats} />

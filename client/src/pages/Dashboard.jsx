@@ -8,7 +8,7 @@ import DateRangeFilter from '../components/dashboard/DateRangeFilter';
 import { dataService } from '../services/dataService'; // We'll double check path
 
 const Dashboard = () => {
-    const { country } = useOutletContext();
+    const { country, dateRange, setDateRange } = useOutletContext();
     const [stats, setStats] = useState([
         { label: 'Alcance Total', value: 0, trend: 0, icon: 'visibility', color: 'blue' },
         { label: 'Engajamento', value: 0, trend: 0, icon: 'favorite', color: 'purple' },
@@ -16,12 +16,6 @@ const Dashboard = () => {
         { label: 'Campanhas', value: 0, trend: 0, icon: 'rocket_launch', color: 'green' },
     ]);
     const [loading, setLoading] = useState(true);
-    const [dateRange, setDateRange] = useState(() => {
-        const end = new Date();
-        const start = new Date();
-        start.setDate(end.getDate() - 90);
-        return { startDate: start, endDate: end };
-    });
 
     useEffect(() => {
         const loadAggregatedData = async () => {
@@ -82,7 +76,7 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" />
+                <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" initialRange={dateRange} />
             </div>
 
             <div className="flex flex-col xl:flex-row gap-8">

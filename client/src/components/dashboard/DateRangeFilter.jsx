@@ -1,24 +1,31 @@
 import React, { useState, useEffect } from 'react';
 
-const DateRangeFilter = ({ onFilterChange, className }) => {
+const DateRangeFilter = ({ onFilterChange, className, initialRange }) => {
     // Helper to format date as YYYY-MM-DD
     const formatDate = (date) => {
-        return date.toISOString().split('T')[0];
+        if (!date) return new Date().toISOString().split('T')[0];
+        const d = new Date(date);
+        return isNaN(d.getTime()) ? new Date().toISOString().split('T')[0] : d.toISOString().split('T')[0];
     };
 
-    // Initialize with "Last 30 Days"
+    // Initialize with provided range or "Last 30 Days"
     const [startDate, setStartDate] = useState(() => {
+        if (initialRange?.startDate) return formatDate(initialRange.startDate);
+
         const d = new Date();
         d.setDate(d.getDate() - 30);
         return formatDate(d);
     });
 
     const [endDate, setEndDate] = useState(() => {
+        if (initialRange?.endDate) return formatDate(initialRange.endDate);
+
         const d = new Date();
         return formatDate(d);
     });
 
-    const [activePreset, setActivePreset] = useState('last30');
+    // Determine initial preset if straightforward, else 'custom'
+    const [activePreset, setActivePreset] = useState('custom');
 
     // Notify parent whenever dates change
     useEffect(() => {

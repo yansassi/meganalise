@@ -119,7 +119,7 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                     // Assuming 'date' field in PB is 'date' type.
 
                     const recordData = {
-                        date: new Date(item.date).toISOString(),
+                        date: new Date(item.date + 'T12:00:00.000Z').toISOString(),
                         metric: item.metric,
                         value: item.value,
                         platform: 'instagram',
@@ -234,7 +234,7 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                     });
 
                     const recordData = {
-                        date: new Date(item.date).toISOString(),
+                        date: new Date(item.date + 'T12:00:00.000Z').toISOString(),
                         metric: item.metric,
                         value: item.value,
                         platform: 'tiktok',

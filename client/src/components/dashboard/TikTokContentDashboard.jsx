@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatDate } from '../../utils/formatters';
 import { useOutletContext } from 'react-router-dom';
 import { dataService } from '../../services/dataService';
 import ContentGrid from './ContentGrid';
@@ -6,17 +7,11 @@ import StatCards from './StatCards';
 import DateRangeFilter from './DateRangeFilter';
 
 const TikTokContentDashboard = () => {
-    const { country } = useOutletContext();
+    const { country, dateRange, setDateRange } = useOutletContext();
     const [data, setData] = useState({
         videos: [],
         stats: [],
         isLoaded: false
-    });
-    const [dateRange, setDateRange] = useState(() => {
-        const end = new Date();
-        const start = new Date();
-        start.setDate(end.getDate() - 30);
-        return { startDate: start, endDate: end };
     });
 
     useEffect(() => {
@@ -44,7 +39,7 @@ const TikTokContentDashboard = () => {
                 imageFile: c.image_file,
                 platform: 'tiktok', // Explicitly set platform for grid/modal
                 manager: 'Time Social',
-                date: c.date ? new Date(c.date).toLocaleDateString('pt-BR') : 'N/A',
+                date: c.date ? formatDate(c.date) : 'N/A',
                 status: 'Published',
                 // TikTok specific metrics mapping
                 views: c.views || 0,
@@ -88,7 +83,7 @@ const TikTokContentDashboard = () => {
                         {country === 'BR' ? '🇧🇷' : '🇵🇾'}
                     </span>
                 </div>
-                <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" />
+                <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" initialRange={dateRange} />
             </div>
 
             {data.isLoaded && (

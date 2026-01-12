@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { formatDate } from '../utils/formatters';
 import { useParams, useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
 
@@ -191,7 +192,7 @@ export default function EvidenceDashboard() {
         platform: c.platform_type || 'social',
         permalink: c.permalink,
         manager: 'Time Social',
-        date: new Date(c.date).toLocaleDateString('pt-BR'),
+        date: formatDate(c.date),
         virality: c.virality_score,
         status: c.status,
         reach: c.reach,

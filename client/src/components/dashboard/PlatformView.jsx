@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { formatNumber, formatDate } from '../../utils/formatters';
 import { useOutletContext } from 'react-router-dom';
 import { instagramParser } from '../../services/instagramParser';
 import { dataService } from '../../services/dataService';
@@ -101,7 +102,7 @@ const UploadModal = ({ isOpen, onClose, onUpload }) => {
 import ReachInsightsModal from './ReachInsightsModal';
 
 const PlatformView = ({ platform }) => {
-    const { country } = useOutletContext();
+    const { country, dateRange, setDateRange } = useOutletContext();
     const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'audience'
     const [audienceData, setAudienceData] = useState(null);
     const [selectedStory, setSelectedStory] = useState(null); // State for Story Modal
@@ -117,12 +118,6 @@ const PlatformView = ({ platform }) => {
         retentionData: [],
         contentItems: [],
         isLoaded: false
-    });
-    const [dateRange, setDateRange] = useState(() => {
-        const end = new Date();
-        const start = new Date();
-        start.setDate(end.getDate() - 365);
-        return { startDate: start, endDate: end };
     });
 
 
@@ -274,7 +269,7 @@ const PlatformView = ({ platform }) => {
                 imageFile: c.image_file,
                 platform: c.platform_type,
                 manager: 'Time Social',
-                date: new Date(c.date).toLocaleDateString('pt-BR'),
+                date: formatDate(c.date),
                 rawDate: c.date,
                 postingTime: c.posting_time,
                 virality: c.virality_score,
@@ -389,7 +384,7 @@ const PlatformView = ({ platform }) => {
                     </span>
                 </div>
 
-                <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" />
+                <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" initialRange={dateRange} />
             </div>
 
             {/* Tabs Navigation */}
