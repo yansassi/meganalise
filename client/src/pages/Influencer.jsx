@@ -186,7 +186,7 @@ export default function Influencer() {
                                     <div>
                                         <div className="flex justify-between items-start mb-2">
                                             <div className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-[10px] font-bold text-slate-500 uppercase">
-                                                {reg.country === 'BR' ? 'Brasil' : 'Paraguai'}
+                                                {reg.country === 'BR' ? '🇧🇷' : '🇵🇾'}
                                             </div>
                                         </div>
 
@@ -261,8 +261,8 @@ export default function Influencer() {
                                     value={formData.country}
                                     onChange={handleInputChange}
                                 >
-                                    <option value="BR">Brasil (Português)</option>
-                                    <option value="PY">Paraguai (Espanhol)</option>
+                                    <option value="BR">🇧🇷 Brasil (Português)</option>
+                                    <option value="PY">🇵🇾 Paraguai (Espanhol)</option>
                                 </select>
                             </div>
 

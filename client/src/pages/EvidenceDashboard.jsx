@@ -225,7 +225,7 @@ export default function EvidenceDashboard() {
                     <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500 font-medium">
                         <span className="flex items-center gap-1 bg-slate-100 rounded-lg px-2 py-1">
                             <span className="material-icons-round text-sm">public</span>
-                            {registry.country === 'BR' ? 'Brasil' : registry.country === 'PY' ? 'Paraguai' : registry.country}
+                            {registry.country === 'BR' ? '🇧🇷' : registry.country === 'PY' ? '🇵🇾' : registry.country}
                         </span>
                         <span className="flex items-center gap-1 bg-slate-100 rounded-lg px-2 py-1">
                             <span className="material-icons-round text-sm">calendar_today</span>
@@ -244,6 +244,13 @@ export default function EvidenceDashboard() {
                     >
                         <span className="material-icons-round">edit</span>
                         Editar
+                    </button>
+                    <button
+                        onClick={() => navigate(`/presentation/${id}`)}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-xl font-bold text-sm transition-colors flex items-center gap-2 shadow-lg hover:shadow-indigo-500/30"
+                    >
+                        <span className="material-icons-round">slideshow</span>
+                        Gerar Apresentação
                     </button>
                     <button
                         onClick={() => window.print()}
