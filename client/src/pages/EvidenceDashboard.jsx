@@ -21,7 +21,9 @@ const EditRegistryModal = ({ registry, onClose, onSave }) => {
         title: registry.title,
         start_date: registry.start_date.split('T')[0], // Extract YYYY-MM-DD
         end_date: registry.end_date.split('T')[0],
-        keywords: registry.keywords.join(', ')
+        keywords: registry.keywords.join(', '),
+        country: registry.country || 'Brasil',
+        type: registry.type || 'keyword'
     });
 
     const handleChange = (e) => {
@@ -31,7 +33,10 @@ const EditRegistryModal = ({ registry, onClose, onSave }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        const keywordsList = formData.keywords.split(',').map(k => k.trim()).filter(k => k);
+        const keywordsList = formData.type === 'influencer'
+            ? formData.keywords.split(',').map(k => k.trim()).filter(k => k) // Just keep as is for edits for now
+            : formData.keywords.split(',').map(k => k.trim()).filter(k => k);
+
         onSave({
             ...formData,
             keywords: keywordsList
@@ -81,8 +86,24 @@ const EditRegistryModal = ({ registry, onClose, onSave }) => {
                         </div>
                     </div>
 
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">País / Idioma</label>
+                            <select
+                                name="country"
+                                required
+                                className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 outline-none transition-all font-medium text-slate-600 appearance-none"
+                                value={formData.country}
+                                onChange={handleChange}
+                            >
+                                <option value="Brasil">Brasil (Português)</option>
+                                <option value="Paraguai">Paraguai (Espanhol)</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Palavras-chave</label>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">{formData.type === 'influencer' ? 'Usuário / Handle' : 'Palavras-chave'}</label>
                         <input
                             type="text"
                             name="keywords"
@@ -158,6 +179,7 @@ export default function EvidenceDashboard() {
     if (!data) return <div className="p-10 text-center text-slate-400">Registro não encontrado.</div>;
 
     const { registry, metrics, content } = data;
+    const isInfluencer = registry.type === 'influencer';
 
     // Map content for Grid
     const contentItems = content.map(c => ({
@@ -185,20 +207,32 @@ export default function EvidenceDashboard() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-card-dark p-8 rounded-3xl shadow-soft gap-4">
                 <div>
                     <button
-                        onClick={() => navigate('/evidence')}
-                        className="text-sm font-bold text-slate-400 hover:text-blue-600 mb-2 flex items-center gap-1 transition-colors"
+                        onClick={() => navigate(isInfluencer ? '/influencer' : '/evidence')}
+                        className={`text-sm font-bold mb-2 flex items-center gap-1 transition-colors ${isInfluencer ? 'text-purple-400 hover:text-purple-600' : 'text-slate-400 hover:text-blue-600'}`}
                     >
                         <span className="material-icons-round text-sm">arrow_back</span>
-                        Voltar para Registros
+                        {isInfluencer ? 'Voltar para Influenciadores' : 'Voltar para Registros'}
                     </button>
-                    <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight mb-2">{registry.title}</h1>
+                    <div className="flex items-center gap-3 mb-2">
+                        {isInfluencer && (
+                            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-sm">
+                                <span className="material-icons-round">person</span>
+                            </div>
+                        )}
+                        <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">{registry.title}</h1>
+                    </div>
+
                     <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500 font-medium">
+                        <span className="flex items-center gap-1 bg-slate-100 rounded-lg px-2 py-1">
+                            <span className="material-icons-round text-sm">public</span>
+                            {registry.country || 'Brasil'}
+                        </span>
                         <span className="flex items-center gap-1 bg-slate-100 rounded-lg px-2 py-1">
                             <span className="material-icons-round text-sm">calendar_today</span>
                             {new Date(registry.start_date).toLocaleDateString()} - {new Date(registry.end_date).toLocaleDateString()}
                         </span>
                         <span className="flex items-center gap-1 bg-slate-100 rounded-lg px-2 py-1">
-                            <span className="material-icons-round text-sm">tag</span>
+                            <span className="material-icons-round text-sm">{isInfluencer ? 'alternate_email' : 'tag'}</span>
                             {registry.keywords?.join(', ')}
                         </span>
                     </div>

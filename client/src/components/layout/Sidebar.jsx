@@ -47,6 +47,11 @@ const Sidebar = ({ country }) => {
       icon: 'folder_special',
       path: '/evidence'
     },
+    {
+      name: 'Influenciadores',
+      icon: 'person',
+      path: '/influencer'
+    },
     { name: 'Configurações', icon: 'settings', path: '/settings' },
   ];
 

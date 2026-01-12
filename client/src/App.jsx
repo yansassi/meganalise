@@ -9,6 +9,7 @@ import StoriesDashboard from './components/dashboard/StoriesDashboard';
 import ContentDashboard from './components/dashboard/ContentDashboard';
 import InstagramAudienceTab from './components/dashboard/InstagramAudienceTab';
 import Evidence from './pages/Evidence';
+import Influencer from './pages/Influencer';
 import EvidenceDashboard from './pages/EvidenceDashboard';
 import TikTokContentDashboard from './components/dashboard/TikTokContentDashboard';
 
@@ -52,6 +53,7 @@ function App() {
               <Route path="platform/tiktok/content" element={<TikTokContentDashboard />} />
               <Route path="platform/facebook" element={<PlatformView platform="Facebook" />} />
               <Route path="evidence" element={<Evidence />} />
+              <Route path="influencer" element={<Influencer />} />
               <Route path="evidence/:id" element={<EvidenceDashboard />} />
               <Route path="settings" element={<Settings />} />
               <Route path="profile" element={<Profile />} />

@@ -15,7 +15,7 @@ Estas são as coleções principais utilizadas pela lógica de negócio da aplic
 | **`instagram_daily_metrics`** | `base` | `id`, `platform` (select), `date` (date), `metric_category` (text), `created`, `updated` |
 | **`instagram_content`** | `base` | `id`, `original_id` (text), `title` (text), `image_url` (text), `permalink` (text), `created`, `updated` |
 | **`instagram_audience_demographics`** | `base` | `id`, `platform` (text), `import_date` (date), `gender_age` (select), `created`, `updated` |
-| **`evidence_registries`** | `base` | `id`, `title` (text), `start_date` (date), `end_date` (date), `keywords` (json), `created`, `updated` |
+| **`evidence_registries`** | `base` | `id`, `title` (text), `start_date` (date), `end_date` (date), `keywords` (json), `country` (text), `type` (text), `created`, `updated` |
 
 ---
 
@@ -227,10 +227,12 @@ A funcionalidade de Evidência permite criar registros de monitoramento de marca
 
 **Estrutura:**
 *   `id`: Identificador único do registro.
-*   `title`: Nome/título do registro (ex: "Campanha Natal 2025").
+*   `title`: Nome/título do registro (ex: "Campanha Natal 2025" ou "Nome do Influencer").
 *   `start_date`: Data de início do período de monitoramento (formato: YYYY-MM-DD).
 *   `end_date`: Data de fim do período de monitoramento (formato: YYYY-MM-DD).
 *   `keywords`: Array de palavras-chave em formato JSON (ex: `["realme", "smartphone", "oferta"]`).
+*   `country`: País do registro (ex: "Brasil", "Paraguai"). **[NOVO CAMPO]**
+*   `type`: Tipo do registro (`keyword` ou `influencer`). **[NOVO CAMPO]**
 *   `created`: Data de criação do registro.
 *   `updated`: Data da última atualização.
 

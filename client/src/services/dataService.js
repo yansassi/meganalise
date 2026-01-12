@@ -290,7 +290,10 @@ export const dataService = {
             // Keywords stored as JSON
             const payload = {
                 ...data,
-                keywords: JSON.stringify(data.keywords)
+                keywords: JSON.stringify(data.keywords),
+                // Ensure type and country are saved if provided, defaults if not
+                type: data.type || 'keyword',
+                country: data.country || 'Brazil' // Default to Brazil if not specified
             };
 
             // Check if we are updating or creating (if ID exists)
@@ -368,6 +371,17 @@ export const dataService = {
             // 3. Construct Filter
             // Combine Date range AND Keywords
             let filter = `date >= "${startDateStr} 00:00:00" && date <= "${endDateStr} 23:59:59"`;
+
+            // Filter by country if registry has it
+            if (registry.country) {
+                // Map frontend country names to DB country codes if necessary, or just use what is saved
+                // Assuming consistency: 'Brazil' -> 'Brazil' or 'BR'. Let's assume strict match for now.
+                // NOTE: 'Brazil' vs 'Brasil' mismatch risk.
+                // Best practice: Use codes (BR, PY) or normalized names.
+                // Current upload uses "Brasil", "Paraguai".
+                // Registry should save "Brasil", "Paraguai".
+                filter += ` && country = "${registry.country}"`;
+            }
 
             if (keywords.length > 0) {
                 // (title ~ "k1" || title ~ "k2" || ...)
