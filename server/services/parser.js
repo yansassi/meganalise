@@ -491,7 +491,7 @@ const parseTikTokCSV = async (buffer, fileName) => {
                             title: row['Video title'],
                             permalink: link,
                             post_time: row['Post time'],
-                            date_published: row['Time'], // "8 de janeiro" - assumes current year/ref? 
+                            date_published: parseDate(row['Post time'] || row['Time']),
                             // Note: "Time" in Content.csv seems to be query time, "Post time" is publication.
                             // Post time format "14 de outubro". We might need to guess year.
                             likes: parseInt(row['Total likes'] || 0, 10),
