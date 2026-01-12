@@ -208,7 +208,9 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                         views: item.views,
                         country: country, // Added country
                         date: item.date_published ? new Date(item.date_published + 'T12:00:00.000Z').toISOString() : new Date().toISOString(), // Standardize to 'date' with noon time to prevent TZ rollback
-                        author: item.author || '' // Standardize to 'author', default empty if parser doesn't find it
+                        author: item.author || '', // Standardize to 'author'
+                        social_network: 'tiktok', // CRITICAL for frontend identification
+                        platform_type: 'video' // Standardize platform type
                     };
 
                     if (existing.items.length > 0) {

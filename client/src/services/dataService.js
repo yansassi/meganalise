@@ -393,12 +393,19 @@ export const dataService = {
             const collections = ['instagram_content', 'tiktok_content'];
 
             // Execute queries in parallel
+            // Execute queries in parallel
             const queryPromises = collections.map(collectionName =>
                 pb.collection(collectionName).getList(1, 500, {
                     filter: filter,
                     sort: '-date',
                     requestKey: null // Disable auto-cancellation
-                }).catch(err => {
+                }).then(res => ({
+                    items: res.items.map(item => ({
+                        ...item,
+                        social_network: collectionName === 'tiktok_content' ? 'tiktok' : 'instagram',
+                        platform: collectionName === 'tiktok_content' ? 'video' : (item.platform_type || 'social')
+                    }))
+                })).catch(err => {
                     console.warn(`Error querying ${collectionName}`, err);
                     return { items: [] };
                 })
