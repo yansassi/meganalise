@@ -85,7 +85,8 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
                 item.pbId = result.id; // Ensure pbId is set
 
                 // Generate the uploaded image URL immediately
-                const newImageUrl = `https://auth.meganalise.pro/api/files/instagram_content/${result.id}/${result.image_file}`;
+                const collectionName = platform === 'tiktok' ? 'tiktok_content' : 'instagram_content';
+                const newImageUrl = `https://auth.meganalise.pro/api/files/${collectionName}/${result.id}/${result.image_file}`;
                 setUploadedImageUrl(newImageUrl);
 
                 // Propagate update to parent if callback exists

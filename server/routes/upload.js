@@ -80,7 +80,7 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                         platform_type: contentType, // Matched to frontend expectation
                         social_network: 'instagram',
                         country: country,
-                        date: item.date ? new Date(item.date).toISOString() : new Date().toISOString(),
+                        date: item.date ? new Date(item.date + 'T12:00:00.000Z').toISOString() : new Date().toISOString(),
                         posting_time: item.posting_time,
                         reach: item.reach,
                         likes: item.likes,
@@ -207,7 +207,7 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                         shares: item.shares,
                         views: item.views,
                         country: country, // Added country
-                        date: item.date_published ? new Date(item.date_published).toISOString() : new Date().toISOString(), // Standardize to 'date'
+                        date: item.date_published ? new Date(item.date_published + 'T12:00:00.000Z').toISOString() : new Date().toISOString(), // Standardize to 'date' with noon time to prevent TZ rollback
                         author: item.author || '' // Standardize to 'author', default empty if parser doesn't find it
                     };
 
