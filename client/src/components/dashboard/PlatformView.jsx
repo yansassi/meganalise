@@ -143,369 +143,214 @@ const PlatformView = ({ platform }) => {
         }
     };
 
-    const processDbData = (dbData) => {
-        let reach = 0, interactions = 0, followers = 0, websiteClicks = 0, profileVisits = 0, storyViews = 0;
-        let impressions = 0;
-        const followersParams = { start: null, end: null };
-        const chartMap = {};
+    setData({
+        stats,
+        chartData,
+        retentionData,
+        contentItems,
+        reels,
+        stories,
+        isLoaded: true
+    });
+};
 
-        const followersData = [];
+const handleContentUpdate = (updatedItem) => {
+    // Update item in local state to reflect changes (e.g. image upload) without reload
+    setData(prev => {
+        const updateList = (list) => list.map(item =>
+            (item.id === updatedItem.id || item.pbId === updatedItem.pbId) ? { ...item, ...updatedItem } : item
+        );
 
-        dbData.metrics.forEach(m => {
-            if (m.metric === 'reach') reach += m.value;
-            if (m.metric === 'impressions') impressions += m.value;
-            if (m.metric === 'interactions') interactions += m.value;
+        return {
+            ...prev,
+            stories: updateList(prev.stories),
+            reels: updateList(prev.reels),
+            contentItems: updateList(prev.contentItems)
+        };
+    });
 
-            // TikTok Specific Mappings
-            if (m.metric === 'video_views') impressions += m.value; // Map Video Views to Impressions
-            if (m.metric === 'profile_views') profileVisits += m.value;
-            if (m.metric === 'likes' || m.metric === 'comments' || m.metric === 'shares') {
-                interactions += m.value;
-            }
-            if (m.metric === 'followers_total') {
-                // For 'followers_total', it's a cumulative value, not daily gain (usually).
-                // Existing logic for 'followers' assumes daily GAIN if the file was "Seguidores.csv" (which was empty/unknown).
-                // But for TikTok FollowerHistory, we have 'followers_total' and 'followers_change'.
-                const d = new Date(m.date).getTime();
-                if (!followersParams.start || d < followersParams.start.date) followersParams.start = { date: d, value: m.value };
-                if (!followersParams.end || d > followersParams.end.date) followersParams.end = { date: d, value: m.value };
+    // Also update selected story to show immediate changes if keep open
+    if (selectedStory && (selectedStory.id === updatedItem.id || selectedStory.pbId === updatedItem.pbId)) {
+        setSelectedStory(prev => ({ ...prev, ...updatedItem }));
+    }
+};
 
-                // If we want to show growth chart based on total, we keep this.
-                // But wait, existing logic (line 159) pushes to followersData.
-                followersData.push({ date: m.date, value: m.value });
-            }
-            if (m.metric === 'followers_change') {
-                // Explicit daily change
-                // We can use this for the bar chart if available
-            }
-
-
-            if (m.metric === 'followers') {
-                const d = new Date(m.date).getTime();
-                if (!followersParams.start || d < followersParams.start.date) followersParams.start = { date: d, value: m.value };
-                if (!followersParams.end || d > followersParams.end.date) followersParams.end = { date: d, value: m.value };
-
-                followersData.push({ date: m.date, value: m.value });
-            }
-            if (m.metric === 'website_clicks') websiteClicks += m.value;
-            if (m.metric === 'profile_visits') profileVisits += m.value;
-
-            if (m.metric === 'reach' || m.metric === 'video_views') {
-                chartMap[m.date] = (chartMap[m.date] || 0) + m.value;
-            }
-        });
-
-        // TikTok Retention Processing
-        const retentionMap = {};
-        if (platform === 'TikTok') {
-            dbData.metrics.forEach(m => {
-                if (['total_viewers', 'new_viewers', 'returning_viewers'].includes(m.metric)) {
-                    if (!retentionMap[m.date]) retentionMap[m.date] = { date: m.date };
-                    retentionMap[m.date][m.metric] = m.value;
-                }
-            });
-        }
-        const retentionData = Object.values(retentionMap).sort((a, b) => new Date(a.date) - new Date(b.date));
-
-        // Compute Follower Growth (Delta)
-        const followerGrowthMap = {};
-        followersData.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-        for (let i = 1; i < followersData.length; i++) {
-            const current = followersData[i];
-            const prev = followersData[i - 1];
-            // Only calculate diff if dates are consecutive? Or just diff between available points.
-            // Assuming daily data points.
-            const diff = current.value - prev.value;
-            followerGrowthMap[current.date] = diff;
-        }
-
-        // Calculate Net Follower Growth Total
-        let netFollowers = 0;
-        if (followersParams.start && followersParams.end) {
-            netFollowers = followersParams.end.value - followersParams.start.value;
-        }
-
-        // Prepare Chart Data: Prioritize Follower Growth, fallback to Reach
-        let finalChartMap = chartMap;
-        let isGrowthData = false;
-
-        if (Object.keys(followerGrowthMap).length > 0) {
-            finalChartMap = followerGrowthMap;
-            isGrowthData = true;
-        }
-
-        const chartData = Object.keys(finalChartMap).sort().map(date => ({
-            name: date,
-            value: finalChartMap[date]
-        }));
-
-        let reels = [];
-        let stories = [];
-
-        const contentItems = dbData.content.map(c => {
-            const item = {
-                id: c.original_id,
-                pbId: c.id, // PocketBase internal ID for updates
-                title: c.title,
-                imageUrl: c.image_url,
-                imageFile: c.image_file, // Include image_file from DB
-                platform: c.platform_type,
-                manager: 'Time Social',
-                date: new Date(c.date).toLocaleDateString('pt-BR'),
-                rawDate: c.date,
-                postingTime: c.posting_time,
-                virality: c.virality_score,
-                status: c.status,
-                reach: c.reach,
-                saved: c.saved,
-                views: c.views,
-                duration: c.duration,
-                permalink: c.permalink,
-                likes: c.likes,
-                shares: c.shares,
-                comments: c.comments,
-                social_network: c.social_network // Pass social_network from DB to Item
-            };
-
-            if (platform === 'Instagram') {
-                const isStory = c.platform_type === 'story' || (c.platform_type === 'social' && c.title?.startsWith('Story -'));
-
-                if (isStory) {
-                    // It is a story
-                    if (c.platform_type === 'story' || (c.platform_type === 'social' && c.title?.startsWith('Story -'))) {
-                        storyViews += (c.views || 0);
-                        stories.push(item);
-                    }
-                } else {
-                    // It is a Reel or Feed Post
-                    reels.push(item);
-                }
-            }
-            return item;
-        });
-
-        const stats = [
-            { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
-            { label: 'Visualizações', value: impressions, trend: 0, icon: 'trending_up', color: 'indigo' }, // New Card
-            { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
-            { label: 'Seguidores (Saldo)', value: netFollowers, trend: 0, icon: 'group_add', color: 'green' }, // Updated Label
-            { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
-            { label: 'Cliques no Link', value: websiteClicks, trend: 0, icon: 'link', color: 'orange' }
-        ];
-
-        if (platform === 'Instagram') {
-            stats.push({ label: 'Views em Stories', value: storyViews, trend: 0, icon: 'amp_stories', color: 'pink' });
-        }
-
-        setData({
-            stats,
-            chartData,
-            retentionData,
-            contentItems,
-            reels,
-            stories,
-            isLoaded: true
-        });
-    };
-
-    const handleContentUpdate = (updatedItem) => {
-        // Update item in local state to reflect changes (e.g. image upload) without reload
-        setData(prev => {
-            const updateList = (list) => list.map(item =>
-                (item.id === updatedItem.id || item.pbId === updatedItem.pbId) ? { ...item, ...updatedItem } : item
-            );
-
-            return {
-                ...prev,
-                stories: updateList(prev.stories),
-                reels: updateList(prev.reels),
-                contentItems: updateList(prev.contentItems)
-            };
-        });
-
-        // Also update selected story to show immediate changes if keep open
-        if (selectedStory && (selectedStory.id === updatedItem.id || selectedStory.pbId === updatedItem.pbId)) {
-            setSelectedStory(prev => ({ ...prev, ...updatedItem }));
-        }
-    };
-
-    return (
-        <div className="space-y-8 animate-fade-in relative">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold">{platform} - Dados</h1>
-                    <span className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-white/10 text-xs font-bold border border-gray-200 dark:border-white/10">
-                        {country}
-                    </span>
-                </div>
-
-                <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" />
+return (
+    <div className="space-y-8 animate-fade-in relative">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-bold">{platform} - Dados</h1>
+                <span className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-white/10 text-xs font-bold border border-gray-200 dark:border-white/10">
+                    {country}
+                </span>
             </div>
 
-            {/* Tabs Navigation */}
-            <div className="flex items-center space-x-10 mb-8 border-b border-gray-200 pb-px">
-                <button
-                    onClick={() => setActiveTab('overview')}
-                    className={`pb-4 border-b-2 font-bold text-sm transition-all ${activeTab === 'overview' ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-gray-400 hover:text-gray-600'
-                        }`}
-                >
-                    Resumo
-                </button>
-                <button
-                    onClick={() => setActiveTab('audience')}
-                    className={`pb-4 border-b-2 font-bold text-sm flex items-center transition-all ${activeTab === 'audience' ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-gray-400 hover:text-gray-600'
-                        }`}
-                >
-                    Público
-                    {audienceData && <span className="ml-2 w-1.5 h-1.5 bg-green-500 rounded-full"></span>}
-                </button>
-                <button
-                    onClick={() => setActiveTab('intelligence')}
-                    className={`pb-4 border-b-2 font-bold text-sm flex items-center transition-all ${activeTab === 'intelligence' ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-gray-400 hover:text-gray-600'
-                        }`}
-                >
-                    Estratégia
-                    <span className="ml-2 material-icons-round text-xs text-yellow-400">bolt</span>
-                </button>
-            </div>
-
-            {(!data.isLoaded && !audienceData) && (
-                <div className="border-3 border-dashed border-gray-200 dark:border-gray-700 rounded-3xl p-12 text-center">
-                    <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span className="material-icons-round text-3xl">bar_chart</span>
-                    </div>
-                    <h3 className="text-lg font-bold mb-2">Sem dados para exibir</h3>
-                    <p className="text-gray-400 text-sm max-w-sm mx-auto mb-4">
-                        Nenhum dado encontrado para {platform} ({country}).
-                    </p>
-                    <a href="/upload" className="inline-flex items-center gap-2 text-primary font-bold hover:underline">
-                        Ir para Enviar Métricas
-                        <span className="material-icons-round text-sm">arrow_forward</span>
-                    </a>
-                </div>
-            )}
-
-            {/* Dashboard Content */}
-            {(data.isLoaded || audienceData) && (
-                <div className="flex flex-col gap-8 w-full">
-                    {/* Main Content Area - Full Width */}
-                    <div className="w-full space-y-8">
-                        {activeTab === 'overview' && data.isLoaded && (
-                            <>
-                                {/* Stats Grid - Should use grid layout from component */}
-                                <div className="w-full">
-                                    <StatCards stats={data.stats} />
-                                </div>
-
-                                {platform === 'Instagram' ? (
-                                    <div className="space-y-12 mt-8">
-                                        {/* 1. Stories Reel */}
-                                        <section className="w-full overflow-hidden">
-                                            <MediaReel
-                                                title="Stories Recentes"
-                                                items={(data.stories || []).slice(0, 25)}
-                                                onItemClick={(story) => setSelectedStory(story)}
-                                            />
-                                        </section>
-
-                                        {/* 2. Growth Chart (Reach/Views context) */}
-                                        <section className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                                            <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Alcance</h3>
-                                            <div className="w-full h-[300px]">
-                                                {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
-                                            </div>
-                                        </section>
-
-                                        {/* 3. Feed/Reels Reel */}
-                                        <section className="w-full overflow-hidden">
-                                            <MediaReel
-                                                title="Reels e Feed"
-                                                items={(data.reels || []).slice(0, 25)}
-                                                onItemClick={(item) => setSelectedStory(item)}
-                                            />
-                                        </section>
-
-                                        {/* 4. Growth Chart (Interactions context) */}
-                                        <section className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-                                            <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Crescimento (Interações)</h3>
-                                            <div className="w-full h-[300px]">
-                                                {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
-                                            </div>
-                                        </section>
-                                    </div>
-                                ) : (
-                                    <>
-                                        {platform === 'TikTok' ? (
-                                            /* TikTok specific layout */
-                                            <div className="space-y-12">
-                                                {/* Retention Chart */}
-                                                {data.retentionData.length > 0 && (
-                                                    <div className="w-full">
-                                                        <RetentionChart data={data.retentionData} />
-                                                    </div>
-                                                )}
-
-                                                {/* Content Reel (Grid View) */}
-                                                <section className="w-full overflow-hidden">
-                                                    <MediaReel
-                                                        title="Publicações Recentes"
-                                                        items={(data.contentItems || []).slice(0, 25)}
-                                                        onItemClick={(item) => setSelectedStory(item)}
-                                                    />
-                                                </section>
-
-                                                {/* Growth Chart */}
-                                                {data.chartData.length > 0 && (
-                                                    <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
-                                                        <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Crescimento</h3>
-                                                        <GrowthChart data={data.chartData} />
-                                                    </div>
-                                                )}
-
-                                                {/* Content Table (Detailed View) */}
-                                                <div className="w-full">
-                                                    <ContentTable items={data.contentItems} />
-                                                </div>
-                                            </div>
-                                        ) : (
-                                            /* Generic/Other Platform Fallback */
-                                            <>
-                                                {data.chartData.length > 0 && (
-                                                    <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
-                                                        <GrowthChart data={data.chartData} />
-                                                    </div>
-                                                )}
-                                                <div className="w-full">
-                                                    <ContentTable items={data.contentItems} />
-                                                </div>
-                                            </>
-                                        )}
-                                    </>
-                                )}
-                            </>
-                        )}
-
-                        {activeTab === 'audience' && (
-                            <AudienceView data={audienceData} />
-                        )}
-
-                        {activeTab === 'intelligence' && (
-                            <DataIntelligence contentItems={data.contentItems} />
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Modal for Story/Content Reel */}
-            <ContentDetailsModal
-                isOpen={!!selectedStory}
-                onClose={() => setSelectedStory(null)}
-                item={selectedStory}
-                onUpdate={handleContentUpdate}
-            />
+            <DateRangeFilter onFilterChange={setDateRange} className="w-full md:w-auto" />
         </div>
-    );
+
+        {/* Tabs Navigation */}
+        <div className="flex items-center space-x-10 mb-8 border-b border-gray-200 pb-px">
+            <button
+                onClick={() => setActiveTab('overview')}
+                className={`pb-4 border-b-2 font-bold text-sm transition-all ${activeTab === 'overview' ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-gray-400 hover:text-gray-600'
+                    }`}
+            >
+                Resumo
+            </button>
+            <button
+                onClick={() => setActiveTab('audience')}
+                className={`pb-4 border-b-2 font-bold text-sm flex items-center transition-all ${activeTab === 'audience' ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-gray-400 hover:text-gray-600'
+                    }`}
+            >
+                Público
+                {audienceData && <span className="ml-2 w-1.5 h-1.5 bg-green-500 rounded-full"></span>}
+            </button>
+            <button
+                onClick={() => setActiveTab('intelligence')}
+                className={`pb-4 border-b-2 font-bold text-sm flex items-center transition-all ${activeTab === 'intelligence' ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-gray-400 hover:text-gray-600'
+                    }`}
+            >
+                Estratégia
+                <span className="ml-2 material-icons-round text-xs text-yellow-400">bolt</span>
+            </button>
+        </div>
+
+        {(!data.isLoaded && !audienceData) && (
+            <div className="border-3 border-dashed border-gray-200 dark:border-gray-700 rounded-3xl p-12 text-center">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-white/10 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="material-icons-round text-3xl">bar_chart</span>
+                </div>
+                <h3 className="text-lg font-bold mb-2">Sem dados para exibir</h3>
+                <p className="text-gray-400 text-sm max-w-sm mx-auto mb-4">
+                    Nenhum dado encontrado para {platform} ({country}).
+                </p>
+                <a href="/upload" className="inline-flex items-center gap-2 text-primary font-bold hover:underline">
+                    Ir para Enviar Métricas
+                    <span className="material-icons-round text-sm">arrow_forward</span>
+                </a>
+            </div>
+        )}
+
+        {/* Dashboard Content */}
+        {(data.isLoaded || audienceData) && (
+            <div className="flex flex-col gap-8 w-full">
+                {/* Main Content Area - Full Width */}
+                <div className="w-full space-y-8">
+                    {activeTab === 'overview' && data.isLoaded && (
+                        <>
+                            {/* Stats Grid - Should use grid layout from component */}
+                            <div className="w-full">
+                                <StatCards stats={data.stats} />
+                            </div>
+
+                            {platform === 'Instagram' ? (
+                                <div className="space-y-12 mt-8">
+                                    {/* 1. Stories Reel */}
+                                    <section className="w-full overflow-hidden">
+                                        <MediaReel
+                                            title="Stories Recentes"
+                                            items={(data.stories || []).slice(0, 25)}
+                                            onItemClick={(story) => setSelectedStory(story)}
+                                        />
+                                    </section>
+
+                                    {/* 2. Growth Chart (Reach/Views context) */}
+                                    <section className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                                        <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Alcance</h3>
+                                        <div className="w-full h-[300px]">
+                                            {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
+                                        </div>
+                                    </section>
+
+                                    {/* 3. Feed/Reels Reel */}
+                                    <section className="w-full overflow-hidden">
+                                        <MediaReel
+                                            title="Reels e Feed"
+                                            items={(data.reels || []).slice(0, 25)}
+                                            onItemClick={(item) => setSelectedStory(item)}
+                                        />
+                                    </section>
+
+                                    {/* 4. Growth Chart (Interactions context) */}
+                                    <section className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                                        <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Crescimento (Interações)</h3>
+                                        <div className="w-full h-[300px]">
+                                            {data.chartData.length > 0 && <GrowthChart data={data.chartData} />}
+                                        </div>
+                                    </section>
+                                </div>
+                            ) : (
+                                <>
+                                    {platform === 'TikTok' ? (
+                                        /* TikTok specific layout */
+                                        <div className="space-y-12">
+                                            {/* Retention Chart */}
+                                            {data.retentionData.length > 0 && (
+                                                <div className="w-full">
+                                                    <RetentionChart data={data.retentionData} />
+                                                </div>
+                                            )}
+
+                                            {/* Content Reel (Grid View) */}
+                                            <section className="w-full overflow-hidden">
+                                                <MediaReel
+                                                    title="Publicações Recentes"
+                                                    items={(data.contentItems || []).slice(0, 25)}
+                                                    onItemClick={(item) => setSelectedStory(item)}
+                                                />
+                                            </section>
+
+                                            {/* Growth Chart */}
+                                            {data.chartData.length > 0 && (
+                                                <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
+                                                    <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Crescimento</h3>
+                                                    <GrowthChart data={data.chartData} />
+                                                </div>
+                                            )}
+
+                                            {/* Content Table (Detailed View) */}
+                                            <div className="w-full">
+                                                <ContentTable items={data.contentItems} />
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        /* Generic/Other Platform Fallback */
+                                        <>
+                                            {data.chartData.length > 0 && (
+                                                <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
+                                                    <GrowthChart data={data.chartData} />
+                                                </div>
+                                            )}
+                                            <div className="w-full">
+                                                <ContentTable items={data.contentItems} />
+                                            </div>
+                                        </>
+                                    )}
+                                </>
+                            )}
+                        </>
+                    )}
+
+                    {activeTab === 'audience' && (
+                        <AudienceView data={audienceData} />
+                    )}
+
+                    {activeTab === 'intelligence' && (
+                        <DataIntelligence contentItems={data.contentItems} />
+                    )}
+                </div>
+            </div>
+        )}
+
+        {/* Modal for Story/Content Reel */}
+        <ContentDetailsModal
+            isOpen={!!selectedStory}
+            onClose={() => setSelectedStory(null)}
+            item={selectedStory}
+            onUpdate={handleContentUpdate}
+        />
+    </div>
+);
 };
 
 export default PlatformView;
