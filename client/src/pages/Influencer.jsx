@@ -132,8 +132,8 @@ export default function Influencer() {
     };
 
     const topViews = getTop5('total_views');
-    const topEngagement = getTop5('total_interactions');
-    const topSaves = getTop5('total_saves');
+    const topLikes = getTop5('total_likes');
+    const topComments = getTop5('total_comments');
 
     return (
         <div className="space-y-8 animate-fade-in pb-10">
@@ -159,7 +159,7 @@ export default function Influencer() {
                     Meus Influenciadores
                 </h2>
 
-                <div className="flex gap-4 overflow-x-auto pb-6 pt-2 snap-x no-scrollbar">
+                <div className="flex gap-4 overflow-x-auto pb-6 pt-2 snap-x custom-scrollbar">
                     {loading ? (
                         <div className="w-full text-center py-10 text-slate-400">Carregando...</div>
                     ) : registries.length === 0 ? (
@@ -286,14 +286,14 @@ export default function Influencer() {
                         </div>
                     </div>
 
-                    {/* Top Engagement */}
+                    {/* Top Likes */}
                     <div className="bg-white dark:bg-card-dark rounded-3xl shadow-soft p-6">
                         <h3 className="text-md font-bold text-slate-700 dark:text-white mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
-                            <span className="material-icons-round text-purple-500">favorite</span>
-                            Top Engajamento
+                            <span className="material-icons-round text-red-500">favorite</span>
+                            Top Curtidas
                         </h3>
                         <div className="space-y-4">
-                            {topEngagement.map((reg, index) => (
+                            {topLikes.map((reg, index) => (
                                 <div key={reg.id} className="flex items-center gap-3">
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-slate-200 text-slate-600' : index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-slate-50 text-slate-400'}`}>
                                         {index + 1}
@@ -303,23 +303,23 @@ export default function Influencer() {
                                         <p className="text-[10px] text-slate-400">{reg.country === 'BR' ? '🇧🇷' : '🇵🇾'}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-black text-purple-600">{reg.metrics ? formatNumber(reg.metrics.total_interactions) : '-'}</p>
-                                        <p className="text-[10px] text-slate-400 font-medium">Interações</p>
+                                        <p className="text-sm font-black text-red-600">{reg.metrics ? formatNumber(reg.metrics.total_likes) : '-'}</p>
+                                        <p className="text-[10px] text-slate-400 font-medium">Curtidas</p>
                                     </div>
                                 </div>
                             ))}
-                            {topEngagement.length === 0 && <div className="text-center text-slate-400 text-sm py-4">Sem dados no período</div>}
+                            {topLikes.length === 0 && <div className="text-center text-slate-400 text-sm py-4">Sem dados no período</div>}
                         </div>
                     </div>
 
-                    {/* Top Saves */}
+                    {/* Top Comments */}
                     <div className="bg-white dark:bg-card-dark rounded-3xl shadow-soft p-6">
                         <h3 className="text-md font-bold text-slate-700 dark:text-white mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
-                            <span className="material-icons-round text-green-500">bookmark</span>
-                            Top Salvamentos
+                            <span className="material-icons-round text-sky-500">chat_bubble</span>
+                            Top Comentários
                         </h3>
                         <div className="space-y-4">
-                            {topSaves.map((reg, index) => (
+                            {topComments.map((reg, index) => (
                                 <div key={reg.id} className="flex items-center gap-3">
                                     <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-slate-200 text-slate-600' : index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-slate-50 text-slate-400'}`}>
                                         {index + 1}
@@ -329,12 +329,12 @@ export default function Influencer() {
                                         <p className="text-[10px] text-slate-400">{reg.country === 'BR' ? '🇧🇷' : '🇵🇾'}</p>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-sm font-black text-green-600">{reg.metrics ? formatNumber(reg.metrics.total_saves) : '-'}</p>
-                                        <p className="text-[10px] text-slate-400 font-medium">Salvos</p>
+                                        <p className="text-sm font-black text-sky-600">{reg.metrics ? formatNumber(reg.metrics.total_comments) : '-'}</p>
+                                        <p className="text-[10px] text-slate-400 font-medium">Comentários</p>
                                     </div>
                                 </div>
                             ))}
-                            {topSaves.length === 0 && <div className="text-center text-slate-400 text-sm py-4">Sem dados no período</div>}
+                            {topComments.length === 0 && <div className="text-center text-slate-400 text-sm py-4">Sem dados no período</div>}
                         </div>
                     </div>
                 </div>
