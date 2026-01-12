@@ -22,7 +22,7 @@ const EditRegistryModal = ({ registry, onClose, onSave }) => {
         start_date: registry.start_date.split('T')[0], // Extract YYYY-MM-DD
         end_date: registry.end_date.split('T')[0],
         keywords: registry.keywords.join(', '),
-        country: registry.country || 'Brasil',
+        country: registry.country || 'BR',
         type: registry.type || 'keyword'
     });
 
@@ -96,8 +96,8 @@ const EditRegistryModal = ({ registry, onClose, onSave }) => {
                                 value={formData.country}
                                 onChange={handleChange}
                             >
-                                <option value="Brasil">Brasil (Português)</option>
-                                <option value="Paraguai">Paraguai (Espanhol)</option>
+                                <option value="BR">Brasil (Português)</option>
+                                <option value="PY">Paraguai (Espanhol)</option>
                             </select>
                         </div>
                     </div>
@@ -225,7 +225,7 @@ export default function EvidenceDashboard() {
                     <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500 font-medium">
                         <span className="flex items-center gap-1 bg-slate-100 rounded-lg px-2 py-1">
                             <span className="material-icons-round text-sm">public</span>
-                            {registry.country || 'Brasil'}
+                            {registry.country === 'BR' ? 'Brasil' : registry.country === 'PY' ? 'Paraguai' : registry.country}
                         </span>
                         <span className="flex items-center gap-1 bg-slate-100 rounded-lg px-2 py-1">
                             <span className="material-icons-round text-sm">calendar_today</span>

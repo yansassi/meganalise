@@ -14,7 +14,7 @@ export default function Evidence() {
         start_date: '',
         end_date: '',
         keywords: '',
-        country: 'Brasil' // Default country
+        country: 'BR' // Default country
     });
 
     const fetchRegistries = async () => {
@@ -47,7 +47,7 @@ export default function Evidence() {
 
             setShowModal(false);
             setShowModal(false);
-            setFormData({ title: '', start_date: '', end_date: '', keywords: '', country: 'Brasil' });
+            setFormData({ title: '', start_date: '', end_date: '', keywords: '', country: 'BR' });
             fetchRegistries();
         } catch (error) {
             alert('Erro ao salvar registro: ' + error.message);
@@ -110,7 +110,7 @@ export default function Evidence() {
                                         <span className="material-icons-round">folder_special</span>
                                     </div>
                                     <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
-                                        <span className="text-xs font-bold text-slate-500 uppercase">{reg.country || 'Brasil'}</span>
+                                        <span className="text-xs font-bold text-slate-500 uppercase">{reg.country === 'BR' ? 'Brasil' : reg.country === 'PY' ? 'Paraguai' : reg.country}</span>
                                     </div>
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-1">{reg.title}</h3>
@@ -165,8 +165,8 @@ export default function Evidence() {
                                     value={formData.country}
                                     onChange={handleInputChange}
                                 >
-                                    <option value="Brasil">Brasil (Português)</option>
-                                    <option value="Paraguai">Paraguai (Espanhol)</option>
+                                    <option value="BR">Brasil (Português)</option>
+                                    <option value="PY">Paraguai (Espanhol)</option>
                                 </select>
                             </div>
 

@@ -14,7 +14,7 @@ export default function Influencer() {
         start_date: '',
         end_date: '',
         user_handle: '',
-        country: 'Brasil'
+        country: 'BR'
     });
 
     const fetchRegistries = async () => {
@@ -60,7 +60,7 @@ export default function Influencer() {
             });
 
             setShowModal(false);
-            setFormData({ title: '', start_date: '', end_date: '', user_handle: '', country: 'Brasil' });
+            setFormData({ title: '', start_date: '', end_date: '', user_handle: '', country: 'BR' });
             fetchRegistries();
         } catch (error) {
             alert('Erro ao salvar influencer: ' + error.message);
@@ -123,7 +123,7 @@ export default function Influencer() {
                                         <span className="material-icons-round">person</span>
                                     </div>
                                     <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
-                                        <span className="text-xs font-bold text-slate-500 uppercase">{reg.country || 'Brasil'}</span>
+                                        <span className="text-xs font-bold text-slate-500 uppercase">{reg.country === 'BR' ? 'Brasil' : reg.country === 'PY' ? 'Paraguai' : reg.country}</span>
                                     </div>
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-1">{reg.title}</h3>
@@ -187,8 +187,8 @@ export default function Influencer() {
                                     value={formData.country}
                                     onChange={handleInputChange}
                                 >
-                                    <option value="Brasil">Brasil (Português)</option>
-                                    <option value="Paraguai">Paraguai (Espanhol)</option>
+                                    <option value="BR">Brasil (Português)</option>
+                                    <option value="PY">Paraguai (Espanhol)</option>
                                 </select>
                             </div>
 
