@@ -35,6 +35,14 @@ const parseDate = (dateStr) => {
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     }
 
+    // 1b. DD/MM (Default to current year)
+    const shortDateMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})(\s|$)/);
+    if (shortDateMatch) {
+        const [_, day, month] = shortDateMatch;
+        const year = new Date().getFullYear();
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
+
     // 2. YYYY-MM-DD
     if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
         return str.split('T')[0];
