@@ -265,12 +265,18 @@ export default function EvidenceDashboard() {
             )}
 
             {/* Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
                 <MetricCard
                     title="Total Encontrado"
                     value={metrics.total_posts}
                     icon="manage_search"
                     color="bg-blue-600"
+                />
+                <MetricCard
+                    title="Visualizações"
+                    value={metrics.total_views}
+                    icon="visibility"
+                    color="bg-indigo-600"
                 />
                 <MetricCard
                     title="Interações Totais"
