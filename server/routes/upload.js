@@ -205,7 +205,7 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                         shares: item.shares,
                         views: item.views,
                         country: country, // Added country
-                        date_published: new Date().toISOString() // Placeholder or parse item.date_published
+                        date_published: item.date_published ? new Date(item.date_published).toISOString() : new Date().toISOString()
                     };
 
                     if (existing.items.length > 0) {
