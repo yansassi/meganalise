@@ -224,10 +224,40 @@ const PlatformView = ({ platform }) => {
             finalChartMap = followerGrowthMap;
         }
 
-        const chartData = Object.keys(finalChartMap).sort().map(date => ({
-            name: date,
-            value: finalChartMap[date]
-        }));
+        // NEW: Aggregate Post Counts & Types for Tooltip
+        const postStatsMap = {};
+        dbData.content.forEach(c => {
+            const dateKey = c.date ? c.date.split('T')[0] : null;
+            if (!dateKey) return;
+
+            // Normalize dateKey to match chartMap keys (dbData.metrics usually have Full ISO, but let's match roughly)
+            // chartMap keys come from metric.date which IS usually YYYY-MM-DDT... or just YYYY-MM-DD. 
+            // In upload.js we save as ISOString. 
+            // Let's assume strict string matching might fail if time differs. 
+            // Better to match by YYYY-MM-DD.
+
+            // However, existing chartMap uses full strings from DB. 
+            // Let's rely on finding standard keys.
+
+            if (!postStatsMap[dateKey]) {
+                postStatsMap[dateKey] = { count: 0, types: {} };
+            }
+            postStatsMap[dateKey].count++;
+            const type = c.platform_type || 'social';
+            postStatsMap[dateKey].types[type] = (postStatsMap[dateKey].types[type] || 0) + 1;
+        });
+
+        const chartData = Object.keys(finalChartMap).sort().map(date => {
+            const shortDate = date.split('T')[0];
+            const postStats = postStatsMap[shortDate] || { count: 0, types: {} };
+
+            return {
+                name: date,
+                value: finalChartMap[date],
+                postsCount: postStats.count,
+                postTypes: postStats.types
+            };
+        });
 
         let reels = [];
         let stories = [];
