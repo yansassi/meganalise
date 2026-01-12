@@ -410,8 +410,15 @@ export const dataService = {
                     // Check if ANY keyword matches as a whole word
                     return keywords.some(keyword => {
                         const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex chars
-                        // Regex: \bkeyword\b (Boundaries)
-                        const regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
+                        // Regex: Smart boundary check
+                        // If keyword starts with specific symbols (like @), \b fails at the start because @ is non-word.
+                        // We use (^|[^\w]) to match start of string or a non-word char separator.
+                        let regex;
+                        if (/^[@#]/.test(keyword)) {
+                            regex = new RegExp(`(^|[^\\w])${escapedKeyword}(?![\\w])`, 'i');
+                        } else {
+                            regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
+                        }
                         return regex.test(item.title);
                     });
                 });
