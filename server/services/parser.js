@@ -491,7 +491,7 @@ const parseTikTokCSV = async (buffer, fileName) => {
                         const original_id = idMatch ? idMatch[1] : link;
 
                         // Find other headers dynamically
-                        const postTimeHeader = headers.find(h => h.toLowerCase() === 'post time' || h.toLowerCase() === 'tempo de publicação' || h.toLowerCase() === 'tempo de publicacao' || h.toLowerCase() === 'time');
+                        const postTimeHeader = headers.find(h => h.toLowerCase() === 'post time' || h.toLowerCase() === 'tempo de publicação' || h.toLowerCase() === 'tempo de publicacao');
                         const likesHeader = headers.find(h => h.toLowerCase() === 'total likes' || h.toLowerCase() === 'curtidas' || h.toLowerCase() === 'total curtidas');
                         const commentsHeader = headers.find(h => h.toLowerCase() === 'total comments' || h.toLowerCase() === 'comentários' || h.toLowerCase() === 'total comentários' || h.toLowerCase() === 'comentarios');
                         const sharesHeader = headers.find(h => h.toLowerCase() === 'total shares' || h.toLowerCase() === 'compartilhamentos' || h.toLowerCase() === 'total compartilhamentos');
