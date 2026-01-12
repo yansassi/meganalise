@@ -2,13 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
 import { formatNumber } from '../utils/formatters';
+import DateRangeFilter from '../components/dashboard/DateRangeFilter';
 
 export default function Influencer() {
     const navigate = useNavigate();
     const [registries, setRegistries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
-    const [metricsCache, setMetricsCache] = useState({}); // Cache metrics by registry ID
+
+    // Metrics Caches
+    const [metricsCache, setMetricsCache] = useState({}); // Cache for "My Influencers" (Contract Date)
+    const [rankingMetricsCache, setRankingMetricsCache] = useState({}); // Cache for Rankings (Filter Date)
+    const [rankingDateRange, setRankingDateRange] = useState({ startDate: null, endDate: null });
 
     // Form State
     const [formData, setFormData] = useState({
@@ -26,13 +31,33 @@ export default function Influencer() {
         setRegistries(influencers);
         setLoading(false);
 
-        // Fetch metrics for each influencer in background
+        // Fetch metrics for "My Influencers" (Contract Date)
         influencers.forEach(async (reg) => {
             try {
+                // Determine implicit date range if none saved? Actually registry has dates.
                 const { metrics } = await dataService.calculateRegistryMetrics(reg);
                 setMetricsCache(prev => ({ ...prev, [reg.id]: metrics }));
             } catch (e) {
                 console.error("Failed to load metrics for", reg.title);
+            }
+        });
+    };
+
+    // Refetch rankings when date range changes or registries load
+    useEffect(() => {
+        if (registries.length > 0 && rankingDateRange.startDate && rankingDateRange.endDate) {
+            fetchRankingMetrics();
+        }
+    }, [registries, rankingDateRange]);
+
+    const fetchRankingMetrics = () => {
+        registries.forEach(async (reg) => {
+            try {
+                // Pass override dates
+                const { metrics } = await dataService.calculateRegistryMetrics(reg, rankingDateRange);
+                setRankingMetricsCache(prev => ({ ...prev, [reg.id]: metrics }));
+            } catch (e) {
+                console.error("Failed to load ranking metrics for", reg.title);
             }
         });
     };
@@ -52,9 +77,9 @@ export default function Influencer() {
             const handle = formData.user_handle.trim();
             const keywords = [handle];
             if (handle.startsWith('@')) {
-                keywords.push(handle.substring(1)); // Add without @
+                keywords.push(handle.substring(1));
             } else {
-                keywords.unshift(`@${handle}`); // Add with @
+                keywords.unshift(`@${handle}`);
             }
 
             await dataService.saveEvidenceRegistry({
@@ -88,12 +113,27 @@ export default function Influencer() {
 
         try {
             await dataService.updateRegistryImage(registry.id, file);
-            // Refresh to show new image
             fetchRegistries();
         } catch (error) {
             alert('Erro ao enviar imagem: ' + error.message);
         }
     };
+
+    // Ranking Helpers
+    const getTop5 = (metricKey) => {
+        return [...registries]
+            .map(reg => ({
+                ...reg,
+                metricValue: rankingMetricsCache[reg.id] ? rankingMetricsCache[reg.id][metricKey] : 0,
+                metrics: rankingMetricsCache[reg.id]
+            }))
+            .sort((a, b) => b.metricValue - a.metricValue)
+            .slice(0, 5);
+    };
+
+    const topViews = getTop5('total_views');
+    const topEngagement = getTop5('total_interactions');
+    const topSaves = getTop5('total_saves');
 
     return (
         <div className="space-y-8 animate-fade-in pb-10">
@@ -112,110 +152,192 @@ export default function Influencer() {
                 </button>
             </div>
 
-            {/* Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {loading ? (
-                    <div className="col-span-full text-center py-20 text-slate-400">Carregando...</div>
-                ) : registries.length === 0 ? (
-                    <div className="col-span-full flex flex-col items-center justify-center py-20 text-slate-400 gap-4">
-                        <span className="material-icons-round text-6xl opacity-20">person_off</span>
-                        <p>Nenhum influenciador cadastrado.</p>
-                    </div>
-                ) : (
-                    registries.map(reg => {
-                        const metrics = metricsCache[reg.id];
-                        const imageUrl = dataService.getRegistryImageUrl(reg);
+            {/* Section 1: Meus Influenciadores (Horizontal Scroll) */}
+            <div>
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
+                    <span className="material-icons-round text-purple-600">groups</span>
+                    Meus Influenciadores
+                </h2>
 
-                        return (
-                            <div
-                                key={reg.id}
-                                className="bg-white dark:bg-card-dark rounded-3xl shadow-soft hover:shadow-xl transition-all group relative border border-transparent hover:border-purple-500/20 overflow-hidden flex"
-                            >
-                                {/* Left: Info & Stats (Swapped as per request: Photo Left, Info Right) 
-                                    Wait, user request: "jogue as informações para a direita... lado esquerdo deixe um campo para carregar a foto"
-                                    So: LEFT = PHOTO, RIGHT = INFO
-                                */ }
+                <div className="flex gap-4 overflow-x-auto pb-6 pt-2 snap-x no-scrollbar">
+                    {loading ? (
+                        <div className="w-full text-center py-10 text-slate-400">Carregando...</div>
+                    ) : registries.length === 0 ? (
+                        <div className="w-full text-center py-10 text-slate-400 bg-white dark:bg-card-dark rounded-3xl border border-dashed border-slate-200">
+                            Nenhum influenciador cadastrado.
+                        </div>
+                    ) : (
+                        registries.map(reg => {
+                            const metrics = metricsCache[reg.id];
+                            const imageUrl = dataService.getRegistryImageUrl(reg);
 
-                                {/* Left Side: Image / Upload */}
-                                <div className="w-1/3 bg-gray-50 dark:bg-white/5 relative group/img cursor-pointer border-r border-gray-100 dark:border-white/5"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        document.getElementById(`file-${reg.id}`).click();
-                                    }}>
-
-                                    <input
-                                        type="file"
-                                        id={`file-${reg.id}`}
-                                        className="hidden"
-                                        accept="image/*"
-                                        onChange={(e) => handleImageUpload(e, reg)}
-                                    />
-
-                                    {imageUrl ? (
-                                        <>
-                                            <img src={imageUrl} alt={reg.title} className="w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                                                <span className="material-icons-round text-white">edit</span>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2 p-4 text-center hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
-                                            <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
-                                                <span className="material-icons-round">add_a_photo</span>
-                                            </div>
-                                            <span className="text-[10px] font-bold uppercase tracking-wider">Foto</span>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Right Side: Info & Metrics */}
+                            return (
                                 <div
-                                    className="w-2/3 p-5 flex flex-col justify-between cursor-pointer"
-                                    onClick={() => navigate(`/evidence/${reg.id}`)}
+                                    key={reg.id}
+                                    className="min-w-[280px] w-[280px] bg-white dark:bg-card-dark rounded-3xl shadow-soft hover:shadow-xl transition-all group relative border border-transparent hover:border-purple-500/20 overflow-hidden snap-start flex flex-col"
                                 >
-                                    {/* Top: Delete Button */}
-                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                    {/* Top: Image & Actions */}
+                                    <div className="h-40 bg-gray-50 relative group/img cursor-pointer"
+                                        onClick={() => document.getElementById(`file-${reg.id}`).click()}>
+
+                                        <input
+                                            type="file"
+                                            id={`file-${reg.id}`}
+                                            className="hidden"
+                                            accept="image/*"
+                                            onChange={(e) => handleImageUpload(e, reg)}
+                                        />
+
+                                        {imageUrl ? (
+                                            <>
+                                                <img src={imageUrl} alt={reg.title} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-700" />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <span className="material-icons-round text-white">edit</span>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2">
+                                                <span className="material-icons-round text-3xl">add_a_photo</span>
+                                                <span className="text-[10px] uppercase font-bold">Adicionar Foto</span>
+                                            </div>
+                                        )}
+
+                                        {/* Delete Button */}
                                         <button
                                             onClick={(e) => handleDelete(e, reg.id)}
-                                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-colors bg-white shadow-sm"
+                                            className="absolute top-2 right-2 p-1.5 text-red-500 bg-white/90 hover:bg-white rounded-full transition-all opacity-0 group-hover:opacity-100 shadow-sm z-10"
                                         >
                                             <span className="material-icons-round text-sm">delete</span>
                                         </button>
-                                    </div>
 
-                                    <div>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-[10px] font-bold text-slate-500 uppercase">
-                                                {reg.country === 'BR' ? '🇧🇷' : '🇵🇾'}
-                                            </div>
-                                        </div>
-
-                                        <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight mb-0.5 line-clamp-1" title={reg.title}>{reg.title}</h3>
-                                        <p className="text-xs text-purple-600 font-semibold mb-3">{reg.keywords ? reg.keywords[0] : ''}</p>
-
-                                        <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase tracking-wider bg-slate-50 dark:bg-white/5 p-1.5 rounded-lg inline-block">
-                                            <span className="material-icons-round text-[12px]">calendar_today</span>
-                                            {new Date(reg.start_date).toLocaleDateString()} - {new Date(reg.end_date).toLocaleDateString()}
+                                        {/* Country Badge */}
+                                        <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-[10px] font-bold text-slate-700 uppercase shadow-sm">
+                                            {reg.country === 'BR' ? '🇧🇷' : '🇵🇾'}
                                         </div>
                                     </div>
 
-                                    {/* Key Metric: Total Views */}
-                                    <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/5">
-                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Visualizações Totais</div>
-                                        {metrics ? (
-                                            <div className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-1">
-                                                <span className="material-icons-round text-purple-500 text-lg">visibility</span>
-                                                {formatNumber(metrics.total_views)}
+                                    {/* Bottom: Info */}
+                                    <div
+                                        className="p-5 flex flex-col gap-3 flex-1 cursor-pointer"
+                                        onClick={() => navigate(`/evidence/${reg.id}`)}
+                                    >
+                                        <div>
+                                            <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight mb-1 truncate" title={reg.title}>{reg.title}</h3>
+                                            <p className="text-xs text-purple-600 font-semibold truncate">{reg.keywords ? reg.keywords[0] : ''}</p>
+                                        </div>
+
+                                        <div className="mt-auto pt-3 border-t border-slate-50 dark:border-white/5 flex justify-between items-center">
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Período</span>
+                                                <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                                                    {new Date(reg.start_date).toLocaleDateString()}
+                                                </span>
                                             </div>
-                                        ) : (
-                                            <div className="h-6 w-20 bg-gray-100 rounded animate-pulse"></div>
-                                        )}
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Views</span>
+                                                <div className="flex items-center gap-1 text-slate-800 dark:text-white font-black text-sm">
+                                                    <span className="material-icons-round text-purple-500 text-xs">visibility</span>
+                                                    {metrics ? formatNumber(metrics.total_views) : '-'}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        );
-                    })
-                )}
+                            );
+                        })
+                    )}
+                </div>
+            </div>
+
+            {/* Section 2: Rankings (Top 5) */}
+            <div>
+                <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-6 gap-4">
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <span className="material-icons-round text-amber-500">emoji_events</span>
+                        Top Influenciadores
+                    </h2>
+                    <DateRangeFilter onFilterChange={setRankingDateRange} className="w-full md:w-auto shadow-none border-none bg-transparent p-0" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Top Views */}
+                    <div className="bg-white dark:bg-card-dark rounded-3xl shadow-soft p-6">
+                        <h3 className="text-md font-bold text-slate-700 dark:text-white mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
+                            <span className="material-icons-round text-blue-500">visibility</span>
+                            Top Visualizações
+                        </h3>
+                        <div className="space-y-4">
+                            {topViews.map((reg, index) => (
+                                <div key={reg.id} className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-slate-200 text-slate-600' : index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-slate-50 text-slate-400'}`}>
+                                        {index + 1}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{reg.title}</p>
+                                        <p className="text-[10px] text-slate-400">{reg.country === 'BR' ? '🇧🇷' : '🇵🇾'}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm font-black text-blue-600">{reg.metrics ? formatNumber(reg.metrics.total_views) : '-'}</p>
+                                        <p className="text-[10px] text-slate-400 font-medium">Views</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {topViews.length === 0 && <div className="text-center text-slate-400 text-sm py-4">Sem dados no período</div>}
+                        </div>
+                    </div>
+
+                    {/* Top Engagement */}
+                    <div className="bg-white dark:bg-card-dark rounded-3xl shadow-soft p-6">
+                        <h3 className="text-md font-bold text-slate-700 dark:text-white mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
+                            <span className="material-icons-round text-purple-500">favorite</span>
+                            Top Engajamento
+                        </h3>
+                        <div className="space-y-4">
+                            {topEngagement.map((reg, index) => (
+                                <div key={reg.id} className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-slate-200 text-slate-600' : index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-slate-50 text-slate-400'}`}>
+                                        {index + 1}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{reg.title}</p>
+                                        <p className="text-[10px] text-slate-400">{reg.country === 'BR' ? '🇧🇷' : '🇵🇾'}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm font-black text-purple-600">{reg.metrics ? formatNumber(reg.metrics.total_interactions) : '-'}</p>
+                                        <p className="text-[10px] text-slate-400 font-medium">Interações</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {topEngagement.length === 0 && <div className="text-center text-slate-400 text-sm py-4">Sem dados no período</div>}
+                        </div>
+                    </div>
+
+                    {/* Top Saves */}
+                    <div className="bg-white dark:bg-card-dark rounded-3xl shadow-soft p-6">
+                        <h3 className="text-md font-bold text-slate-700 dark:text-white mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
+                            <span className="material-icons-round text-green-500">bookmark</span>
+                            Top Salvamentos
+                        </h3>
+                        <div className="space-y-4">
+                            {topSaves.map((reg, index) => (
+                                <div key={reg.id} className="flex items-center gap-3">
+                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-slate-200 text-slate-600' : index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-slate-50 text-slate-400'}`}>
+                                        {index + 1}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{reg.title}</p>
+                                        <p className="text-[10px] text-slate-400">{reg.country === 'BR' ? '🇧🇷' : '🇵🇾'}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-sm font-black text-green-600">{reg.metrics ? formatNumber(reg.metrics.total_saves) : '-'}</p>
+                                        <p className="text-[10px] text-slate-400 font-medium">Salvos</p>
+                                    </div>
+                                </div>
+                            ))}
+                            {topSaves.length === 0 && <div className="text-center text-slate-400 text-sm py-4">Sem dados no período</div>}
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Modal */}

@@ -378,10 +378,21 @@ export const dataService = {
      * Calculates metrics for a specific registry
      * @param {Object} registry 
      */
-    async calculateRegistryMetrics(registry) {
+    async calculateRegistryMetrics(registry, dateOverride = null) {
         try {
-            const { start_date, end_date, keywords } = registry;
+            const { keywords } = registry;
             const keywordsLower = keywords.map(k => k.toLowerCase());
+
+            // Determine date range: Use override if provided, otherwise registry defaults
+            let start_date, end_date;
+
+            if (dateOverride && dateOverride.startDate && dateOverride.endDate) {
+                start_date = dateOverride.startDate;
+                end_date = dateOverride.endDate;
+            } else {
+                start_date = registry.start_date;
+                end_date = registry.end_date;
+            }
 
             // Ensure dates are in YYYY-MM-DD format regardless of how they are stored (ISO vs simple date)
             const startDateStr = start_date.split('T')[0].split(' ')[0];
@@ -484,9 +495,11 @@ export const dataService = {
                 total_likes: matchedContent.reduce((sum, item) => sum + (item.likes || 0), 0),
                 total_comments: matchedContent.reduce((sum, item) => sum + (item.comments || 0), 0),
                 total_views: matchedContent.reduce((sum, item) => sum + (item.views || 0), 0),
+                total_shares: matchedContent.reduce((sum, item) => sum + (item.shares || 0), 0),
+                total_saves: matchedContent.reduce((sum, item) => sum + (item.saved || 0), 0),
             };
 
-            metrics.total_interactions = metrics.total_likes + metrics.total_comments + matchedContent.reduce((sum, item) => sum + (item.shares || 0) + (item.saved || 0), 0);
+            metrics.total_interactions = metrics.total_likes + metrics.total_comments + metrics.total_shares + metrics.total_saves;
 
             return { metrics, content: matchedContent };
 
