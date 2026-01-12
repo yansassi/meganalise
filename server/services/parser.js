@@ -35,11 +35,15 @@ const parseDate = (dateStr) => {
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     }
 
-    // 1b. DD/MM (Default to current year)
+    // 1b. DD/MM (Default to current year, fallback to previous if future)
     const shortDateMatch = str.match(/^(\d{1,2})[\/\-](\d{1,2})(\s|$)/);
     if (shortDateMatch) {
         const [_, day, month] = shortDateMatch;
-        const year = new Date().getFullYear();
+        let year = new Date().getFullYear();
+        const date = new Date(year, parseInt(month) - 1, parseInt(day));
+        if (date > new Date()) { // Heuristic: If date is in future, it's likely last year
+            year--;
+        }
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     }
 

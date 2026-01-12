@@ -128,7 +128,8 @@ const Sidebar = ({ country }) => {
       </div>
 
       <div className="px-6 pb-6 pt-6 border-t border-blue-500/30">
-        <NavLink to="/upload" className="w-full bg-[#1E40AF] hover:bg-[#1e3a8a] text-white rounded-lg py-3 px-4 flex items-center justify-center transition-colors shadow-lg">
+        <NavLink to="/upload" className={`w-full text-white rounded-lg py-3 px-4 flex items-center justify-center transition-colors shadow-lg ${country === 'PY' ? 'bg-[#DC2626] hover:bg-[#B91C1C]' : 'bg-[#1E40AF] hover:bg-[#1e3a8a]'
+          }`}>
           <span className="material-icons-round mr-2">cloud_upload</span>
           <span className="font-semibold text-sm">Enviar Métricas</span>
         </NavLink>
