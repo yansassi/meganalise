@@ -170,7 +170,7 @@ const normalizeContentData = (data, isUSFormat = false) => {
         const saved = parseInt(findValue(row, ['Salvamentos', 'Saved', 'Save']) || 0, 10);
         const views = parseInt(findValue(row, ['Visualizações', 'Views', 'Visualizacoes', 'View']) || 0, 10);
         const duration = parseInt(findValue(row, ['Duração (s)', 'Duration (s)', 'Duracao']) || 0, 10);
-        const duration = parseInt(findValue(row, ['Duração (s)', 'Duration (s)', 'Duracao']) || 0, 10);
+
         const permalink = findValue(row, ['Link permanente', 'Permalink', 'Link']) || '';
         const author = findValue(row, ['Nome de usuário da conta', 'Account username', 'Username']) || '';
 
