@@ -448,10 +448,30 @@ export const dataService = {
                         } else {
                             regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
                         }
-                        if (regex.test(item.title)) return true;
-                        if (item.author && regex.test(item.author)) return true;
 
-                        return false;
+                        // Strict Influencer Logic
+                        if (registry.type === 'influencer') {
+                            // 1. Author Match (Strip @ for robust matching against raw author field)
+                            // If keyword is "@yan", author might be "yan". If keyword is "yan", author "yan".
+                            const cleanKeyword = keyword.startsWith('@') ? keyword.slice(1) : keyword;
+
+                            // Check Author (Case insensitive exact or simplified match)
+                            if (item.author && item.author.toLowerCase() === cleanKeyword.toLowerCase()) return true;
+
+                            // 2. Title Match (Mentions)
+                            // ONLY match Title if the keyword explicitly starts with '@' (verifying it's a mention)
+                            // We IGNORE title matches for keywords without '@' to prevent matching hashtags/text like #comprasparaguai
+                            if (keyword.startsWith('@')) {
+                                if (regex.test(item.title)) return true;
+                            }
+
+                            return false;
+                        } else {
+                            // Default Evidence Logic (Broad match)
+                            if (regex.test(item.title)) return true;
+                            if (item.author && regex.test(item.author)) return true;
+                            return false;
+                        }
                     });
                 });
             }
