@@ -359,27 +359,41 @@ export const dataService = {
             const registry = await this.getEvidenceRegistry(registryId);
             if (!registry) throw new Error("Registry not found");
 
+            // 2. Calculate Metrics using helper
+            const { metrics, content } = await this.calculateRegistryMetrics(registry);
+
+            return {
+                registry,
+                metrics,
+                content
+            };
+
+        } catch (err) {
+            console.error("Error generating evidence dashboard", err);
+            throw err;
+        }
+    },
+
+    /**
+     * Calculates metrics for a specific registry
+     * @param {Object} registry 
+     */
+    async calculateRegistryMetrics(registry) {
+        try {
             const { start_date, end_date, keywords } = registry;
             const keywordsLower = keywords.map(k => k.toLowerCase());
 
-            // 2. Fetch Content from Instagram within date range
             // Ensure dates are in YYYY-MM-DD format regardless of how they are stored (ISO vs simple date)
             const startDateStr = start_date.split('T')[0].split(' ')[0];
             const endDateStr = end_date.split('T')[0].split(' ')[0];
 
             // Use 'date' field instead of 'timestamp'
-            // 3. Construct Filter
+            // Construct Filter
             // Combine Date range AND Keywords
             let filter = `date >= "${startDateStr} 00:00:00" && date <= "${endDateStr} 23:59:59"`;
 
             // Filter by country if registry has it
             if (registry.country) {
-                // Map frontend country names to DB country codes if necessary, or just use what is saved
-                // Assuming consistency: 'Brazil' -> 'Brazil' or 'BR'. Let's assume strict match for now.
-                // NOTE: 'Brazil' vs 'Brasil' mismatch risk.
-                // Best practice: Use codes (BR, PY) or normalized names.
-                // Current upload uses "Brasil", "Paraguai".
-                // Registry should save "Brasil", "Paraguai".
                 filter += ` && country = "${registry.country}"`;
             }
 
@@ -389,10 +403,9 @@ export const dataService = {
                 filter += ` && (${keywordConditions})`;
             }
 
-            // 4. Query Multiple Collections (Instagram & TikTok)
+            // Query Multiple Collections (Instagram & TikTok)
             const collections = ['instagram_content', 'tiktok_content'];
 
-            // Execute queries in parallel
             // Execute queries in parallel
             const queryPromises = collections.map(collectionName =>
                 pb.collection(collectionName).getList(1, 500, {
@@ -416,33 +429,25 @@ export const dataService = {
             // Merge and Sort
             const allItems = results.flatMap(res => res.items);
 
-            // Sort by date descending (merging two sorted lists needs re-sort)
+            // Sort by date descending
             allItems.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            // 5. Refine matches with Whole Word check (in memory)
-            // PocketBase '~' operator is a simple "LIKE", so "realme" matches "realmente".
-            // We strictly filter for whole words here.
-
+            // Refine matches with Whole Word check (in memory)
             let refinedContent = allItems;
 
             if (keywords.length > 0) {
                 refinedContent = allItems.filter(item => {
                     if (!item.title) return false;
-                    const titleLower = item.title.toLowerCase();
 
                     // Check if ANY keyword matches as a whole word
                     return keywords.some(keyword => {
-                        const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex chars
-                        // Regex: Smart boundary check
-                        // If keyword starts with specific symbols (like @), \b fails at the start because @ is non-word.
-                        // We use (^|[^\w]) to match start of string or a non-word char separator.
+                        const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                         let regex;
                         if (/^[@#]/.test(keyword)) {
                             regex = new RegExp(`(^|[^\\w])${escapedKeyword}(?![\\w])`, 'i');
                         } else {
                             regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
                         }
-                        // Check Title OR Author
                         if (regex.test(item.title)) return true;
                         if (item.author && regex.test(item.author)) return true;
 
@@ -453,7 +458,7 @@ export const dataService = {
 
             const matchedContent = refinedContent;
 
-            // 6. Calculate Aggregated Metrics for matched content
+            // Calculate Aggregated Metrics for matched content
             const metrics = {
                 total_posts: matchedContent.length,
                 total_likes: matchedContent.reduce((sum, item) => sum + (item.likes || 0), 0),
@@ -461,20 +466,36 @@ export const dataService = {
                 total_views: matchedContent.reduce((sum, item) => sum + (item.views || 0), 0),
             };
 
-            // Engagement: (Likes + Comments + Shares + Saved usually) - using Likes + Comments for now
-            // But let's verify what 'interactions' means in other dashboards. Usually (likes+comments+shares+saved).
-            // Let's check item fields.
             metrics.total_interactions = metrics.total_likes + metrics.total_comments + matchedContent.reduce((sum, item) => sum + (item.shares || 0) + (item.saved || 0), 0);
 
-            return {
-                registry,
-                metrics,
-                content: matchedContent
-            };
+            return { metrics, content: matchedContent };
 
         } catch (err) {
-            console.error("Error generating evidence dashboard", err);
-            throw err;
+            console.error("Error calculating registry metrics", err);
+            return { metrics: { total_views: 0, total_posts: 0, total_interactions: 0 }, content: [] };
         }
+    },
+
+    /**
+     * Updates registry image
+     */
+    async updateRegistryImage(id, imageFile) {
+        try {
+            const formData = new FormData();
+            formData.append('image_file', imageFile);
+
+            return await pb.collection('evidence_registries').update(id, formData);
+        } catch (error) {
+            console.error('Error uploading registry image:', error);
+            throw error;
+        }
+    },
+
+    /**
+     * Gets registry image URL
+     */
+    getRegistryImageUrl(registry) {
+        if (!registry || !registry.image_file) return null;
+        return `https://auth.meganalise.pro/api/files/evidence_registries/${registry.id}/${registry.image_file}`;
     }
 };

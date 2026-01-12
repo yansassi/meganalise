@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
+import { formatNumber } from '../utils/formatters';
 
 export default function Influencer() {
     const navigate = useNavigate();
     const [registries, setRegistries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [metricsCache, setMetricsCache] = useState({}); // Cache metrics by registry ID
 
     // Form State
     const [formData, setFormData] = useState({
@@ -20,9 +22,19 @@ export default function Influencer() {
     const fetchRegistries = async () => {
         setLoading(true);
         const data = await dataService.getEvidenceRegistries();
-        // Filter only Influencer type registries
-        setRegistries(data.filter(r => r.type === 'influencer'));
+        const influencers = data.filter(r => r.type === 'influencer');
+        setRegistries(influencers);
         setLoading(false);
+
+        // Fetch metrics for each influencer in background
+        influencers.forEach(async (reg) => {
+            try {
+                const { metrics } = await dataService.calculateRegistryMetrics(reg);
+                setMetricsCache(prev => ({ ...prev, [reg.id]: metrics }));
+            } catch (e) {
+                console.error("Failed to load metrics for", reg.title);
+            }
+        });
     };
 
     useEffect(() => {
@@ -37,11 +49,6 @@ export default function Influencer() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Logic: 
-            // 1. Take the user handle (e.g. "@yan")
-            // 2. Generate keywords: "@yan", "yan" (optional variations)
-            // 3. Save as type="influencer"
-
             const handle = formData.user_handle.trim();
             const keywords = [handle];
             if (handle.startsWith('@')) {
@@ -75,6 +82,19 @@ export default function Influencer() {
         }
     };
 
+    const handleImageUpload = async (e, registry) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            await dataService.updateRegistryImage(registry.id, file);
+            // Refresh to show new image
+            fetchRegistries();
+        } catch (error) {
+            alert('Erro ao enviar imagem: ' + error.message);
+        }
+    };
+
     return (
         <div className="space-y-8 animate-fade-in pb-10">
             {/* Header */}
@@ -93,7 +113,7 @@ export default function Influencer() {
             </div>
 
             {/* Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {loading ? (
                     <div className="col-span-full text-center py-20 text-slate-400">Carregando...</div>
                 ) : registries.length === 0 ? (
@@ -102,45 +122,99 @@ export default function Influencer() {
                         <p>Nenhum influenciador cadastrado.</p>
                     </div>
                 ) : (
-                    registries.map(reg => (
-                        <div
-                            key={reg.id}
-                            onClick={() => navigate(`/evidence/${reg.id}`)} // Reuses Evidence Dashboard
-                            className="bg-white dark:bg-card-dark p-6 rounded-3xl shadow-soft cursor-pointer hover:shadow-xl hover:scale-[1.02] transition-all group relative border border-transparent hover:border-purple-500/20"
-                        >
-                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                    onClick={(e) => handleDelete(e, reg.id)}
-                                    className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                                >
-                                    <span className="material-icons-round text-lg">delete</span>
-                                </button>
-                            </div>
+                    registries.map(reg => {
+                        const metrics = metricsCache[reg.id];
+                        const imageUrl = dataService.getRegistryImageUrl(reg);
 
-                            <div className="mb-4">
-                                <div className="flex justify-between items-start">
-                                    <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4 text-2xl font-bold shadow-sm">
-                                        <span className="material-icons-round">person</span>
+                        return (
+                            <div
+                                key={reg.id}
+                                className="bg-white dark:bg-card-dark rounded-3xl shadow-soft hover:shadow-xl transition-all group relative border border-transparent hover:border-purple-500/20 overflow-hidden flex"
+                            >
+                                {/* Left: Info & Stats (Swapped as per request: Photo Left, Info Right) 
+                                    Wait, user request: "jogue as informações para a direita... lado esquerdo deixe um campo para carregar a foto"
+                                    So: LEFT = PHOTO, RIGHT = INFO
+                                */ }
+
+                                {/* Left Side: Image / Upload */}
+                                <div className="w-1/3 bg-gray-50 dark:bg-white/5 relative group/img cursor-pointer border-r border-gray-100 dark:border-white/5"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        document.getElementById(`file-${reg.id}`).click();
+                                    }}>
+
+                                    <input
+                                        type="file"
+                                        id={`file-${reg.id}`}
+                                        className="hidden"
+                                        accept="image/*"
+                                        onChange={(e) => handleImageUpload(e, reg)}
+                                    />
+
+                                    {imageUrl ? (
+                                        <>
+                                            <img src={imageUrl} alt={reg.title} className="w-full h-full object-cover" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                                <span className="material-icons-round text-white">edit</span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2 p-4 text-center hover:bg-gray-100 dark:hover:bg-white/10 transition-colors">
+                                            <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center">
+                                                <span className="material-icons-round">add_a_photo</span>
+                                            </div>
+                                            <span className="text-[10px] font-bold uppercase tracking-wider">Foto</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Right Side: Info & Metrics */}
+                                <div
+                                    className="w-2/3 p-5 flex flex-col justify-between cursor-pointer"
+                                    onClick={() => navigate(`/evidence/${reg.id}`)}
+                                >
+                                    {/* Top: Delete Button */}
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                        <button
+                                            onClick={(e) => handleDelete(e, reg.id)}
+                                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-full transition-colors bg-white shadow-sm"
+                                        >
+                                            <span className="material-icons-round text-sm">delete</span>
+                                        </button>
                                     </div>
-                                    <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
-                                        <span className="text-xs font-bold text-slate-500 uppercase">{reg.country === 'BR' ? 'Brasil' : reg.country === 'PY' ? 'Paraguai' : reg.country}</span>
+
+                                    <div>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-[10px] font-bold text-slate-500 uppercase">
+                                                {reg.country === 'BR' ? 'Brasil' : 'Paraguai'}
+                                            </div>
+                                        </div>
+
+                                        <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight mb-0.5 line-clamp-1" title={reg.title}>{reg.title}</h3>
+                                        <p className="text-xs text-purple-600 font-semibold mb-3">{reg.keywords ? reg.keywords[0] : ''}</p>
+
+                                        <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase tracking-wider bg-slate-50 dark:bg-white/5 p-1.5 rounded-lg inline-block">
+                                            <span className="material-icons-round text-[12px]">calendar_today</span>
+                                            {new Date(reg.start_date).toLocaleDateString()} - {new Date(reg.end_date).toLocaleDateString()}
+                                        </div>
+                                    </div>
+
+                                    {/* Key Metric: Total Views */}
+                                    <div className="mt-4 pt-3 border-t border-gray-100 dark:border-white/5">
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Visualizações Totais</div>
+                                        {metrics ? (
+                                            <div className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-1">
+                                                <span className="material-icons-round text-purple-500 text-lg">visibility</span>
+                                                {formatNumber(metrics.total_views)}
+                                            </div>
+                                        ) : (
+                                            <div className="h-6 w-20 bg-gray-100 rounded animate-pulse"></div>
+                                        )}
                                     </div>
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-1">{reg.title}</h3>
-                                <p className="text-sm text-purple-600 font-semibold mb-1">{reg.keywords ? reg.keywords[0] : ''}</p>
-                                <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
-                                    {new Date(reg.start_date).toLocaleDateString()} - {new Date(reg.end_date).toLocaleDateString()}
-                                </p>
                             </div>
-
-                            <div className="flex flex-wrap gap-2 mt-4">
-                                <span className="px-2 py-1 bg-purple-50 text-purple-600 rounded-lg text-xs font-semibold flex items-center gap-1">
-                                    <span className="material-icons-round text-[10px]">alternate_email</span>
-                                    Monitorando handle
-                                </span>
-                            </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 
