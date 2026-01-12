@@ -384,26 +384,42 @@ export const dataService = {
             }
 
             if (keywords.length > 0) {
-                // (title ~ "k1" || title ~ "k2" || ...)
-                const keywordConditions = keywords.map(k => `title ~ "${k}"`).join(' || ');
+                // (title ~ "k1" || title ~ "k2" || ... || author ~ "k1" ...)
+                const keywordConditions = keywords.map(k => `title ~ "${k}" || author ~ "${k}"`).join(' || ');
                 filter += ` && (${keywordConditions})`;
             }
 
-            // Fetch matched records directly from DB
-            // This retrieves all items containing the substring (e.g. "realmente" for "realme")
-            const contentRecords = await pb.collection('instagram_content').getList(1, 500, {
-                filter: filter,
-                sort: '-date'
-            });
+            // 4. Query Multiple Collections (Instagram & TikTok)
+            const collections = ['instagram_content', 'tiktok_content'];
 
-            // 4. Refine matches with Whole Word check (in memory)
+            // Execute queries in parallel
+            const queryPromises = collections.map(collectionName =>
+                pb.collection(collectionName).getList(1, 500, {
+                    filter: filter,
+                    sort: '-date',
+                    requestKey: null // Disable auto-cancellation
+                }).catch(err => {
+                    console.warn(`Error querying ${collectionName}`, err);
+                    return { items: [] };
+                })
+            );
+
+            const results = await Promise.all(queryPromises);
+
+            // Merge and Sort
+            const allItems = results.flatMap(res => res.items);
+
+            // Sort by date descending (merging two sorted lists needs re-sort)
+            allItems.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // 5. Refine matches with Whole Word check (in memory)
             // PocketBase '~' operator is a simple "LIKE", so "realme" matches "realmente".
             // We strictly filter for whole words here.
 
-            let refinedContent = contentRecords.items;
+            let refinedContent = allItems;
 
             if (keywords.length > 0) {
-                refinedContent = contentRecords.items.filter(item => {
+                refinedContent = allItems.filter(item => {
                     if (!item.title) return false;
                     const titleLower = item.title.toLowerCase();
 
@@ -419,14 +435,18 @@ export const dataService = {
                         } else {
                             regex = new RegExp(`\\b${escapedKeyword}\\b`, 'i');
                         }
-                        return regex.test(item.title);
+                        // Check Title OR Author
+                        if (regex.test(item.title)) return true;
+                        if (item.author && regex.test(item.author)) return true;
+
+                        return false;
                     });
                 });
             }
 
             const matchedContent = refinedContent;
 
-            // 5. Calculate Aggregated Metrics for matched content
+            // 6. Calculate Aggregated Metrics for matched content
             const metrics = {
                 total_posts: matchedContent.length,
                 total_likes: matchedContent.reduce((sum, item) => sum + (item.likes || 0), 0),

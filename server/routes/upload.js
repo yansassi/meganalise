@@ -90,7 +90,9 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                         views: item.views,
                         duration: item.duration,
                         virality_score: parseFloat(item.virality), // Matched to frontend expectation
-                        status: item.status
+                        virality_score: parseFloat(item.virality), // Matched to frontend expectation
+                        status: item.status,
+                        author: item.author // Save author/username
                     };
 
                     if (existing.items.length > 0) {

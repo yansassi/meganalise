@@ -170,7 +170,9 @@ const normalizeContentData = (data, isUSFormat = false) => {
         const saved = parseInt(findValue(row, ['Salvamentos', 'Saved', 'Save']) || 0, 10);
         const views = parseInt(findValue(row, ['Visualizações', 'Views', 'Visualizacoes', 'View']) || 0, 10);
         const duration = parseInt(findValue(row, ['Duração (s)', 'Duration (s)', 'Duracao']) || 0, 10);
+        const duration = parseInt(findValue(row, ['Duração (s)', 'Duration (s)', 'Duracao']) || 0, 10);
         const permalink = findValue(row, ['Link permanente', 'Permalink', 'Link']) || '';
+        const author = findValue(row, ['Nome de usuário da conta', 'Account username', 'Username']) || '';
 
         const engagements = likes + shares + comments + saved;
         const virality = reach > 0 ? ((engagements / reach) * 100).toFixed(1) : 0;
@@ -246,7 +248,7 @@ const normalizeContentData = (data, isUSFormat = false) => {
         }
 
         return {
-            id, title, imageUrl: '', permalink, platform, manager: 'Time Social',
+            id, title, imageUrl: '', permalink, platform, manager: 'Time Social', author,
             date: dateFormatted, posting_time: timeFormatted, virality, status, reach, likes, shares, comments, saved, views, duration
         };
     }).filter(item => item !== null); // Remove skipped rows
