@@ -412,6 +412,13 @@ const PlatformView = ({ platform }) => {
                     Estratégia
                     <span className="ml-2 material-icons-round text-xs text-yellow-400">bolt</span>
                 </button>
+                <button
+                    onClick={() => setActiveTab('content')}
+                    className={`pb-4 border-b-2 font-bold text-sm flex items-center transition-all ${activeTab === 'content' ? 'border-[#2563EB] text-[#2563EB]' : 'border-transparent text-gray-400 hover:text-gray-600'
+                        }`}
+                >
+                    Conteúdo
+                </button>
             </div>
 
             {(!data.isLoaded && !audienceData) && (
@@ -539,6 +546,12 @@ const PlatformView = ({ platform }) => {
 
                         {activeTab === 'intelligence' && (
                             <DataIntelligence contentItems={data.contentItems} />
+                        )}
+
+                        {activeTab === 'content' && (
+                            <div className="w-full">
+                                <ContentTable items={data.contentItems} />
+                            </div>
                         )}
                     </div>
                 </div>

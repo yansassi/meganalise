@@ -104,7 +104,8 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                                         <td className="py-4 px-4">
                                             <div className={`w-9 h-9 rounded-full flex items-center justify-center mx-auto
                           ${(item.platform === 'video' || item.platform === 'reel') ? 'bg-red-100 text-red-600 dark:bg-red-900/20' : ''}
-                          ${item.platform === 'social' ? 'bg-pink-100 text-pink-600 dark:bg-pink-900/20' : ''}
+                          ${item.social_network === 'facebook' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/20' : ''}
+                          ${item.social_network !== 'facebook' && item.platform === 'social' ? 'bg-pink-100 text-pink-600 dark:bg-pink-900/20' : ''}
                           ${item.platform === 'story' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/20' : ''}
                           ${item.platform === 'camera' ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/20' : ''}
                           ${item.platform === 'instagram' ? 'bg-purple-100 text-purple-600 dark:bg-purple-900/20' : ''}
@@ -112,8 +113,9 @@ const ContentTable = ({ items = [], title = "Conteúdo de Melhor Desempenho", li
                                                 <span className="material-icons-round text-lg">
                                                     {(item.platform === 'video' || item.platform === 'reel') ? 'play_arrow' :
                                                         item.platform === 'story' ? 'amp_stories' :
-                                                            item.platform === 'social' ? 'camera_alt' :
-                                                                item.platform === 'instagram' ? 'photo_camera' : 'lens'}
+                                                            item.social_network === 'facebook' ? 'facebook' :
+                                                                item.platform === 'social' ? 'camera_alt' :
+                                                                    item.platform === 'instagram' ? 'photo_camera' : 'lens'}
                                                 </span>
                                             </div>
                                         </td>
