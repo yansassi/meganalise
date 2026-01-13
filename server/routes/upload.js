@@ -152,7 +152,7 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                 errors.push({ error: err.message, type: 'demographics' });
             }
         } else {
-            return res.status(400).json({ error: 'Unknown file type or failed to parse' });
+            return res.status(400).json({ error: result.message || 'Unknown file type or failed to parse' });
         }
 
         res.json({

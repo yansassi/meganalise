@@ -361,7 +361,13 @@ const normalizeAudienceData = (lines) => {
 };
 
 const parseInstagramCSV = async (buffer, fileName) => {
-    const csvText = decodeBuffer(buffer);
+    let csvText = decodeBuffer(buffer);
+
+    // Remove "sep=," if present
+    if (csvText.trim().startsWith('sep=,')) {
+        csvText = csvText.replace(/^sep=,[\r\n]+/, '');
+    }
+
     const lines = csvText.split(/\r\n|\n/);
 
     let headerIndex = 0;
@@ -405,6 +411,7 @@ const parseInstagramCSV = async (buffer, fileName) => {
         Papa.parse(cleanCSV, {
             header: true,
             skipEmptyLines: true,
+            transformHeader: h => h.trim(),
             complete: (results) => {
                 const data = results.data;
                 const metadataLower = metadataLines.toLowerCase();
@@ -471,7 +478,7 @@ const parseInstagramCSV = async (buffer, fileName) => {
                 }
 
                 console.warn('Unknown file type. Headers:', Object.keys(data[0] || {}), 'Filename:', fileName);
-                resolve({ type: 'unknown', data: [] });
+                resolve({ type: 'unknown', data: [], message: `Erro: Formato desconhecido para ${fileName}. Headers detectados: ${JSON.stringify(Object.keys(data[0] || {}))}` });
             },
             error: (error) => reject(error),
         });
