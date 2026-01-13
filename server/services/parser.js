@@ -386,12 +386,12 @@ const parseInstagramCSV = async (buffer, fileName) => {
         return { type: 'ignored', data: {} };
     }
 
-    // BLOCK FACEBOOK FILES STRICTLY
-    if (firstLines.includes('identificação do post') || firstLines.includes('número de identificação do ativo de vídeo')) {
-        return { type: 'unknown', message: 'Este arquivo parece ser do Facebook. Por favor selecione a aba Facebook.' };
-    }
+    // BLOCK FACEBOOK FILES STRICTLY - REMOVED: Instagram exports from Meta Suite also have these headers now.
+    // if (firstLines.includes('identificação do post') || firstLines.includes('número de identificação do ativo de vídeo')) {
+    //    return { type: 'unknown', message: 'Este arquivo parece ser do Facebook. Por favor selecione a aba Facebook.' };
+    // }
 
-    // ... rest of logic
+    // Find header linest of logic
     for (let i = 0; i < Math.min(lines.length, 10); i++) {
         const line = lines[i].toLowerCase();
         if (line.includes('"data"') || line.includes('data,') || line.includes('data;') ||
