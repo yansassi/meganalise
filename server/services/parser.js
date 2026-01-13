@@ -707,8 +707,20 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
             skipEmptyLines: true,
             transformHeader: h => h.trim(),
             beforeFirstChunk: (chunk) => {
-                // Try to strip potential Byte Order Mark if Papa doesn't
-                // Also ensure headers are clean.
+                const lines = chunk.split(/\r?\n/);
+                // Look for header line containing key columns
+                // Keywords: "Link permanente", "Permalink", "Identificação", "Título", "Data"
+                const index = lines.findIndex(l => {
+                    const lower = l.toLowerCase();
+                    return lower.includes('link permanente') || lower.includes('permalink') ||
+                        lower.includes('identificação do post') || lower.includes('active video id') ||
+                        lower.includes('título') || lower.includes('title');
+                });
+
+                if (index !== -1) {
+                    console.log('Found Content headers at line:', index);
+                    return lines.slice(index).join('\n');
+                }
                 return chunk;
             },
             complete: (results) => {

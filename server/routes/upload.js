@@ -358,6 +358,17 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
         } else if (result.type === 'content') {
             for (const item of result.data) {
                 try {
+                    // Prepare payload to match PocketBase schema
+                    // IMPORTANT: We must NOT pass 'id' in the payload if it is the Facebook ID (long string),
+                    // because PocketBase expects 'id' to be 15 chars max if provided.
+                    const payload = { ...item };
+                    delete payload.id; // Remove FB ID so PB generates its own or we ignore it
+
+                    payload.original_id = item.id; // Store FB ID in original_id
+                    payload.country = country;
+                    payload.platform = 'facebook'; // Enforce 'facebook' match PB enum/select
+                    payload.media_type = item.platform; // Save original type (video/social)
+
                     // Upsert by original_id
                     const existing = await pb.collection('facebook_content').getList(1, 1, {
                         filter: `original_id = "${item.id}"`,
@@ -365,21 +376,9 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                     });
 
                     if (existing.items.length > 0) {
-                        await pb.collection('facebook_content').update(existing.items[0].id, {
-                            ...item,
-                            original_id: item.id, // Ensure ID is set
-                            country: country, // Update country if needed
-                            platform: 'facebook',
-                            media_type: item.platform // Save the detected type (video/social/story) as media_type
-                        }, { requestKey: null });
+                        await pb.collection('facebook_content').update(existing.items[0].id, payload, { requestKey: null });
                     } else {
-                        await pb.collection('facebook_content').create({
-                            ...item,
-                            original_id: item.id,
-                            country: country,
-                            platform: 'facebook',
-                            media_type: item.platform
-                        }, { requestKey: null });
+                        await pb.collection('facebook_content').create(payload, { requestKey: null });
                     }
                     savedCount++;
                 } catch (e) {
