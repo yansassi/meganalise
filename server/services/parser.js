@@ -644,6 +644,16 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
             return;
         }
 
+        // 1b. Principais Formatos (Content or Ignored?)
+        // If the user wants to upload "Principais formatos de conteúdo.csv", what is inside? 
+        // Usually it's summary data, not individual posts.
+        // Let's log it for now and maybe accept as metric?
+        if (fileNameLower.includes('principais formatos')) {
+            console.log('Skipping "Principais formatos" file (likely summary)');
+            resolve({ type: 'ignored', message: 'Arquivo de resumo ignorado (Principais formatos)' });
+            return;
+        }
+
         // 2. Metrics (Visitas, Seguidores, etc.)
         // Facebook Metrics usually start with "sep=," or a title line, then headers.
         // Or sometimes just headers.
@@ -703,13 +713,13 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                 const headers = results.meta.fields || [];
                 const headersLower = headers.map(h => h.toLowerCase());
 
-                if (headersLower.some(h => h.includes('dentificação do post') || h.includes('número de identificação') || h.includes('active video id'))) {
+                if (headersLower.some(h => h.includes('dentificação do post') || h.includes('número de identificação') || h.includes('active video id') || h.includes('identificação'))) {
                     const content = normalizeContentData(data);
                     resolve({ type: 'content', data: content });
                 } else {
                     // Fallback/Unknown
-                    console.warn('Unknown Facebook CSV format:', fileName);
-                    resolve({ type: 'unknown', data: [] });
+                    console.warn('Unknown Facebook CSV format:', fileName, 'Headers found:', headers);
+                    resolve({ type: 'unknown', data: [], message: `Formato desconhecido para: ${fileName}. Headers: ${headers.join(', ')}` });
                 }
             },
             error: (err) => reject(err)

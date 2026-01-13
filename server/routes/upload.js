@@ -324,7 +324,6 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
         }
 
         if (result.type === 'metric') {
-            const batch = pb.createBatch();
             for (const item of result.data) {
                 // Upsert logic: Check if exists
                 try {
@@ -334,69 +333,75 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                     // For metrics, we upsert based on Date + Metric + Country
 
                     const existing = await pb.collection('facebook_daily_metrics').getList(1, 1, {
-                        filter: `date = "${item.date}" && metric = "${item.metric}" && platform = "facebook" && country = "${country}"`
+                        filter: `date = "${item.date}" && metric = "${item.metric}" && platform = "facebook" && country = "${country}"`,
+                        requestKey: null
                     });
 
                     if (existing.items.length > 0) {
-                        batch.collection('facebook_daily_metrics').update(existing.items[0].id, {
+                        await pb.collection('facebook_daily_metrics').update(existing.items[0].id, {
                             value: item.value,
                             country: country // Ensure country matches
-                        });
+                        }, { requestKey: null });
                     } else {
-                        batch.collection('facebook_daily_metrics').create({
+                        await pb.collection('facebook_daily_metrics').create({
                             platform: 'facebook',
                             date: item.date,
                             metric: item.metric,
                             value: item.value,
                             country: country
-                        });
+                        }, { requestKey: null });
                     }
                     savedCount++;
                 } catch (e) {
+                    console.error('Error saving facebook metric:', e.message);
                     errors.push(e.message);
                 }
             }
-            await batch.send();
         } else if (result.type === 'content') {
-            const batch = pb.createBatch();
             for (const item of result.data) {
                 try {
                     // Upsert by original_id
                     const existing = await pb.collection('facebook_content').getList(1, 1, {
-                        filter: `original_id = "${item.id}"`
+                        filter: `original_id = "${item.id}"`,
+                        requestKey: null
                     });
 
                     if (existing.items.length > 0) {
-                        batch.collection('facebook_content').update(existing.items[0].id, {
+                        await pb.collection('facebook_content').update(existing.items[0].id, {
                             ...item,
                             original_id: item.id, // Ensure ID is set
                             country: country // Update country if needed
-                        });
+                        }, { requestKey: null });
                     } else {
-                        batch.collection('facebook_content').create({
+                        await pb.collection('facebook_content').create({
                             ...item,
                             original_id: item.id,
                             country: country
-                        });
+                        }, { requestKey: null });
                     }
                     savedCount++;
                 } catch (e) {
+                    console.error('Error saving facebook content:', e.message);
                     errors.push(e.message);
                 }
             }
-            await batch.send();
         } else if (result.type === 'audience') {
-            const data = result.data;
-            // Save snapshot
-            await pb.collection('facebook_audience_demographics').create({
-                platform: 'facebook',
-                import_date: new Date().toISOString(),
-                country_filter: country, // Store which audience this belongs to if applicable, or just country label
-                gender_age: data.gender_age,
-                cities: data.cities,
-                countries: data.countries
-            });
-            savedCount = 1;
+            try {
+                const data = result.data;
+                // Save snapshot
+                await pb.collection('facebook_audience_demographics').create({
+                    platform: 'facebook',
+                    import_date: new Date().toISOString(),
+                    country_filter: country, // Store which audience this belongs to if applicable, or just country label
+                    gender_age: data.gender_age,
+                    cities: data.cities,
+                    countries: data.countries
+                }, { requestKey: null });
+                savedCount = 1;
+            } catch (e) {
+                console.error('Error saving facebook audience:', e.message);
+                errors.push(e.message);
+            }
         }
 
         res.json({
