@@ -433,13 +433,26 @@ export const dataService = {
                     filter: filter,
                     sort: '-date',
                     requestKey: null // Disable auto-cancellation
-                }).then(res => ({
-                    items: res.items.map(item => ({
-                        ...item,
-                        social_network: collectionName === 'tiktok_content' ? 'tiktok' : collectionName === 'facebook_content' ? 'facebook' : 'instagram',
-                        platform: collectionName === 'tiktok_content' ? 'video' : collectionName === 'facebook_content' ? 'social' : (item.platform_type || 'social')
-                    }))
-                })).catch(err => {
+                }).then(res => {
+                    let items = res.items;
+
+                    // STRICT FILTER: Check for cross-contamination
+                    // If we are querying Instagram, exclude items that clearly belong to Facebook
+                    if (collectionName === 'instagram_content') {
+                        items = items.filter(item => {
+                            const link = (item.permalink || '').toLowerCase();
+                            return !link.includes('facebook.com');
+                        });
+                    }
+
+                    return {
+                        items: items.map(item => ({
+                            ...item,
+                            social_network: collectionName === 'tiktok_content' ? 'tiktok' : collectionName === 'facebook_content' ? 'facebook' : 'instagram',
+                            platform: collectionName === 'tiktok_content' ? 'video' : collectionName === 'facebook_content' ? 'social' : (item.platform_type || 'social')
+                        }))
+                    };
+                }).catch(err => {
                     console.warn(`Error querying ${collectionName}`, err);
                     return { items: [] };
                 })
