@@ -380,12 +380,17 @@ const parseInstagramCSV = async (buffer, fileName) => {
         return { type: 'ignored', data: {} };
     }
 
+    // BLOCK FACEBOOK FILES STRICTLY
+    if (firstLines.includes('identificação do post') || firstLines.includes('número de identificação do ativo de vídeo')) {
+        return { type: 'unknown', message: 'Este arquivo parece ser do Facebook. Por favor selecione a aba Facebook.' };
+    }
+
     // ... rest of logic
     for (let i = 0; i < Math.min(lines.length, 10); i++) {
         const line = lines[i].toLowerCase();
         if (line.includes('"data"') || line.includes('data,') || line.includes('data;') ||
             line.includes('"identificador') || line.includes('identificador') ||
-            line.includes('"identificação') || line.includes('identificação') ||
+            // Removed "identificação" checks as they are Facebook specific
             line.includes('alcance,') || line.includes('alcance;') ||
             line.includes('link permanente') || line.includes('permalink')) {
             headerIndex = i;
@@ -411,7 +416,17 @@ const parseInstagramCSV = async (buffer, fileName) => {
 
                 // Content detection logic...
                 const isUSFilename = /^[a-z]{3}-\d{2}-\d{4}/i.test(fileNameLower);
-                const hasContentColumns = hasColumn('permalink') || hasColumn('link permanente') || hasColumn('tipo de conte') || hasColumn('tipo de post') || hasColumn('identificação do post');
+                // Removed 'identificação do post' from hasContentColumns
+                const hasContentColumns = hasColumn('permalink') || hasColumn('link permanente') || hasColumn('tipo de conte') || hasColumn('tipo de post');
+
+                // EXTRA SAFEGUARD: Check first row data for Facebook
+                if (data.length > 0) {
+                    const permalink = data[0]['Link permanente'] || data[0]['Permalink'] || '';
+                    if (permalink && permalink.includes('facebook.com')) {
+                        resolve({ type: 'unknown', message: 'Conteúdo do Facebook detectado. Use a aba Facebook.' });
+                        return;
+                    }
+                }
 
                 if (isUSFilename || hasContentColumns || (data.length > 0 && typeof data[0]['Alcance'] !== 'undefined' && (hasColumn('curtidas') || hasColumn('respostas')))) {
                     resolve({ type: 'content', data: normalizeContentData(data, isUSFilename) });
