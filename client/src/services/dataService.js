@@ -379,7 +379,7 @@ export const dataService = {
      * Calculates metrics for a specific registry
      * @param {Object} registry 
      */
-    async calculateRegistryMetrics(registry, dateOverride = null) {
+    async calculateRegistryMetrics(registry, dateOverride = null, platformFilter = 'all') {
         try {
             const { keywords } = registry;
             const keywordsLower = keywords.map(k => k.toLowerCase());
