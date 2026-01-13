@@ -41,7 +41,7 @@ export const dataService = {
         formData.append('country', country);
 
         // Normalize platform to endpoint
-        const endpoint = platform.toLowerCase() === 'tiktok' ? 'tiktok' : 'instagram';
+        const endpoint = platform.toLowerCase();
 
         const response = await fetch(`https://api.meganalise.pro/api/upload/${endpoint}`, {
             method: 'POST',
