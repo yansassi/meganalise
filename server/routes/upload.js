@@ -311,27 +311,24 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
         }
 
         const buffer = req.file.buffer;
-        const filename = req.file.originalname;
+        // Normalize filename for better detection (remove accents)
+        const originalFilename = req.file.originalname;
+        const filename = originalFilename.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-        console.log(`Processing Facebook file: ${filename} for country: ${country}`);
+        console.log(`Processing Facebook file: ${originalFilename} (normalized: ${filename}) for country: ${country}`);
 
         const result = await parseFacebookCSV(buffer, filename);
         let savedCount = 0;
         let errors = [];
 
         if (result.type === 'unknown') {
-            return res.status(400).json({ error: 'Formato de arquivo Facebook desconhecido' });
+            return res.status(400).json({ error: result.message || 'Formato de arquivo Facebook desconhecido' });
         }
 
         if (result.type === 'metric') {
             for (const item of result.data) {
                 // Upsert logic: Check if exists
                 try {
-                    // key: date + metric + platform='facebook' + country (optional?)
-                    // Let's use filter.
-                    // Ideally we should have a composite index or unique constraint but we handle manually for now.
-                    // For metrics, we upsert based on Date + Metric + Country
-
                     const existing = await pb.collection('facebook_daily_metrics').getList(1, 1, {
                         filter: `date = "${item.date}" && metric = "${item.metric}" && platform = "facebook" && country = "${country}"`,
                         requestKey: null
@@ -340,7 +337,7 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                     if (existing.items.length > 0) {
                         await pb.collection('facebook_daily_metrics').update(existing.items[0].id, {
                             value: item.value,
-                            country: country // Ensure country matches
+                            country: country
                         }, { requestKey: null });
                     } else {
                         await pb.collection('facebook_daily_metrics').create({
@@ -353,8 +350,9 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                     }
                     savedCount++;
                 } catch (e) {
-                    console.error('Error saving facebook metric:', e.message);
-                    errors.push(e.message);
+                    const errorDetail = e.response ? JSON.stringify(e.response.data) : e.message;
+                    console.error('Error saving facebook metric:', errorDetail);
+                    errors.push(`Metric Error (${item.date}): ${errorDetail}`);
                 }
             }
         } else if (result.type === 'content') {
@@ -381,8 +379,9 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                     }
                     savedCount++;
                 } catch (e) {
-                    console.error('Error saving facebook content:', e.message);
-                    errors.push(e.message);
+                    const errorDetail = e.response ? JSON.stringify(e.response.data) : e.message;
+                    console.error('Error saving facebook content:', errorDetail);
+                    errors.push(`Content Error (${item.id}): ${errorDetail}`);
                 }
             }
         } else if (result.type === 'audience') {
@@ -399,8 +398,9 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                 }, { requestKey: null });
                 savedCount = 1;
             } catch (e) {
-                console.error('Error saving facebook audience:', e.message);
-                errors.push(e.message);
+                const errorDetail = e.response ? JSON.stringify(e.response.data) : e.message;
+                console.error('Error saving facebook audience:', errorDetail);
+                errors.push(errorDetail);
             }
         }
 

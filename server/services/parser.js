@@ -636,18 +636,16 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
         const fileNameLower = fileName.toLowerCase();
 
         // 1. Audience (Público) -> Text Parsing
-        if (fileNameLower.includes('público') || fileNameLower.includes('audience')) {
+        // Checks for "publico" (normalized) or "audience"
+        if (fileNameLower.includes('publico') || fileNameLower.includes('audience')) {
+            console.log('Parsing Facebook Audience/Publico file');
             const lines = decodedContent.split(/\r?\n/);
-            // Use our normalizeAudienceData logic (it might need a tweak for Facebook specifics if headers vary)
             const audienceData = normalizeAudienceData(lines);
             resolve({ type: 'audience', data: audienceData });
             return;
         }
 
-        // 1b. Principais Formatos (Content or Ignored?)
-        // If the user wants to upload "Principais formatos de conteúdo.csv", what is inside? 
-        // Usually it's summary data, not individual posts.
-        // Let's log it for now and maybe accept as metric?
+        // 1b. Principais Formatos
         if (fileNameLower.includes('principais formatos')) {
             console.log('Skipping "Principais formatos" file (likely summary)');
             resolve({ type: 'ignored', message: 'Arquivo de resumo ignorado (Principais formatos)' });
@@ -655,23 +653,19 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
         }
 
         // 2. Metrics (Visitas, Seguidores, etc.)
-        // Facebook Metrics usually start with "sep=," or a title line, then headers.
-        // Or sometimes just headers.
-        // We know from inspection:
-        // Line 1: sep=, (optional)
-        // Line 2: Title (e.g. "Visitas ao Facebook")
-        // Line 3: "Data","Primary"
+        // Normalized keywords: visitas, seguidores, interacoes, cliques, visualizacoes
         if (fileNameLower.includes('visitas') || fileNameLower.includes('seguidores') ||
-            fileNameLower.includes('interações') || fileNameLower.includes('cliques') ||
-            fileNameLower.includes('visualizações')) {
+            fileNameLower.includes('interacoes') || fileNameLower.includes('interações') ||
+            fileNameLower.includes('cliques') ||
+            fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações')) {
+
+            console.log('Parsing Facebook Metric file:', fileNameLower);
 
             Papa.parse(decodedContent, {
                 header: true,
                 skipEmptyLines: true,
                 transformHeader: h => h.trim(),
                 beforeFirstChunk: (chunk) => {
-                    // Facebook usually puts "Data","Primary" on line 3 or 2.
-                    // We need to find the header line.
                     const lines = chunk.split(/\r?\n/);
                     // Find line starting with "Data"
                     const index = lines.findIndex(l => l.toLowerCase().includes('"data"') || l.toLowerCase().startsWith('data,'));
@@ -685,9 +679,11 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                     let metricName = 'unknown';
                     if (fileNameLower.includes('visitas')) metricName = 'profile_visits';
                     else if (fileNameLower.includes('seguidores')) metricName = 'followers_total';
-                    else if (fileNameLower.includes('interações')) metricName = 'interactions';
+                    else if (fileNameLower.includes('interacoes') || fileNameLower.includes('interações')) metricName = 'interactions';
                     else if (fileNameLower.includes('cliques')) metricName = 'website_clicks';
-                    else if (fileNameLower.includes('visualizações')) metricName = 'reach'; // Default to reach or impressions
+                    else if (fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações')) metricName = 'reach';
+
+                    console.log(`Detected metric: ${metricName} for file ${fileName}`);
 
                     const metrics = normalizeDailyMetric(data, metricName);
                     resolve({ type: 'metric', data: metrics });
