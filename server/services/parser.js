@@ -632,12 +632,18 @@ const parseTikTokCSV = async (buffer, fileName) => {
 
 const parseFacebookCSV = (fileBuffer, fileName) => {
     return new Promise((resolve, reject) => {
-        const decodedContent = decodeBuffer(fileBuffer);
+        let decodedContent = decodeBuffer(fileBuffer);
+
+        // Remove "sep=," if present at the start (common in Excel CSV exports)
+        if (decodedContent.trim().startsWith('sep=,')) {
+            decodedContent = decodedContent.replace(/^sep=,[\r\n]+/, '');
+        }
+
         const fileNameLower = fileName.toLowerCase();
 
         // 1. Audience (Público) -> Text Parsing
-        // Checks for "publico" (normalized) or "audience"
-        if (fileNameLower.includes('publico') || fileNameLower.includes('audience')) {
+        // Checks for "publico" (normalized), "audience", or partial match "blico" due to encoding issues
+        if (fileNameLower.includes('publico') || fileNameLower.includes('audience') || fileNameLower.includes('blico')) {
             console.log('Parsing Facebook Audience/Publico file');
             const lines = decodedContent.split(/\r?\n/);
             const audienceData = normalizeAudienceData(lines);
@@ -646,7 +652,7 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
         }
 
         // 1b. Principais Formatos
-        if (fileNameLower.includes('principais formatos')) {
+        if (fileNameLower.includes('principais formats') || fileNameLower.includes('principais formatos')) {
             console.log('Skipping "Principais formatos" file (likely summary)');
             resolve({ type: 'ignored', message: 'Arquivo de resumo ignorado (Principais formatos)' });
             return;
@@ -654,10 +660,11 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
 
         // 2. Metrics (Visitas, Seguidores, etc.)
         // Normalized keywords: visitas, seguidores, interacoes, cliques, visualizacoes
+        // Partial matches for robustness: 'visualiza', 'intera'
         if (fileNameLower.includes('visitas') || fileNameLower.includes('seguidores') ||
-            fileNameLower.includes('interacoes') || fileNameLower.includes('interações') ||
+            fileNameLower.includes('interacoes') || fileNameLower.includes('interações') || fileNameLower.includes('intera') ||
             fileNameLower.includes('cliques') ||
-            fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações')) {
+            fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações') || fileNameLower.includes('visualiza')) {
 
             console.log('Parsing Facebook Metric file:', fileNameLower);
 
@@ -679,9 +686,9 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                     let metricName = 'unknown';
                     if (fileNameLower.includes('visitas')) metricName = 'profile_visits';
                     else if (fileNameLower.includes('seguidores')) metricName = 'followers_total';
-                    else if (fileNameLower.includes('interacoes') || fileNameLower.includes('interações')) metricName = 'interactions';
+                    else if (fileNameLower.includes('interacoes') || fileNameLower.includes('interações') || fileNameLower.includes('intera')) metricName = 'interactions';
                     else if (fileNameLower.includes('cliques')) metricName = 'website_clicks';
-                    else if (fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações')) metricName = 'reach';
+                    else if (fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações') || fileNameLower.includes('visualiza')) metricName = 'reach';
 
                     console.log(`Detected metric: ${metricName} for file ${fileName}`);
 

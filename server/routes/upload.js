@@ -368,13 +368,17 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                         await pb.collection('facebook_content').update(existing.items[0].id, {
                             ...item,
                             original_id: item.id, // Ensure ID is set
-                            country: country // Update country if needed
+                            country: country, // Update country if needed
+                            platform: 'facebook',
+                            media_type: item.platform // Save the detected type (video/social/story) as media_type
                         }, { requestKey: null });
                     } else {
                         await pb.collection('facebook_content').create({
                             ...item,
                             original_id: item.id,
-                            country: country
+                            country: country,
+                            platform: 'facebook',
+                            media_type: item.platform
                         }, { requestKey: null });
                     }
                     savedCount++;
