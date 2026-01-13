@@ -130,6 +130,35 @@ router.get('/:country/:platform', async (req, res) => {
                 // Frontend expects reach, likes, comments, shares
             }));
 
+        } else if (socialNetwork === 'facebook') {
+            const metricsFilter = `country = "${country}" && platform = "facebook"${dateFilter}`;
+            try {
+                metrics = await pb.collection('facebook_daily_metrics').getFullList({
+                    filter: metricsFilter,
+                    sort: 'date',
+                    requestKey: null
+                });
+            } catch (e) {
+                console.log('Error fetching facebook metrics:', e.message);
+            }
+
+            try {
+                content = await pb.collection('facebook_content').getFullList({
+                    filter: `country = "${country}"${dateFilter}`,
+                    sort: '-date',
+                    requestKey: null
+                });
+            } catch (e) {
+                console.log('Error fetching facebook content:', e.message);
+            }
+
+            // Normalize Content
+            content = content.map(c => ({
+                ...c,
+                social_network: 'facebook',
+                platform_type: 'social' // Default to social post
+            }));
+
         } else {
             // Instagram (Default)
             const metricsFilter = `country = "${country}" && platform = "${socialNetwork}"${dateFilter}`;

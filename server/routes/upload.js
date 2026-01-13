@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const { pb } = require('../services/db');
-const { parseInstagramCSV, parseTikTokCSV } = require('../services/parser');
+const { parseInstagramCSV, parseTikTokCSV, parseFacebookCSV } = require('../services/parser');
 
 const router = express.Router();
 const upload = multer(); // Memory storage
@@ -296,6 +296,119 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
     } catch (error) {
         console.error('TikTok Upload parse error:', error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/facebook', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'No file uploaded' });
+        }
+
+        const { country } = req.body;
+        if (!country) {
+            return res.status(400).json({ error: 'Country is required' });
+        }
+
+        const buffer = req.file.buffer;
+        const filename = req.file.originalname;
+
+        console.log(`Processing Facebook file: ${filename} for country: ${country}`);
+
+        const result = await parseFacebookCSV(buffer, filename);
+        let savedCount = 0;
+        let errors = [];
+
+        if (result.type === 'unknown') {
+            return res.status(400).json({ error: 'Formato de arquivo Facebook desconhecido' });
+        }
+
+        if (result.type === 'metric') {
+            const batch = pb.createBatch();
+            for (const item of result.data) {
+                // Upsert logic: Check if exists
+                try {
+                    // key: date + metric + platform='facebook' + country (optional?)
+                    // Let's use filter.
+                    // Ideally we should have a composite index or unique constraint but we handle manually for now.
+                    // For metrics, we upsert based on Date + Metric + Country
+
+                    const existing = await pb.collection('facebook_daily_metrics').getList(1, 1, {
+                        filter: `date = "${item.date}" && metric = "${item.metric}" && platform = "facebook" && country = "${country}"`
+                    });
+
+                    if (existing.items.length > 0) {
+                        batch.collection('facebook_daily_metrics').update(existing.items[0].id, {
+                            value: item.value,
+                            country: country // Ensure country matches
+                        });
+                    } else {
+                        batch.collection('facebook_daily_metrics').create({
+                            platform: 'facebook',
+                            date: item.date,
+                            metric: item.metric,
+                            value: item.value,
+                            country: country
+                        });
+                    }
+                    savedCount++;
+                } catch (e) {
+                    errors.push(e.message);
+                }
+            }
+            await batch.send();
+        } else if (result.type === 'content') {
+            const batch = pb.createBatch();
+            for (const item of result.data) {
+                try {
+                    // Upsert by original_id
+                    const existing = await pb.collection('facebook_content').getList(1, 1, {
+                        filter: `original_id = "${item.id}"`
+                    });
+
+                    if (existing.items.length > 0) {
+                        batch.collection('facebook_content').update(existing.items[0].id, {
+                            ...item,
+                            original_id: item.id, // Ensure ID is set
+                            country: country // Update country if needed
+                        });
+                    } else {
+                        batch.collection('facebook_content').create({
+                            ...item,
+                            original_id: item.id,
+                            country: country
+                        });
+                    }
+                    savedCount++;
+                } catch (e) {
+                    errors.push(e.message);
+                }
+            }
+            await batch.send();
+        } else if (result.type === 'audience') {
+            const data = result.data;
+            // Save snapshot
+            await pb.collection('facebook_audience_demographics').create({
+                platform: 'facebook',
+                import_date: new Date().toISOString(),
+                country_filter: country, // Store which audience this belongs to if applicable, or just country label
+                gender_age: data.gender_age,
+                cities: data.cities,
+                countries: data.countries
+            });
+            savedCount = 1;
+        }
+
+        res.json({
+            success: true,
+            type: result.type,
+            processed: savedCount,
+            errors: errors.length > 0 ? errors : undefined
+        });
+
+    } catch (err) {
+        console.error('Facebook Upload Error:', err);
+        res.status(500).json({ error: err.message });
     }
 });
 

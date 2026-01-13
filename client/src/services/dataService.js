@@ -236,7 +236,7 @@ export const dataService = {
             const formData = new FormData();
             formData.append('image_file', imageFile);
 
-            const collectionName = platform === 'tiktok' ? 'tiktok_content' : 'instagram_content';
+            const collectionName = platform === 'tiktok' ? 'tiktok_content' : platform === 'facebook' ? 'facebook_content' : 'instagram_content';
 
             const result = await pb.collection(collectionName).update(
                 contentId,
@@ -261,7 +261,7 @@ export const dataService = {
         // Check if we have imageFile field (from mapped data) or image_file (from raw PB data)
         const imageField = item.imageFile || item.image_file;
 
-        if (imageField && item.pbId) {
+        if (imageField && (item.pbId || item.id)) {
             // Construct PocketBase file URL manually
             // Format: https://auth.meganalise.pro/api/files/COLLECTION_NAME/RECORD_ID/FILENAME
 
@@ -270,7 +270,8 @@ export const dataService = {
                 collection = 'tiktok_content';
             }
 
-            return `https://auth.meganalise.pro/api/files/${collection}/${item.pbId}/${imageField}`;
+            const recordId = item.pbId || item.id;
+            return `https://auth.meganalise.pro/api/files/${collection}/${recordId}/${imageField}`;
         }
 
         // Senão, usa URL externa (compatibilidade)
@@ -414,8 +415,17 @@ export const dataService = {
                 filter += ` && (${keywordConditions})`;
             }
 
-            // Query Multiple Collections (Instagram & TikTok)
-            const collections = ['instagram_content', 'tiktok_content'];
+            // Query Multiple Collections based on filter
+            let collections = [];
+            if (platformFilter === 'all') {
+                collections = ['instagram_content', 'tiktok_content', 'facebook_content'];
+            } else if (platformFilter === 'instagram') {
+                collections = ['instagram_content'];
+            } else if (platformFilter === 'tiktok') {
+                collections = ['tiktok_content'];
+            } else if (platformFilter === 'facebook') {
+                collections = ['facebook_content'];
+            }
 
             // Execute queries in parallel
             const queryPromises = collections.map(collectionName =>
@@ -426,8 +436,8 @@ export const dataService = {
                 }).then(res => ({
                     items: res.items.map(item => ({
                         ...item,
-                        social_network: collectionName === 'tiktok_content' ? 'tiktok' : 'instagram',
-                        platform: collectionName === 'tiktok_content' ? 'video' : (item.platform_type || 'social')
+                        social_network: collectionName === 'tiktok_content' ? 'tiktok' : collectionName === 'facebook_content' ? 'facebook' : 'instagram',
+                        platform: collectionName === 'tiktok_content' ? 'video' : collectionName === 'facebook_content' ? 'social' : (item.platform_type || 'social')
                     }))
                 })).catch(err => {
                     console.warn(`Error querying ${collectionName}`, err);

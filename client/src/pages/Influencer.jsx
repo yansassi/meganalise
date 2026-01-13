@@ -15,6 +15,9 @@ export default function Influencer() {
     const [rankingMetricsCache, setRankingMetricsCache] = useState({}); // Cache for Rankings (Filter Date)
     const [rankingDateRange, setRankingDateRange] = useState({ startDate: null, endDate: null });
 
+    // Platform Filter
+    const [activePlatform, setActivePlatform] = useState('all');
+
     // Form State
     const [formData, setFormData] = useState({
         title: '',
@@ -35,7 +38,7 @@ export default function Influencer() {
         influencers.forEach(async (reg) => {
             try {
                 // Determine implicit date range if none saved? Actually registry has dates.
-                const { metrics } = await dataService.calculateRegistryMetrics(reg);
+                const { metrics } = await dataService.calculateRegistryMetrics(reg, null, activePlatform);
                 setMetricsCache(prev => ({ ...prev, [reg.id]: metrics }));
             } catch (e) {
                 console.error("Failed to load metrics for", reg.title);
@@ -43,18 +46,28 @@ export default function Influencer() {
         });
     };
 
-    // Refetch rankings when date range changes or registries load
+    // Refetch rankings when date range changes or registries load or platform changes
     useEffect(() => {
-        if (registries.length > 0 && rankingDateRange.startDate && rankingDateRange.endDate) {
-            fetchRankingMetrics();
+        if (registries.length > 0) {
+            // Re-fetch "My Influencers" metrics if platform changes (even if registries didn't change, we need to update cache)
+            registries.forEach(async (reg) => {
+                try {
+                    const { metrics } = await dataService.calculateRegistryMetrics(reg, null, activePlatform);
+                    setMetricsCache(prev => ({ ...prev, [reg.id]: metrics }));
+                } catch (e) { console.error(e); }
+            });
+
+            if (rankingDateRange.startDate && rankingDateRange.endDate) {
+                fetchRankingMetrics();
+            }
         }
-    }, [registries, rankingDateRange]);
+    }, [registries, rankingDateRange, activePlatform]);
 
     const fetchRankingMetrics = () => {
         registries.forEach(async (reg) => {
             try {
-                // Pass override dates
-                const { metrics } = await dataService.calculateRegistryMetrics(reg, rankingDateRange);
+                // Pass override dates AND platform
+                const { metrics } = await dataService.calculateRegistryMetrics(reg, rankingDateRange, activePlatform);
                 setRankingMetricsCache(prev => ({ ...prev, [reg.id]: metrics }));
             } catch (e) {
                 console.error("Failed to load ranking metrics for", reg.title);
@@ -150,6 +163,22 @@ export default function Influencer() {
                     <span className="material-icons-round">person_add</span>
                     Novo Influencer
                 </button>
+            </div>
+
+            {/* Platform Filter Tabs */}
+            <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 pb-1 overflow-x-auto">
+                {['all', 'instagram', 'tiktok', 'facebook'].map(platform => (
+                    <button
+                        key={platform}
+                        onClick={() => setActivePlatform(platform)}
+                        className={`pb-3 px-2 text-sm font-bold capitalize transition-all border-b-2 ${activePlatform === platform
+                            ? 'border-purple-600 text-purple-600'
+                            : 'border-transparent text-gray-400 hover:text-gray-600'
+                            }`}
+                    >
+                        {platform === 'all' ? 'Todos' : platform}
+                    </button>
+                ))}
             </div>
 
             {/* Section 1: Meus Influenciadores (Horizontal Scroll) */}
@@ -383,6 +412,7 @@ export default function Influencer() {
                                     value={formData.country}
                                     onChange={handleInputChange}
                                 >
+                                    <option value="BR">🇧🇷 Brasil (Português)</option>
                                     <option value="BR">🇧🇷 Brasil (Português)</option>
                                     <option value="PY">🇵🇾 Paraguai (Espanhol)</option>
                                 </select>

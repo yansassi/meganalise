@@ -89,12 +89,20 @@ const ContentGrid = ({ items = [], title = "Conteúdo", limit = 45, showPaginati
                                         </div>
 
                                         {/* Type Indicator (Top Left) */}
-                                        <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20">
-                                            <span className="material-icons-round text-white text-[12px]">
-                                                {(item.platform === 'video' || item.platform === 'reel') ? 'play_arrow' :
-                                                    item.platform === 'story' ? 'amp_stories' :
-                                                        item.platform === 'social' ? 'camera_alt' : 'image'}
-                                            </span>
+                                        <div className="absolute top-1 left-1 flex gap-1">
+                                            <div className="w-5 h-5 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                                                <span className="material-icons-round text-white text-[12px]">
+                                                    {(item.platform === 'video' || item.platform === 'reel') ? 'play_arrow' :
+                                                        item.platform === 'story' ? 'amp_stories' :
+                                                            item.platform === 'social' ? 'camera_alt' : 'image'}
+                                                </span>
+                                            </div>
+                                            {/* Platform Badge */}
+                                            <div className={`w-5 h-5 rounded-full flex items-center justify-center border border-white/20 backdrop-blur-sm ${item.social_network === 'facebook' ? 'bg-blue-600/80' : item.social_network === 'tiktok' ? 'bg-black/60' : 'bg-pink-600/80'}`}>
+                                                <span className="material-icons-round text-white text-[10px]">
+                                                    {item.social_network === 'facebook' ? 'facebook' : item.social_network === 'tiktok' ? 'music_note' : 'photo_camera'}
+                                                </span>
+                                            </div>
                                         </div>
 
                                         {/* External Link (Top Right) */}
