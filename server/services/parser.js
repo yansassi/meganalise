@@ -201,25 +201,22 @@ const normalizeContentData = (data, isUSFormat = false) => {
 
         if (rawDate) {
             try {
-                const parts = rawDate.split(' ');
-                const datePart = parts[0];
-                const timePart = parts[1]; // Extract time "HH:MM"
-
-                if (timePart) {
-                    timeFormatted = timePart.substring(0, 5); // Ensure HH:MM
+                // Try basic time extraction with regex (HH:MM)
+                const timeMatch = rawDate.match(/(\d{1,2}:\d{2})/);
+                if (timeMatch) {
+                    timeFormatted = timeMatch[1];
                 }
 
-                if (datePart.includes('/')) {
-                    const dParts = datePart.split('/');
-                    if (dParts.length === 3) {
-                        if (isUSFormat) {
-                            dateFormatted = `${dParts[2]}-${dParts[0]}-${dParts[1]}`;
-                        } else {
-                            dateFormatted = `${dParts[2]}-${dParts[1]}-${dParts[0]}`;
-                        }
-                    }
+                // Date Parsing
+                // 1. Special handling for US Slashed dates (MM/DD/YYYY) if specified
+                const slashMatch = rawDate.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                if (isUSFormat && slashMatch) {
+                    const [_, p1, p2, year] = slashMatch;
+                    // US: p1=Month, p2=Day
+                    dateFormatted = `${year}-${p1.padStart(2, '0')}-${p2.padStart(2, '0')}`;
                 } else {
-                    dateFormatted = datePart;
+                    // 2. Use robust parseDate helper (handles DD/MM/YYYY, Text months "Jan 10", YYYY-MM-DD)
+                    dateFormatted = parseDate(rawDate);
                 }
             } catch (e) {
                 console.error('Date parsing error', rawDate);
