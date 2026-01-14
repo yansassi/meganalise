@@ -174,11 +174,11 @@ const findValue = (row, candidates) => {
 const normalizeContentData = (data, isUSFormat = false) => {
     return data.map((row, index) => {
         const reach = parseInt(findValue(row, ['Alcance', 'Reach']) || 0, 10);
-        const likes = parseInt(findValue(row, ['Curtidas', 'Likes', 'Curtida', 'Like']) || 0, 10);
+        const likes = parseInt(findValue(row, ['Curtidas', 'Likes', 'Curtida', 'Like', 'Reações', 'Reacoes', 'Reactions']) || 0, 10);
         const shares = parseInt(findValue(row, ['Compartilhamentos', 'Shares', 'Share']) || 0, 10);
         const comments = parseInt(findValue(row, ['Respostas', 'Comentários', 'Comments', 'Comentarios', 'Comentario', 'Comment', 'Res']) || 0, 10);
         const saved = parseInt(findValue(row, ['Salvamentos', 'Saved', 'Save']) || 0, 10);
-        const views = parseInt(findValue(row, ['Visualizações', 'Views', 'Visualizacoes', 'View', 'Impressões do anúncio', 'Impressões']) || 0, 10); // Facebook usually gives Impressions
+        const views = parseInt(findValue(row, ['Visualizações de 3 segundos', 'Visualizações', 'Views', 'Visualizacoes', 'View', 'Impressões do anúncio', 'Impressões']) || 0, 10); // Facebook usually gives Impressions
         const duration = parseInt(findValue(row, ['Duração (s)', 'Duration (s)', 'Duracao']) || 0, 10);
         const clicks = parseInt(findValue(row, ['Cliques no link', 'Link Clicks']) || 0, 10);
 
@@ -733,8 +733,33 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                 const headersLower = headers.map(h => h.toLowerCase());
 
                 if (headersLower.some(h => h.includes('dentificação do post') || h.includes('número de identificação') || h.includes('active video id') || h.includes('identificação'))) {
-                    const content = normalizeContentData(data);
-                    resolve({ type: 'content', data: content });
+                    const rawContent = normalizeContentData(data);
+
+                    // Aggregate by ID to handle daily breakdown rows
+                    const aggregated = {};
+                    rawContent.forEach(item => {
+                        if (!aggregated[item.id]) {
+                            aggregated[item.id] = { ...item };
+                        } else {
+                            // Sum metrics
+                            aggregated[item.id].reach += item.reach;
+                            aggregated[item.id].likes += item.likes;
+                            aggregated[item.id].shares += item.shares;
+                            aggregated[item.id].comments += item.comments;
+                            aggregated[item.id].saved += item.saved;
+                            aggregated[item.id].views += item.views;
+                            aggregated[item.id].clicks += item.clicks;
+                        }
+                    });
+
+                    // Recalculate virality and return array
+                    const finalContent = Object.values(aggregated).map(item => {
+                        const engagements = item.likes + item.shares + item.comments + item.saved + item.clicks;
+                        item.virality = item.reach > 0 ? ((engagements / item.reach) * 100).toFixed(1) : 0;
+                        return item;
+                    });
+
+                    resolve({ type: 'content', data: finalContent });
                 } else {
                     // Fallback/Unknown
                     console.warn('Unknown Facebook CSV format:', fileName, 'Headers found:', headers);
