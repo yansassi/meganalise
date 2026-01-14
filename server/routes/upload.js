@@ -361,13 +361,29 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                     // Prepare payload to match PocketBase schema
                     // IMPORTANT: We must NOT pass 'id' in the payload if it is the Facebook ID (long string),
                     // because PocketBase expects 'id' to be 15 chars max if provided.
-                    const payload = { ...item };
-                    delete payload.id; // Remove FB ID so PB generates its own or we ignore it
-
-                    payload.original_id = item.id; // Store FB ID in original_id
-                    payload.country = country;
-                    payload.platform = 'facebook'; // Enforce 'facebook' match PB enum/select
-                    payload.media_type = item.platform; // Save original type (video/social)
+                    // Explicitly map fields to ensure correct data types and schema alignment
+                    const payload = {
+                        original_id: item.id,
+                        title: item.title,
+                        permalink: item.permalink,
+                        platform_type: item.platform, // 'social' or 'video'
+                        social_network: 'facebook',
+                        country: country,
+                        date: item.date ? new Date(item.date + 'T12:00:00.000Z').toISOString() : new Date().toISOString(),
+                        posting_time: item.posting_time,
+                        reach: item.reach,
+                        likes: item.likes,
+                        shares: item.shares,
+                        comments: item.comments,
+                        saved: item.saved,
+                        views: item.views,
+                        clicks: item.clicks,
+                        duration: item.duration,
+                        virality: item.virality,
+                        status: item.status,
+                        author: item.author,
+                        media_type: item.platform
+                    };
 
                     // Upsert by original_id
                     const existing = await pb.collection('facebook_content').getList(1, 1, {
