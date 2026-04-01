@@ -1,40 +1,63 @@
 @import "tailwindcss";
 
 @theme {
-  /* New Color Scheme - Clean & Modern */
-  --color-bg-main: #F3F4F6;
-  --color-sidebar: #2563EB;
-  --color-sidebar-dark: #1E40AF;
-  --color-sidebar-darker: #1e3a8a;
+  /* Premium System Color Scheme - based on design_system_spec.md */
+  --color-primary: #6C5DD3;
+  --color-primary-glow: rgba(108, 93, 211, 0.3);
+  --color-secondary: #FF754C;
+  
+  --color-bg-light: #F5F6FA;
+  --color-bg-dark: #0F172A;
+  --color-sidebar-bg: #0F1235;
 
-  /* Accent Colors */
-  --color-green: #10B981;
-  --color-purple: #D946EF;
-  --color-blue: #3B82F6;
-  --color-orange: #F97316;
+  /* Card Colors */
+  --color-card-light: #FFFFFF;
+  --color-card-dark: #1E293B;
+
+  /* Accent Colors for Stats */
+  --color-accent-green: #10B981;
+  --color-accent-purple: #D946EF;
+  --color-accent-blue: #3B82F6;
+  --color-accent-orange: #F97316;
 
   /* Text Colors */
   --color-text-primary: #1F2937;
   --color-text-secondary: #9CA3AF;
   --color-text-muted: #6B7280;
 
-  /* Border & Shadow */
-  --color-border-light: #E5E7EB;
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
+  /* Custom Shadows */
+  --shadow-soft: 0 10px 40px -10px rgba(0,0,0,0.05);
+  --shadow-glow: 0 0 20px rgba(108, 93, 211, 0.3);
+  --shadow-premium: 0 20px 40px -10px rgba(0,0,0,0.1);
 }
 
 @layer base {
   body {
     @apply font-sans transition-colors duration-300;
     color: var(--color-text-primary);
-    background: #F3F4F6;
+    background: var(--color-bg-light);
   }
 }
 
-/* Utility Classes */
+@layer utilities {
+  .glass-panel {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-soft;
+  }
+  
+  .glass-panel-dark {
+    @apply bg-gray-900/60 backdrop-blur-xl border border-white/5 shadow-premium;
+  }
+
+  .bento-card {
+    @apply bg-white rounded-3xl shadow-soft border border-slate-100 p-6 overflow-hidden relative transition-all duration-300;
+  }
+  
+  .bento-card:hover {
+    @apply shadow-premium -translate-y-[2px];
+  }
+}
+
+/* Scrollbar Utilities */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
