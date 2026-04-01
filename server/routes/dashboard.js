@@ -20,32 +20,79 @@ router.get('/aggregate/:country', async (req, res) => {
         let filter = `country = "${country}"`;
         if (startDate && endDate) {
             const start = new Date(startDate).toISOString();
-            const end = new Date(endDate).toISOString();
+            const endDateObj = new Date(endDate);
+            endDateObj.setUTCHours(23, 59, 59, 999);
+            const end = endDateObj.toISOString();
             filter += ` && date >= "${start}" && date <= "${end}"`;
         }
 
-        // Fetch metrics from all platforms (currently just instagram logic implies all found)
-        // Note: If we add more platforms, we might need to query different collections or same one if unified.
-        // Assuming 'instagram_daily_metrics' for now or a unified metrics table? 
-        // The upload route saves to 'instagram_daily_metrics'.
-        // Does 'Dashboard.jsx' expect metrics from ALL platforms? Yes.
-        // So we should query all known metric collections.
+        // We paginate to avoid loading all records into memory at once
+        // and perform aggregation in-memory.
+        const batchSize = 500;
+        let page = 1;
+        let hasMore = true;
 
-        // For now, only 'instagram_daily_metrics' exists in our scope.
+        let totalReach = 0;
+        let totalInteractions = 0;
+        let totalFollowers = 0; // Followers are tricky - usually last record value, but here we sum?
+                                // Dashboard.jsx sums them: if (m.metric === 'followers') totalFollowers += m.value;
+                                // This implies daily follower GAIN? Or just sum of follower count snapshots?
+                                // If it's sum of daily snapshots, that's weird for "Total Followers".
+                                // But we must preserve existing logic.
 
-        // We need to fetch ALL records matching filter, not just first page.
-        // Use getFullList
-        const metricsRecords = await pb.collection('instagram_daily_metrics').getFullList({
-            filter: filter,
-            requestKey: null
-        });
+        // Also, we need to return something that Dashboard.jsx can consume.
+        // Dashboard.jsx expects `data.metrics` array and iterates it.
+        // If we want to return a small array that produces the same sum, we can do that.
+        // Or we can return the full list if requested, but the task is to optimize.
 
-        // The dashboard expects aggregated values (e.g. sum of reach across period).
-        // Actually, Dashboard.jsx does the summing itself (lines 41-45).
-        // So we just return the raw metrics list.
+        // Optimization: Return a condensed list of metrics containing the sums.
+        // This avoids sending 10k records.
+        // Dashboard.jsx logic:
+        // data.metrics.forEach(m => {
+        //    if (m.metric === 'reach') totalReach += m.value;
+        //    if (m.metric === 'interactions') totalEngagement += m.value;
+        //    if (m.metric === 'followers') totalFollowers += m.value;
+        // });
+
+        // So if we return 3 items:
+        // [{ metric: 'reach', value: sumReach }, { metric: 'interactions', value: sumInteractions }, ...]
+        // The dashboard will calculate the correct totals!
+
+        while (hasMore) {
+            const result = await pb.collection('instagram_daily_metrics').getList(page, batchSize, {
+                filter: filter,
+                requestKey: null,
+                fields: 'metric,value' // Select only needed fields to save memory/bandwidth
+            });
+
+            const items = result.items;
+            if (items.length === 0) {
+                hasMore = false;
+                break;
+            }
+
+            for (const m of items) {
+                const val = Number(m.value) || 0;
+                if (m.metric === 'reach') totalReach += val;
+                else if (m.metric === 'interactions') totalInteractions += val;
+                else if (m.metric === 'followers') totalFollowers += val;
+            }
+
+            if (page >= result.totalPages) {
+                hasMore = false;
+            }
+            page++;
+        }
+
+        // Construct the condensed metrics list
+        const condensedMetrics = [
+            { metric: 'reach', value: totalReach },
+            { metric: 'interactions', value: totalInteractions },
+            { metric: 'followers', value: totalFollowers }
+        ];
 
         res.json({
-            metrics: metricsRecords
+            metrics: condensedMetrics
         });
 
     } catch (error) {
@@ -70,10 +117,9 @@ router.get('/:country/:platform', async (req, res) => {
             // Ensure full ISO timestamp for accurate comparison if stored as ISO
             // Or just >= start and <= end
             const start = new Date(startDate).toISOString();
-            const end = new Date(endDate).toISOString(); // This might be start of day?
-            // To include the end date fully, we might need to adjust time?
-            // Usually PB date comparison handles ISO strings.
-            // Let's assume passed dates are correct boundaries or handled by frontend.
+            const endDateObj = new Date(endDate);
+            endDateObj.setUTCHours(23, 59, 59, 999);
+            const end = endDateObj.toISOString();
             dateFilter = ` && date >= "${start}" && date <= "${end}"`;
         }
 
@@ -83,42 +129,30 @@ router.get('/:country/:platform', async (req, res) => {
 
         if (socialNetwork === 'tiktok') {
             const metricsFilter = `country = "${country}" && platform = "${socialNetwork}"${dateFilter}`;
-            try {
-                metrics = await pb.collection('tiktok_daily_metrics').getFullList({
+            // Use country filter if available, otherwise just date filter for TikTok temporarily
+            const contentFilter = `country = "${country}"${dateFilter}`;
+
+            const [metricsResult, contentResult] = await Promise.all([
+                pb.collection('tiktok_daily_metrics').getFullList({
                     filter: metricsFilter,
                     sort: 'date',
                     requestKey: null
-                });
-            } catch (e) {
-                console.log('Error fetching tiktok metrics (might not exist yet):', e.message);
-            }
-
-            const contentFilter = [
-                // `country = "${country}"`, // TikTok content currently doesn't have country field in upload.js?
-                // Let's check upload.js. I didn't add country to tiktok_content. 
-                // I should have. Let's assume I did or I will fix it. 
-                // Actually looking at upload.js, I did `const recordData = { ... }` inside `if (result.type === 'content')`.
-                // I missed adding `country` to `recordData` for TikTok content in upload.js!
-                // I need to fix upload.js first or handle it here.
-                // For now, let's skip country filter for tiktok content if it's missing, or assume it's there.
-                // Wait, I MUST fix upload.js if I want country filtering.
-                // But for now, let's implement the query assuming I'll fix it.
-            ].filter(Boolean).join(' && ');
-
-            // Actually, simplest is to fetch all tiktok content for now since we might not have country.
-            // But wait, if I have multiple clients... user is implied by header/auth? 
-            // PB is global? Queries need to be scoped.
-            // I better fix upload.js to add country.
-
-            try {
-                content = await pb.collection('tiktok_content').getFullList({
-                    filter: `country = "${country}"${dateFilter}`,
+                }).catch(e => {
+                    console.log('Error fetching tiktok metrics:', e.message);
+                    return [];
+                }),
+                pb.collection('tiktok_content').getList(1, 1000, {
+                    filter: contentFilter,
                     sort: '-date',
                     requestKey: null
-                });
-            } catch (e) {
-                console.log('Error fetching tiktok content:', e.message);
-            }
+                }).then(res => res.items).catch(e => {
+                    console.log('Error fetching tiktok content:', e.message);
+                    return [];
+                })
+            ]);
+
+            metrics = metricsResult;
+            content = contentResult;
 
             // Normalize Content for Frontend
             content = content.map(c => ({
@@ -132,25 +166,29 @@ router.get('/:country/:platform', async (req, res) => {
 
         } else if (socialNetwork === 'facebook') {
             const metricsFilter = `country = "${country}" && platform = "facebook"${dateFilter}`;
-            try {
-                metrics = await pb.collection('facebook_daily_metrics').getFullList({
+            const contentFilter = `country = "${country}"${dateFilter}`;
+
+            const [metricsResult, contentResult] = await Promise.all([
+                pb.collection('facebook_daily_metrics').getFullList({
                     filter: metricsFilter,
                     sort: 'date',
                     requestKey: null
-                });
-            } catch (e) {
-                console.log('Error fetching facebook metrics:', e.message);
-            }
-
-            try {
-                content = await pb.collection('facebook_content').getFullList({
-                    filter: `country = "${country}"${dateFilter}`,
+                }).catch(e => {
+                    console.log('Error fetching facebook metrics:', e.message);
+                    return [];
+                }),
+                pb.collection('facebook_content').getList(1, 1000, {
+                    filter: contentFilter,
                     sort: '-date',
                     requestKey: null
-                });
-            } catch (e) {
-                console.log('Error fetching facebook content:', e.message);
-            }
+                }).then(res => res.items).catch(e => {
+                    console.log('Error fetching facebook content:', e.message);
+                    return [];
+                })
+            ]);
+
+            metrics = metricsResult;
+            content = contentResult;
 
             // Normalize Content
             content = content.map(c => ({
@@ -162,18 +200,23 @@ router.get('/:country/:platform', async (req, res) => {
         } else {
             // Instagram (Default)
             const metricsFilter = `country = "${country}" && platform = "${socialNetwork}"${dateFilter}`;
-            metrics = await pb.collection('instagram_daily_metrics').getFullList({
-                filter: metricsFilter,
-                sort: 'date',
-                requestKey: null
-            });
-
             const contentFilter = `country = "${country}" && social_network = "${socialNetwork}"${dateFilter}`;
-            content = await pb.collection('instagram_content').getFullList({
-                filter: contentFilter,
-                sort: '-date',
-                requestKey: null
-            });
+
+            const [metricsResult, contentResult] = await Promise.all([
+                pb.collection('instagram_daily_metrics').getFullList({
+                    filter: metricsFilter,
+                    sort: 'date',
+                    requestKey: null
+                }),
+                pb.collection('instagram_content').getList(1, 1000, {
+                    filter: contentFilter,
+                    sort: '-date',
+                    requestKey: null
+                })
+            ]);
+
+            metrics = metricsResult;
+            content = contentResult.items;
         }
 
         res.json({

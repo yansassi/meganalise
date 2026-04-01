@@ -42,8 +42,9 @@ export const dataService = {
 
         // Normalize platform to endpoint
         const endpoint = platform.toLowerCase();
+        const apiUrl = import.meta.env.VITE_API_URL || 'https://api.meganalise.pro';
 
-        const response = await fetch(`https://api.meganalise.pro/api/upload/${endpoint}`, {
+        const response = await fetch(`${apiUrl}/api/upload/${endpoint}`, {
             method: 'POST',
             body: formData
         });
@@ -65,7 +66,8 @@ export const dataService = {
             if (startDate) params.append('startDate', startDate);
             if (endDate) params.append('endDate', endDate);
 
-            const response = await fetch(`https://api.meganalise.pro/api/dashboard/${country}/${platform}?${params.toString()}`);
+            const apiUrl = import.meta.env.VITE_API_URL || 'https://api.meganalise.pro';
+            const response = await fetch(`${apiUrl}/api/dashboard/${country}/${platform}?${params.toString()}`);
 
             if (!response.ok) {
                 // Return empty structure on failure to avoid crashes
@@ -89,7 +91,8 @@ export const dataService = {
             if (startDate) params.append('startDate', startDate);
             if (endDate) params.append('endDate', endDate);
 
-            const response = await fetch(`https://api.meganalise.pro/api/dashboard/aggregate/${country}?${params.toString()}`);
+            const apiUrl = import.meta.env.VITE_API_URL || 'https://api.meganalise.pro';
+            const response = await fetch(`${apiUrl}/api/dashboard/aggregate/${country}?${params.toString()}`);
 
             if (!response.ok) {
                 return { metrics: [] };
@@ -144,23 +147,19 @@ export const dataService = {
                 // Fetch latest gender and territory records
                 // We might need to fetch multiple records and merge
                 const genderRecords = await pb.collection('tiktok_audience_demographics').getList(1, 1, {
-                    filter: `type = "gender"`, // We might need country filter if we saved it? Upload logic didn't seem to save country for demographics demographics?
-                    // Checking upload.js: tiktok demographics recordData has: type, data, date_reference. NO country.
-                    // This is a potential bug if we want country isolation.
-                    // IMPORTANT: I should add country to demographics in upload.js too.
-                    // For now, let's fetch.
+                    filter: `type = "gender" && country = "${country}"`,
                     sort: '-created',
                     requestKey: null
                 });
 
                 const territoryRecords = await pb.collection('tiktok_audience_demographics').getList(1, 1, {
-                    filter: `type = "territory"`,
+                    filter: `type = "territory" && country = "${country}"`,
                     sort: '-created',
                     requestKey: null
                 });
 
                 const activityRecords = await pb.collection('tiktok_audience_demographics').getList(1, 1, {
-                    filter: `type = "activity"`,
+                    filter: `type = "activity" && country = "${country}"`,
                     sort: '-created',
                     requestKey: null
                 });
@@ -268,10 +267,13 @@ export const dataService = {
             let collection = 'instagram_content';
             if (item.social_network === 'tiktok' || item.platform === 'tiktok') {
                 collection = 'tiktok_content';
+            } else if (item.social_network === 'facebook' || item.platform === 'facebook') {
+                collection = 'facebook_content';
             }
 
             const recordId = item.pbId || item.id;
-            return `https://auth.meganalise.pro/api/files/${collection}/${recordId}/${imageField}`;
+            const pbUrl = import.meta.env.VITE_PB_URL || 'https://auth.meganalise.pro';
+            return `${pbUrl}/api/files/${collection}/${recordId}/${imageField}`;
         }
 
         // Senão, usa URL externa (compatibilidade)
@@ -428,9 +430,27 @@ export const dataService = {
             }
 
             // Execute queries in parallel
-            const queryPromises = collections.map(collectionName =>
-                pb.collection(collectionName).getList(1, 500, {
-                    filter: filter,
+            const queryPromises = collections.map(collectionName => {
+                // Construct basic filter (Date & Country)
+                let currentFilter = `date >= "${startDateStr} 00:00:00" && date <= "${endDateStr} 23:59:59"`;
+                if (registry.country) {
+                    currentFilter += ` && country = "${registry.country}"`;
+                }
+
+                // Append Keyword Filter - Conditioned on Collection
+                if (keywords.length > 0) {
+                    const keywordConditions = keywords.map(k => {
+                        // Facebook content does not have an 'author' field in current schema
+                        if (collectionName === 'facebook_content') {
+                            return `title ~ "${k}"`;
+                        }
+                        return `title ~ "${k}" || author ~ "${k}"`;
+                    }).join(' || ');
+                    currentFilter += ` && (${keywordConditions})`;
+                }
+
+                return pb.collection(collectionName).getList(1, 500, {
+                    filter: currentFilter,
                     sort: '-date',
                     requestKey: null // Disable auto-cancellation
                 }).then(res => {
@@ -456,7 +476,7 @@ export const dataService = {
                     console.warn(`Error querying ${collectionName}`, err);
                     return { items: [] };
                 })
-            );
+            });
 
             const results = await Promise.all(queryPromises);
 
@@ -552,6 +572,7 @@ export const dataService = {
      */
     getRegistryImageUrl(registry) {
         if (!registry || !registry.image_file) return null;
-        return `https://auth.meganalise.pro/api/files/evidence_registries/${registry.id}/${registry.image_file}`;
+        const pbUrl = import.meta.env.VITE_PB_URL || 'https://auth.meganalise.pro';
+        return `${pbUrl}/api/files/evidence_registries/${registry.id}/${registry.image_file}`;
     }
 };

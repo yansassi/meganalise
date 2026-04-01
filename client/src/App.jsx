@@ -3,7 +3,6 @@ import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
 
 import React, { useState } from 'react';
-import { instagramParser } from './services/instagramParser';
 import PlatformView from './components/dashboard/PlatformView';
 import StoriesDashboard from './components/dashboard/StoriesDashboard';
 import ContentDashboard from './components/dashboard/ContentDashboard';
@@ -22,6 +21,8 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
 // Dashboard is now imported from pages/Dashboard
+import PresentationView from './components/dashboard/PresentationView';
+
 
 
 
@@ -60,6 +61,7 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
           </Route>
+          <Route path="/presentation/:id" element={<PresentationView />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>

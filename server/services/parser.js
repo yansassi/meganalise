@@ -41,7 +41,11 @@ const parseDate = (dateStr) => {
         const [_, day, month] = shortDateMatch;
         let year = new Date().getFullYear();
         const date = new Date(year, parseInt(month) - 1, parseInt(day));
-        if (date > new Date()) { // Heuristic: If date is in future, it's likely last year
+        // Heuristic: If date is in future, it's likely last year.
+        // Note: This check uses strict comparison. If today is Jan 1, and parsed date is Jan 1, it's fine.
+        // If parsed date is Jan 2, it is future -> year-- (becomes Jan 2 last year).
+        // WARNING: This assumes uploads are for recent past events. Uploading very old data without year might fail.
+        if (date > new Date()) {
             year--;
         }
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
@@ -105,6 +109,7 @@ const parseDate = (dateStr) => {
                 const tempDate = new Date(currentYear, parseInt(month) - 1, parseInt(day));
                 // If the date in current year is in the future (e.g., "Jan 25" when today is "Jan 12"),
                 // assume it belongs to the previous year.
+                // WARNING: Same heuristic limitation as above.
                 if (tempDate > new Date()) {
                     year = currentYear - 1;
                 }
@@ -119,7 +124,9 @@ const parseDate = (dateStr) => {
         return d.toISOString().split('T')[0];
     }
 
-    return str.replace('T', ' ').split(' ')[0];
+    // 5. Fallback: Parse failed
+    console.warn(`Date parsing failed for value: "${str}"`);
+    return null;
 };
 
 const normalizeDailyMetric = (data, metricName) => {
@@ -146,26 +153,33 @@ const normalizeDailyMetric = (data, metricName) => {
     }).filter(item => item && item.date); // Filter nulls
 };
 
-const findValue = (row, candidates) => {
-    const keys = Object.keys(row);
+// Normalize string: removing accents and lowering case
+const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/['"]/g, '');
 
-    // Normalize string: removing accents and lowering case
-    const normalize = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase().replace(/['"]/g, '');
+const createKeyMap = (row) => {
+    const map = new Map();
+    for (const key of Object.keys(row)) {
+        map.set(normalize(key), key);
+    }
+    return map;
+};
 
+const findValue = (row, keyMap, candidates) => {
     // 1. Exact match (case insensitive normalized)
     for (const c of candidates) {
         const normalizedCandidate = normalize(c);
-        for (const key of keys) {
-            if (normalize(key) === normalizedCandidate) return row[key];
+        if (keyMap.has(normalizedCandidate)) {
+            return row[keyMap.get(normalizedCandidate)];
         }
     }
 
     // 2. Fuzzy match
     for (const c of candidates) {
         const normalizedCandidate = normalize(c);
-        for (const key of keys) {
-            const normalizedKey = normalize(key);
-            if (normalizedKey.includes(normalizedCandidate)) return row[key];
+        for (const [normalizedKey, originalKey] of keyMap.entries()) {
+            if (normalizedKey.includes(normalizedCandidate)) {
+                return row[originalKey];
+            }
         }
     }
     return undefined;
@@ -173,17 +187,20 @@ const findValue = (row, candidates) => {
 
 const normalizeContentData = (data, isUSFormat = false) => {
     return data.map((row, index) => {
-        const reach = parseInt(findValue(row, ['Alcance', 'Reach']) || 0, 10);
-        const likes = parseInt(findValue(row, ['Curtidas', 'Likes', 'Curtida', 'Like', 'Reações', 'Reacoes', 'Reactions']) || 0, 10);
-        const shares = parseInt(findValue(row, ['Compartilhamentos', 'Shares', 'Share']) || 0, 10);
-        const comments = parseInt(findValue(row, ['Respostas', 'Comentários', 'Comments', 'Comentarios', 'Comentario', 'Comment', 'Res']) || 0, 10);
-        const saved = parseInt(findValue(row, ['Salvamentos', 'Saved', 'Save']) || 0, 10);
-        const views = parseInt(findValue(row, ['Visualizações de 3 segundos', 'Visualizações', 'Views', 'Visualizacoes', 'View', 'Impressões do anúncio', 'Impressões']) || 0, 10); // Facebook usually gives Impressions
-        const duration = parseInt(findValue(row, ['Duração (s)', 'Duration (s)', 'Duracao']) || 0, 10);
-        const clicks = parseInt(findValue(row, ['Cliques no link', 'Link Clicks']) || 0, 10);
+        const keyMap = createKeyMap(row);
+        const getValue = (candidates) => findValue(row, keyMap, candidates);
 
-        const permalink = findValue(row, ['Link permanente', 'Permalink', 'Link']) || '';
-        const author = findValue(row, ['Nome de usuário da conta', 'Account username', 'Username', 'Nome da Página']) || '';
+        const reach = parseInt(getValue(['Alcance', 'Reach']) || 0, 10);
+        const likes = parseInt(getValue(['Curtidas', 'Likes', 'Curtida', 'Like', 'Reações', 'Reacoes', 'Reactions']) || 0, 10);
+        const shares = parseInt(getValue(['Compartilhamentos', 'Shares', 'Share']) || 0, 10);
+        const comments = parseInt(getValue(['Respostas', 'Comentários', 'Comments', 'Comentarios', 'Comentario', 'Comment', 'Res']) || 0, 10);
+        const saved = parseInt(getValue(['Salvamentos', 'Saved', 'Save']) || 0, 10);
+        const views = parseInt(getValue(['Visualizações de 3 segundos', 'Visualizações', 'Views', 'Visualizacoes', 'View', 'Impressões do anúncio', 'Impressões']) || 0, 10); // Facebook usually gives Impressions
+        const duration = parseInt(getValue(['Duração (s)', 'Duration (s)', 'Duracao']) || 0, 10);
+        const clicks = parseInt(getValue(['Cliques no link', 'Link Clicks']) || 0, 10);
+
+        const permalink = getValue(['Link permanente', 'Permalink', 'Link']) || '';
+        const author = getValue(['Nome de usuário da conta', 'Account username', 'Username', 'Nome da Página']) || '';
 
         const engagements = likes + shares + comments + saved + clicks;
         const virality = reach > 0 ? ((engagements / reach) * 100).toFixed(1) : 0;
@@ -192,10 +209,10 @@ const normalizeContentData = (data, isUSFormat = false) => {
 
         let dateFormatted = null;
         let timeFormatted = null;
-        const rawDate = findValue(row, ['Horário de publicação', 'Data', 'Date', 'Horario']);
+        const rawDate = getValue(['Horário de publicação', 'Data', 'Date', 'Horario']);
 
         // Check if row is a summary row (starts with Total or date is Total)
-        if (rawDate === 'Total' || findValue(row, ['Identificação do post']) === 'Total') {
+        if (rawDate === 'Total' || getValue(['Identificação do post']) === 'Total') {
             return null; // Skip this row
         }
 
@@ -223,7 +240,7 @@ const normalizeContentData = (data, isUSFormat = false) => {
             }
         }
 
-        const rawType = (findValue(row, ['Tipo de post', 'Tipo de conteúdo', 'Tipo de conteÃºdo', 'Content type']) || '');
+        const rawType = (getValue(['Tipo de post', 'Tipo de conteúdo', 'Tipo de conteÃºdo', 'Content type']) || '');
         const typeLower = rawType.toLowerCase();
 
         let platform = 'social';
@@ -233,7 +250,7 @@ const normalizeContentData = (data, isUSFormat = false) => {
             platform = 'video';
         }
 
-        let title = findValue(row, ['Descrição', 'TÃ\xadtulo da legenda', 'Legenda', 'Título/Legenda', 'Caption']);
+        let title = getValue(['Descrição', 'TÃ\xadtulo da legenda', 'Legenda', 'Título/Legenda', 'Caption']);
         if (!title || title.trim() === '') {
             if (platform === 'story') {
                 title = `Story - ${dateFormatted || 'Instagram'}`;
@@ -248,7 +265,7 @@ const normalizeContentData = (data, isUSFormat = false) => {
         }
 
         // Robust ID generation
-        let id = findValue(row, ['Identificação do post', 'Identificador multimídia', 'Identificador', 'Post ID', 'ID']);
+        let id = getValue(['Identificação do post', 'Identificador multimídia', 'Identificador', 'Post ID', 'ID']);
         if (!id) {
             // Fallback: Generate hash from unique-ish content
             const uniqueString = `${title}-${dateFormatted}-${timeFormatted}-${platform}`;
@@ -365,14 +382,40 @@ const parseInstagramCSV = async (buffer, fileName) => {
         csvText = csvText.replace(/^sep=,[\r\n]+/, '');
     }
 
-    const lines = csvText.split(/\r\n|\n/);
+    // Optimization: Avoid splitting the entire large file into lines just to read headers.
+    // We scan for the first few newlines to extract metadata and detect the header line.
+    const MAX_SCAN_LINES = 20;
+    const lineEndings = [];
+    let pos = 0;
 
-    let headerIndex = 0;
+    // Find newline positions for the first MAX_SCAN_LINES
+    while (lineEndings.length < MAX_SCAN_LINES && pos < csvText.length) {
+        const nextLF = csvText.indexOf('\n', pos);
+        if (nextLF === -1) {
+            lineEndings.push(csvText.length);
+            break;
+        }
+        lineEndings.push(nextLF);
+        pos = nextLF + 1;
+    }
+
+    // Extract first few lines for inspection
+    const firstFewLines = [];
+    let prevStart = 0;
+    for (const end of lineEndings) {
+        let line = csvText.substring(prevStart, end);
+        if (line.endsWith('\r')) line = line.slice(0, -1); // Handle CRLF
+        firstFewLines.push(line);
+        prevStart = end + 1;
+    }
+
     const fileNameLower = fileName.toLowerCase();
-    const firstLines = lines.slice(0, 5).join('\n').toLowerCase();
+    const firstLines = firstFewLines.slice(0, 5).join('\n').toLowerCase();
 
     // Check for Audience/Demographics
     if (fileNameLower.includes('público') || fileNameLower.includes('audience') || firstLines.includes('faixa etária')) {
+        // Demographics parsing relies on full line iteration, so we split here if needed.
+        const lines = csvText.split(/\r\n|\n/);
         const audienceData = normalizeAudienceData(lines);
         return { type: 'demographics', data: audienceData };
     }
@@ -388,9 +431,10 @@ const parseInstagramCSV = async (buffer, fileName) => {
     //    return { type: 'unknown', message: 'Este arquivo parece ser do Facebook. Por favor selecione a aba Facebook.' };
     // }
 
+    let headerIndex = 0;
     // Find header linest of logic
-    for (let i = 0; i < Math.min(lines.length, 10); i++) {
-        const line = lines[i].toLowerCase();
+    for (let i = 0; i < Math.min(firstFewLines.length, 10); i++) {
+        const line = firstFewLines[i].toLowerCase();
         if (line.includes('"data"') || line.includes('data,') || line.includes('data;') ||
             line.includes('"identificador') || line.includes('identificador') ||
             // Removed "identificação" checks as they are Facebook specific
@@ -401,8 +445,18 @@ const parseInstagramCSV = async (buffer, fileName) => {
         }
     }
 
-    const metadataLines = lines.slice(0, headerIndex).join('\n');
-    const cleanCSV = lines.slice(headerIndex).join('\n');
+    const metadataLines = firstFewLines.slice(0, headerIndex).join('\n');
+
+    // Calculate start index for cleanCSV
+    // headerIndex is the line number (0-based) where the header starts.
+    // If headerIndex is 0, start is 0.
+    // If headerIndex > 0, start is after the newline of the previous line (lineEndings[headerIndex - 1]).
+    let cleanCsvStartIndex = 0;
+    if (headerIndex > 0) {
+        cleanCsvStartIndex = lineEndings[headerIndex - 1] + 1;
+    }
+
+    const cleanCSV = csvText.substring(cleanCsvStartIndex);
 
     return new Promise((resolve, reject) => {
         Papa.parse(cleanCSV, {

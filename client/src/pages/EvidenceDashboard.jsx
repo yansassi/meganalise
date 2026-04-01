@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { formatDate } from '../utils/formatters';
 import { useParams, useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
+import html2pdf from 'html2pdf.js';
+import PDFReportTemplate from '../components/dashboard/PDFReportTemplate';
 
 import ContentGrid from '../components/dashboard/ContentGrid';
 
@@ -144,6 +146,7 @@ export default function EvidenceDashboard() {
     const [error, setError] = useState(null);
 
     const [showEditModal, setShowEditModal] = useState(false);
+    const [generatingPdf, setGeneratingPdf] = useState(false);
 
     useEffect(() => {
         const loadData = async () => {
@@ -172,6 +175,28 @@ export default function EvidenceDashboard() {
             alert('Erro ao atualizar: ' + err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const generatePDF = async () => {
+        setGeneratingPdf(true);
+        const element = document.getElementById('pdf-report-content');
+
+        const opt = {
+            margin: 0,
+            filename: `Relatorio-${data?.registry?.title?.replace(/[^a-z0-9]/gi, '_') || 'Evidence'}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false, letterRendering: true, backgroundColor: '#ffffff' },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        try {
+            await html2pdf().set(opt).from(element).save();
+        } catch (err) {
+            console.error("PDF Generation Error", err);
+            alert("Erro ao gerar PDF. Tente novamente.");
+        } finally {
+            setGeneratingPdf(false);
         }
     };
 
@@ -254,23 +279,61 @@ export default function EvidenceDashboard() {
                         Gerar Apresentação
                     </button>
                     <button
-                        onClick={() => window.print()}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl font-bold text-sm transition-colors flex items-center gap-2"
+                        onClick={generatePDF}
+                        disabled={generatingPdf}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl font-bold text-sm transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <span className="material-icons-round">print</span>
-                        Imprimir Relatório
+                        {generatingPdf ? (
+                            <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
+                        ) : (
+                            <span className="material-icons-round">picture_as_pdf</span>
+                        )}
+                        {generatingPdf ? 'Gerando...' : 'Baixar PDF'}
                     </button>
                 </div>
             </div>
 
+            {/* Hidden PDF Template */}
+            <div style={{ position: 'absolute', top: '-10000px', left: '-10000px' }}>
+                {data && (
+                    <PDFReportTemplate
+                        registry={data.registry}
+                        items={data.content}
+                        chartData={(() => {
+                            const platformMap = data.content.reduce((acc, item) => {
+                                const p = item.platform_type || 'social';
+                                acc[p] = (acc[p] || 0) + (item.views || 0);
+                                return acc;
+                            }, {});
+                            return Object.entries(platformMap).map(([name, value]) => ({ name, value }));
+                        })()}
+                        // Note: metric names in dashboard 'metrics' object might differ from what Template expects. 
+                        // EvidenceDashboard metrics: total_posts, total_views, total_interactions, total_likes, total_comments
+                        // Template expects: totalReach, totalEng, totalViews
+                        // Mapping:
+                        // totalReach -> metrics.total_posts (User label says "Total Encontrado", template says "Alcance Total"??)
+                        // Actually in PresentationView it calculated reach from items. 
+                        // Let's recalculate from content to be consistent with Template logic if metrics property names differ.
+
+                        // Re-calculating to match PresentationView logic exactly:
+                        totalReach={data.content.reduce((acc, item) => acc + (item.reach || 0), 0)}
+                        totalEng={data.metrics.total_interactions}
+                        totalViews={data.metrics.total_views}
+                    />
+                )}
+            </div>
+
+
             {/* Edit Modal */}
-            {showEditModal && (
-                <EditRegistryModal
-                    registry={registry}
-                    onClose={() => setShowEditModal(false)}
-                    onSave={handleUpdate}
-                />
-            )}
+            {
+                showEditModal && (
+                    <EditRegistryModal
+                        registry={registry}
+                        onClose={() => setShowEditModal(false)}
+                        onSave={handleUpdate}
+                    />
+                )
+            }
 
             {/* Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
@@ -313,6 +376,6 @@ export default function EvidenceDashboard() {
                 limit={100}
                 showPagination={true}
             />
-        </div>
+        </div >
     );
 }

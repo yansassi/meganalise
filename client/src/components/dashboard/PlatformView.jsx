@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatNumber, formatDate } from '../../utils/formatters';
 import { useOutletContext } from 'react-router-dom';
-import { instagramParser } from '../../services/instagramParser';
 import { dataService } from '../../services/dataService';
 import StatCards from './StatCards';
 import GrowthChart from './GrowthChart';

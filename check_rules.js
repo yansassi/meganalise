@@ -1,7 +1,7 @@
 const PocketBase = require('pocketbase/cjs');
 require('dotenv').config({ path: require('path').join(__dirname, 'server', '.env') });
 
-const pb = new PocketBase('https://auth.meganalise.pro');
+const pb = new PocketBase(process.env.PB_URL || 'https://auth.meganalise.pro');
 
 async function checkRules() {
     try {

@@ -8,7 +8,7 @@ const RetentionChart = ({ data }) => {
     return (
         <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[400px]">
             <h3 className="text-lg font-bold text-[#1F2937] mb-6 px-2">Retenção de Audiência</h3>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <AreaChart
                     data={data}
                     margin={{ top: 10, right: 30, left: 0, bottom: 0 }}

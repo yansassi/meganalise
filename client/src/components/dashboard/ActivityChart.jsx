@@ -11,7 +11,7 @@ const ActivityChart = ({ data }) => {
     return (
         <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[400px]">
             <h3 className="text-lg font-bold text-[#1F2937] mb-6 px-2">Atividade dos Seguidores (Por Hora)</h3>
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                 <BarChart
                     data={sortedData}
                     margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
