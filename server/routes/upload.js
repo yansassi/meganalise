@@ -579,7 +579,7 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                                 try {
                                     await pb.collection('facebook_daily_metrics').create({
                                         platform: 'facebook',
-                                        date: item.date,
+                                        date: new Date(item.date + 'T12:00:00.000Z').toISOString(),
                                         metric: item.metric,
                                         value: item.value,
                                         country: country
@@ -587,7 +587,7 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                                     return { success: true };
                                 } catch (createErr) {
                                     if (createErr.status === 400) {
-                                        const found = await pb.collection('facebook_daily_metrics').getFirstListItem(`date = "${item.date}" && metric = "${item.metric}" && country = "${country}"`, { requestKey: null });
+                                        const found = await pb.collection('facebook_daily_metrics').getFirstListItem(`date ~ "${item.date}" && metric = "${item.metric}" && country = "${country}"`, { requestKey: null });
                                         await pb.collection('facebook_daily_metrics').update(found.id, { value: item.value, country }, { requestKey: null });
                                         return { success: true };
                                     } else {
@@ -651,7 +651,13 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                                 platform_type: item.platform, // 'social' or 'video'
                                 social_network: 'facebook',
                                 country: country,
-                                date: item.date ? new Date(item.date + 'T12:00:00.000Z').toISOString() : new Date().toISOString(),
+                                date: (() => {
+                                    if (!item.date) return new Date().toISOString();
+                                    // Extract YYYY-MM-DD portion only (strip any time already embedded)
+                                    const datePart = item.date.split('T')[0];
+                                    const parsed = new Date(datePart + 'T12:00:00.000Z');
+                                    return isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+                                })(),
                                 posting_time: item.posting_time,
                                 reach: item.reach,
                                 likes: item.likes,

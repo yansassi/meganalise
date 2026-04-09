@@ -333,6 +333,23 @@ const PlatformView = ({ platform }) => {
             if (platform === 'Instagram') {
                 stats.push({ label: 'Views em Stories', value: storyViews, trend: 0, icon: 'amp_stories', color: 'pink' });
             }
+        } else if (platform === 'Facebook') {
+            stats = [
+                { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
+                { label: 'Visualizações', value: impressions, trend: 0, icon: 'trending_up', color: 'indigo' },
+                { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
+                { label: 'Seguidores (Saldo)', value: netFollowers, trend: 0, icon: 'group_add', color: 'cyan' },
+                { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
+                { label: 'Cliques no Link', value: websiteClicks, trend: 0, icon: 'link', color: 'orange' }
+            ];
+        } else {
+            // Default Fallback
+            stats = [
+                { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
+                { label: 'Visualizações', value: impressions, trend: 0, icon: 'trending_up', color: 'indigo' },
+                { label: 'Interações', value: interactions, trend: 0, icon: 'favourite', color: 'purple' },
+                { label: 'Seguidores', value: netFollowers, trend: 0, icon: 'group', color: 'green' }
+            ];
         }
 
         setData({

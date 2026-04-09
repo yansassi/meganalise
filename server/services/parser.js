@@ -218,22 +218,25 @@ const normalizeContentData = (data, isUSFormat = false) => {
 
         if (rawDate) {
             try {
+                // Sanitize: Remove surrounding quotes if present (can happen with papaparse on some CSVs)
+                const sanitizedDate = rawDate.replace(/^["']|["']$/g, '').trim();
+
                 // Try basic time extraction with regex (HH:MM)
-                const timeMatch = rawDate.match(/(\d{1,2}:\d{2})/);
+                const timeMatch = sanitizedDate.match(/(\d{1,2}:\d{2})/);
                 if (timeMatch) {
                     timeFormatted = timeMatch[1];
                 }
 
                 // Date Parsing
                 // 1. Special handling for US Slashed dates (MM/DD/YYYY) if specified
-                const slashMatch = rawDate.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+                const slashMatch = sanitizedDate.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
                 if (isUSFormat && slashMatch) {
                     const [_, p1, p2, year] = slashMatch;
                     // US: p1=Month, p2=Day
                     dateFormatted = `${year}-${p1.padStart(2, '0')}-${p2.padStart(2, '0')}`;
                 } else {
                     // 2. Use robust parseDate helper (handles DD/MM/YYYY, Text months "Jan 10", YYYY-MM-DD)
-                    dateFormatted = parseDate(rawDate);
+                    dateFormatted = parseDate(sanitizedDate);
                 }
             } catch (e) {
                 console.error('Date parsing error', rawDate);
@@ -746,7 +749,7 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                     else if (fileNameLower.includes('seguidores')) metricName = 'followers_total';
                     else if (fileNameLower.includes('interacoes') || fileNameLower.includes('interações') || fileNameLower.includes('intera')) metricName = 'interactions';
                     else if (fileNameLower.includes('cliques')) metricName = 'website_clicks';
-                    else if (fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações') || fileNameLower.includes('visualiza')) metricName = 'reach';
+                    else if (fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações') || fileNameLower.includes('visualiza')) metricName = 'impressions';
 
                     console.log(`Detected metric: ${metricName} for file ${fileName}`);
 
