@@ -319,7 +319,8 @@ const PlatformView = ({ platform }) => {
             ];
         } else if (platform === 'Facebook') {
             stats = [
-                { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
+                { label: 'Visualizações', value: impressions, trend: 0, icon: 'visibility', color: 'blue' },
+                { label: 'Visualizadores', value: reach, trend: 0, icon: 'groups', color: 'indigo' },
                 { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
                 { label: 'Seguidores (Saldo)', value: netFollowers, trend: 0, icon: 'group_add', color: 'cyan' },
                 { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
@@ -357,6 +358,7 @@ const PlatformView = ({ platform }) => {
             fbVideos,
             netFollowers,
             reach,
+            impressions,
             interactions,
             websiteClicks,
             profileVisits,
@@ -511,10 +513,10 @@ const PlatformView = ({ platform }) => {
                                         {/* Engajamento Highlights - Mini cards */}
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                                             {[
-                                                { label: 'Alcance', value: data.reach, icon: 'visibility', color: '#2563EB', bg: '#EFF6FF' },
+                                                { label: 'Visualizações', value: data.impressions, icon: 'visibility', color: '#2563EB', bg: '#EFF6FF' },
+                                                { label: 'Visualizadores', value: data.reach, icon: 'groups', color: '#6366F1', bg: '#EEF2FF' },
                                                 { label: 'Interações', value: data.interactions, icon: 'favorite', color: '#9333EA', bg: '#F5F3FF' },
                                                 { label: 'Visitas ao Perfil', value: data.profileVisits, icon: 'person_search', color: '#0D9488', bg: '#F0FDFA' },
-                                                { label: 'Cliques no Link', value: data.websiteClicks, icon: 'link', color: '#F97316', bg: '#FFF7ED' },
                                             ].map(card => (
                                                 <div key={card.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4">
                                                     <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: card.bg }}>

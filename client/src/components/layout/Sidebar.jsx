@@ -40,6 +40,9 @@ const Sidebar = ({ country }) => {
       path: '/platform/facebook',
       submenu: [
         { name: 'Geral', path: '/platform/facebook' },
+        { name: 'Conteúdo', path: '/platform/facebook/content' },
+        { name: 'Stories', path: '/platform/facebook/stories' },
+        { name: 'Público', path: '/platform/facebook/audience' }
       ]
     },
     {

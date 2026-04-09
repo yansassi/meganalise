@@ -33,6 +33,10 @@ const Settings = () => (
   </div>
 );
 
+import FacebookContentDashboard from './components/dashboard/FacebookContentDashboard';
+import FacebookStoriesDashboard from './components/dashboard/FacebookStoriesDashboard';
+import FacebookAudienceTab from './components/dashboard/FacebookAudienceTab';
+
 function App() {
   const [country, setCountry] = useState('BR');
 
@@ -53,6 +57,9 @@ function App() {
               <Route path="platform/tiktok" element={<PlatformView platform="TikTok" />} />
               <Route path="platform/tiktok/content" element={<TikTokContentDashboard />} />
               <Route path="platform/facebook" element={<PlatformView platform="Facebook" />} />
+              <Route path="platform/facebook/content" element={<FacebookContentDashboard />} />
+              <Route path="platform/facebook/stories" element={<FacebookStoriesDashboard />} />
+              <Route path="platform/facebook/audience" element={<FacebookAudienceTab />} />
               <Route path="evidence" element={<Evidence />} />
               <Route path="influencer" element={<Influencer />} />
               <Route path="evidence/:id" element={<EvidenceDashboard />} />

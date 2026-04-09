@@ -143,7 +143,9 @@ export const dataService = {
      */
     async getAudienceDemographics(country, platform = 'instagram') {
         try {
-            if (platform.toLowerCase() === 'tiktok') {
+            const platformLower = platform.toLowerCase();
+
+            if (platformLower === 'tiktok') {
                 // Fetch latest gender and territory records
                 // We might need to fetch multiple records and merge
                 const genderRecords = await pb.collection('tiktok_audience_demographics').getList(1, 1, {
@@ -177,20 +179,6 @@ export const dataService = {
                 const territoryData = territoryRecords.items.length > 0 ? safeParse(territoryRecords.items[0].data) : {};
                 const activityData = activityRecords.items.length > 0 ? safeParse(activityRecords.items[0].data) : [];
 
-                // Map to AudienceView format
-                // AudienceView expects: genderAge (keys: 18-24, etc? Or just Gender?), cities, countries
-                // TikTok 'gender' data is { Male: 0.82, Female: 0.17 }
-                // TikTok 'territory' data is { BR: 0.91, JP: 0.008 }
-
-                // We need to map this.
-                // genderAge: we only have Gender. AudienceView might expect Age ranges. 
-                // We might need to adapt AudienceView or map "Male"/"Female" to a dummy age range?
-                // Or just pass `genderDistribution: genderData` and update AudienceView to handle it.
-                // Let's pass what we have and let AudienceView component logic handle (or fail/show partial).
-                // Actually AudienceView expects `genderAge` object where keys are ages and values are {male, female}.
-                // TikTok only gives global Gender.
-                // We can fake it or just set a "All Ages" key?
-
                 return {
                     id: 'tiktok-latest',
                     importDate: new Date().toISOString(),
@@ -202,9 +190,18 @@ export const dataService = {
                 };
             }
 
+            // Determine collection name based on platform
+            const collectionName = platformLower === 'facebook' 
+                ? 'facebook_audience_demographics' 
+                : 'instagram_audience_demographics';
+
+            const filter = platformLower === 'facebook'
+                ? `platform = "facebook" && country = "${country}"`
+                : `platform = "instagram" && country = "${country}"`;
+
             // Get latest record
-            const records = await pb.collection('instagram_audience_demographics').getList(1, 1, {
-                filter: `platform = "instagram" && country = "${country}"`,
+            const records = await pb.collection(collectionName).getList(1, 1, {
+                filter: filter,
                 sort: '-import_date',
                 requestKey: null
             });
@@ -215,9 +212,9 @@ export const dataService = {
             return {
                 id: item.id,
                 importDate: item.import_date,
-                genderAge: typeof item.gender_age_data === 'string' ? JSON.parse(item.gender_age_data) : item.gender_age_data || {},
-                cities: typeof item.cities_data === 'string' ? JSON.parse(item.cities_data) : item.cities_data || [],
-                countries: typeof item.countries_data === 'string' ? JSON.parse(item.countries_data) : item.countries_data || []
+                genderAge: typeof item.gender_age === 'string' ? JSON.parse(item.gender_age) : item.gender_age || item.gender_age_data || {},
+                cities: typeof item.cities === 'string' ? JSON.parse(item.cities) : item.cities || item.cities_data || [],
+                countries: typeof item.countries === 'string' ? JSON.parse(item.countries) : item.countries || item.countries_data || []
             };
         } catch (err) {
             console.error("Error fetching audience demographics", err);

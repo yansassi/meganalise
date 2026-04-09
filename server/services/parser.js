@@ -749,6 +749,7 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                     else if (fileNameLower.includes('seguidores')) metricName = 'followers_total';
                     else if (fileNameLower.includes('interacoes') || fileNameLower.includes('interações') || fileNameLower.includes('intera')) metricName = 'interactions';
                     else if (fileNameLower.includes('cliques')) metricName = 'website_clicks';
+                    else if (fileNameLower.includes('visualizadores')) metricName = 'reach';
                     else if (fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações') || fileNameLower.includes('visualiza')) metricName = 'impressions';
 
                     console.log(`Detected metric: ${metricName} for file ${fileName}`);
