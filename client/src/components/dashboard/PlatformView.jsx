@@ -103,6 +103,7 @@ import ReachInsightsModal from './ReachInsightsModal';
 const PlatformView = ({ platform }) => {
     const { country, dateRange, setDateRange } = useOutletContext();
     const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'audience'
+    const [fbContentTab, setFbContentTab] = useState('posts'); // 'posts', 'stories', 'audience'
     const [audienceData, setAudienceData] = useState(null);
     const [selectedStory, setSelectedStory] = useState(null); // State for Story Modal
     const [showReachModal, setShowReachModal] = useState(false); // State for Reach Modal
@@ -258,6 +259,9 @@ const PlatformView = ({ platform }) => {
 
         let reels = [];
         let stories = [];
+        let fbPosts = [];
+        let fbStories = [];
+        let fbVideos = [];
 
         const contentItems = dbData.content.map(c => {
             const item = {
@@ -286,13 +290,18 @@ const PlatformView = ({ platform }) => {
 
             if (platform === 'Instagram') {
                 const isStory = c.platform_type === 'story' || (c.platform_type === 'social' && c.title?.startsWith('Story -'));
-
                 if (isStory) {
                     storyViews += (c.views || 0);
                     stories.push(item);
                 } else {
                     reels.push(item);
                 }
+            }
+            if (platform === 'Facebook') {
+                const isStory = c.platform_type === 'story' || c.title?.toLowerCase().startsWith('story');
+                if (isStory) fbStories.push(item);
+                else if (c.platform_type === 'video' || c.duration > 0) fbVideos.push(item);
+                else fbPosts.push(item);
             }
             return item;
         });
@@ -343,6 +352,9 @@ const PlatformView = ({ platform }) => {
             contentItems,
             reels,
             stories,
+            fbPosts,
+            fbStories,
+            fbVideos,
             netFollowers,
             reach,
             interactions,
@@ -602,7 +614,115 @@ const PlatformView = ({ platform }) => {
                             <DataIntelligence contentItems={data.contentItems} />
                         )}
 
-                        {activeTab === 'content' && (
+                        {activeTab === 'content' && platform === 'Facebook' && (
+                            <div className="w-full space-y-6">
+                                {/* Sub-abas do Facebook: Conteúdo | Stories | Público */}
+                                <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/10 rounded-2xl p-1.5 w-fit">
+                                    {[
+                                        { id: 'posts', label: 'Publicações', icon: 'grid_view' },
+                                        { id: 'stories', label: 'Stories', icon: 'amp_stories' },
+                                        { id: 'videos', label: 'Vídeos', icon: 'play_circle' },
+                                        { id: 'audience', label: 'Público', icon: 'people' },
+                                    ].map(tab => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setFbContentTab(tab.id)}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                                                fbContentTab === tab.id
+                                                    ? 'bg-white dark:bg-gray-800 text-[#2563EB] shadow-sm'
+                                                    : 'text-gray-500 hover:text-gray-700'
+                                            }`}
+                                        >
+                                            <span className="material-icons-round text-base">{tab.icon}</span>
+                                            {tab.label}
+                                            {tab.id === 'posts' && data.fbPosts?.length > 0 && (
+                                                <span className="ml-1 bg-blue-100 text-blue-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{data.fbPosts.length}</span>
+                                            )}
+                                            {tab.id === 'stories' && data.fbStories?.length > 0 && (
+                                                <span className="ml-1 bg-purple-100 text-purple-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{data.fbStories.length}</span>
+                                            )}
+                                            {tab.id === 'videos' && data.fbVideos?.length > 0 && (
+                                                <span className="ml-1 bg-red-100 text-red-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{data.fbVideos.length}</span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Conteúdo de cada sub-aba */}
+                                {fbContentTab === 'posts' && (
+                                    <div className="space-y-6">
+                                        {data.fbPosts?.length > 0 ? (
+                                            <>
+                                                <section className="w-full overflow-hidden">
+                                                    <MediaReel
+                                                        title={`Publicações (${data.fbPosts.length})`}
+                                                        items={data.fbPosts.slice(0, 25)}
+                                                        onItemClick={(item) => setSelectedStory(item)}
+                                                    />
+                                                </section>
+                                                <ContentTable items={data.fbPosts} />
+                                            </>
+                                        ) : (
+                                            <div className="text-center py-16 text-gray-400">
+                                                <span className="material-icons-round text-5xl mb-3 opacity-30">grid_view</span>
+                                                <p className="text-sm">Nenhuma publicação encontrada no período.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {fbContentTab === 'stories' && (
+                                    <div className="space-y-6">
+                                        {data.fbStories?.length > 0 ? (
+                                            <>
+                                                <section className="w-full overflow-hidden">
+                                                    <MediaReel
+                                                        title={`Stories do Facebook (${data.fbStories.length})`}
+                                                        items={data.fbStories.slice(0, 25)}
+                                                        onItemClick={(item) => setSelectedStory(item)}
+                                                    />
+                                                </section>
+                                                <ContentTable items={data.fbStories} />
+                                            </>
+                                        ) : (
+                                            <div className="text-center py-16 text-gray-400">
+                                                <span className="material-icons-round text-5xl mb-3 opacity-30">amp_stories</span>
+                                                <p className="text-sm font-medium">Nenhum Story encontrado no período.</p>
+                                                <p className="text-xs mt-1 opacity-70">Stories são identificados automaticamente pelo tipo de conteúdo.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {fbContentTab === 'videos' && (
+                                    <div className="space-y-6">
+                                        {data.fbVideos?.length > 0 ? (
+                                            <>
+                                                <section className="w-full overflow-hidden">
+                                                    <MediaReel
+                                                        title={`Vídeos e Reels (${data.fbVideos.length})`}
+                                                        items={data.fbVideos.slice(0, 25)}
+                                                        onItemClick={(item) => setSelectedStory(item)}
+                                                    />
+                                                </section>
+                                                <ContentTable items={data.fbVideos} />
+                                            </>
+                                        ) : (
+                                            <div className="text-center py-16 text-gray-400">
+                                                <span className="material-icons-round text-5xl mb-3 opacity-30">play_circle</span>
+                                                <p className="text-sm">Nenhum vídeo encontrado no período.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {fbContentTab === 'audience' && (
+                                    <AudienceView data={audienceData} />
+                                )}
+                            </div>
+                        )}
+
+                        {activeTab === 'content' && platform !== 'Facebook' && (
                             <div className="w-full">
                                 <ContentTable items={data.contentItems} />
                             </div>
