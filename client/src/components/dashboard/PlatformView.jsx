@@ -302,52 +302,36 @@ const PlatformView = ({ platform }) => {
         if (platform === 'TikTok') {
             stats = [
                 { label: 'Visualizações', value: impressions, trend: 0, icon: 'play_circle', color: 'red' },
-                { label: 'Curtidas', value: likes, trend: 0, icon: 'favorite', color: 'pink' }, // Correct order per user
-                { label: 'Comentários', value: comments, trend: 0, icon: 'chat_bubble', color: 'blue' },
-                { label: 'Compartilhamentos', value: shares, trend: 0, icon: 'share', color: 'green' }
-                // Removed interactions/profile visits card for cleanliness if user only wanted replaced ones?
-                // User said: "retirar esses (alcance, seguidores, clicks) e colocar (likes, comments, shares)"
-                // But in text message: "X Removi: Alcance, Seguidores, Cliques. V Adicionei... i Mantive: Views, Visitas, Interações"
-                // Let's stick to what I notified the user about: Views, Profile Visits, Interactions, Likes, Comments, Shares.
-            ];
-            // Re-adding the ones I said I kept:
-            stats = [
-                { label: 'Visualizações', value: impressions, trend: 0, icon: 'play_circle', color: 'red' },
                 { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
                 { label: 'Interações', value: interactions, trend: 0, icon: 'favorite_border', color: 'purple' },
                 { label: 'Curtidas', value: likes, trend: 0, icon: 'favorite', color: 'pink' },
                 { label: 'Comentários', value: comments, trend: 0, icon: 'chat_bubble', color: 'blue' },
                 { label: 'Compartilhamentos', value: shares, trend: 0, icon: 'share', color: 'green' }
             ];
-
-        } else {
-            // Default (Instagram)
+        } else if (platform === 'Facebook') {
+            stats = [
+                { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
+                { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
+                { label: 'Seguidores (Saldo)', value: netFollowers, trend: 0, icon: 'group_add', color: 'cyan' },
+                { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
+                { label: 'Cliques no Link', value: websiteClicks, trend: 0, icon: 'link', color: 'orange' }
+            ];
+        } else if (platform === 'Instagram') {
             stats = [
                 { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
                 { label: 'Visualizações', value: impressions, trend: 0, icon: 'trending_up', color: 'indigo' },
                 { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
                 { label: 'Seguidores (Saldo)', value: netFollowers, trend: 0, icon: 'group_add', color: 'green' },
                 { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
-                { label: 'Cliques no Link', value: websiteClicks, trend: 0, icon: 'link', color: 'orange' }
-            ];
-            if (platform === 'Instagram') {
-                stats.push({ label: 'Views em Stories', value: storyViews, trend: 0, icon: 'amp_stories', color: 'pink' });
-            }
-        } else if (platform === 'Facebook') {
-            stats = [
-                { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
-                { label: 'Visualizações', value: impressions, trend: 0, icon: 'trending_up', color: 'indigo' },
-                { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
-                { label: 'Seguidores (Saldo)', value: netFollowers, trend: 0, icon: 'group_add', color: 'cyan' },
-                { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
-                { label: 'Cliques no Link', value: websiteClicks, trend: 0, icon: 'link', color: 'orange' }
+                { label: 'Cliques no Link', value: websiteClicks, trend: 0, icon: 'link', color: 'orange' },
+                { label: 'Views em Stories', value: storyViews, trend: 0, icon: 'amp_stories', color: 'pink' }
             ];
         } else {
             // Default Fallback
             stats = [
                 { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
                 { label: 'Visualizações', value: impressions, trend: 0, icon: 'trending_up', color: 'indigo' },
-                { label: 'Interações', value: interactions, trend: 0, icon: 'favourite', color: 'purple' },
+                { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
                 { label: 'Seguidores', value: netFollowers, trend: 0, icon: 'group', color: 'green' }
             ];
         }
@@ -359,6 +343,11 @@ const PlatformView = ({ platform }) => {
             contentItems,
             reels,
             stories,
+            netFollowers,
+            reach,
+            interactions,
+            websiteClicks,
+            profileVisits,
             isLoaded: true
         });
     };
@@ -504,53 +493,102 @@ const PlatformView = ({ platform }) => {
                                             </div>
                                         </section>
                                     </div>
-                                ) : (
-                                    <>
-                                        {platform === 'TikTok' ? (
-                                            /* TikTok specific layout */
-                                            <div className="space-y-12">
-                                                {/* Retention Chart */}
-                                                {data.retentionData.length > 0 && (
-                                                    <div className="w-full">
-                                                        <RetentionChart data={data.retentionData} />
+                                ) : platform === 'Facebook' ? (
+                                    /* Facebook specific layout */
+                                    <div className="space-y-10">
+                                        {/* Engajamento Highlights - Mini cards */}
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {[
+                                                { label: 'Alcance', value: data.reach, icon: 'visibility', color: '#2563EB', bg: '#EFF6FF' },
+                                                { label: 'Interações', value: data.interactions, icon: 'favorite', color: '#9333EA', bg: '#F5F3FF' },
+                                                { label: 'Visitas ao Perfil', value: data.profileVisits, icon: 'person_search', color: '#0D9488', bg: '#F0FDFA' },
+                                                { label: 'Cliques no Link', value: data.websiteClicks, icon: 'link', color: '#F97316', bg: '#FFF7ED' },
+                                            ].map(card => (
+                                                <div key={card.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4">
+                                                    <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: card.bg }}>
+                                                        <span className="material-icons-round text-xl" style={{ color: card.color }}>{card.icon}</span>
                                                     </div>
-                                                )}
-
-                                                {/* Content Reel (Grid View) */}
-                                                <section className="w-full overflow-hidden">
-                                                    <MediaReel
-                                                        title="Publicações Recentes"
-                                                        items={(data.contentItems || []).slice(0, 25)}
-                                                        onItemClick={(item) => setSelectedStory(item)}
-                                                    />
-                                                </section>
-
-                                                {/* Growth Chart */}
-                                                {data.chartData.length > 0 && (
-                                                    <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
-                                                        <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Crescimento</h3>
-                                                        <GrowthChart data={data.chartData} />
+                                                    <div>
+                                                        <p className="text-xs text-gray-400 font-medium">{card.label}</p>
+                                                        <p className="text-xl font-bold text-gray-800">{formatNumber(card.value || 0)}</p>
                                                     </div>
-                                                )}
-
-                                                {/* Content Table (Detailed View) */}
-                                                <div className="w-full">
-                                                    <ContentTable items={data.contentItems} />
                                                 </div>
-                                            </div>
-                                        ) : (
-                                            /* Generic/Other Platform Fallback */
-                                            <>
-                                                {data.chartData.length > 0 && (
-                                                    <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
-                                                        <GrowthChart data={data.chartData} />
+                                            ))}
+                                        </div>
+
+                                        {/* Gráfico de Alcance */}
+                                        {data.chartData.length > 0 && (
+                                            <section className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                                                <div className="flex items-center gap-3 mb-5">
+                                                    <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
+                                                        <span className="material-icons-round text-blue-500 text-lg">show_chart</span>
                                                     </div>
-                                                )}
-                                                <div className="w-full">
-                                                    <ContentTable items={data.contentItems} />
+                                                    <h3 className="text-base font-bold text-gray-800">Evolução do Alcance</h3>
                                                 </div>
-                                            </>
+                                                <div className="w-full h-[280px]">
+                                                    <GrowthChart data={data.chartData} />
+                                                </div>
+                                            </section>
                                         )}
+
+                                        {/* Publicações Recentes - Reel */}
+                                        {(data.contentItems || []).length > 0 && (
+                                            <section className="w-full overflow-hidden">
+                                                <MediaReel
+                                                    title="Publicações Recentes"
+                                                    items={(data.contentItems || []).slice(0, 25)}
+                                                    onItemClick={(item) => setSelectedStory(item)}
+                                                />
+                                            </section>
+                                        )}
+
+                                        {/* Tabela de Conteúdo detalhada */}
+                                        <section className="w-full">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center">
+                                                    <span className="material-icons-round text-purple-500 text-lg">table_chart</span>
+                                                </div>
+                                                <h3 className="text-base font-bold text-gray-800">Desempenho por Publicação</h3>
+                                            </div>
+                                            <ContentTable items={data.contentItems} />
+                                        </section>
+                                    </div>
+                                ) : platform === 'TikTok' ? (
+                                    /* TikTok specific layout */
+                                    <div className="space-y-12">
+                                        {data.retentionData.length > 0 && (
+                                            <div className="w-full">
+                                                <RetentionChart data={data.retentionData} />
+                                            </div>
+                                        )}
+                                        <section className="w-full overflow-hidden">
+                                            <MediaReel
+                                                title="Publicações Recentes"
+                                                items={(data.contentItems || []).slice(0, 25)}
+                                                onItemClick={(item) => setSelectedStory(item)}
+                                            />
+                                        </section>
+                                        {data.chartData.length > 0 && (
+                                            <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
+                                                <h3 className="text-lg font-bold text-[#1F2937] mb-4 px-2">Análise de Crescimento</h3>
+                                                <GrowthChart data={data.chartData} />
+                                            </div>
+                                        )}
+                                        <div className="w-full">
+                                            <ContentTable items={data.contentItems} />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    /* Generic/Other Platform Fallback */
+                                    <>
+                                        {data.chartData.length > 0 && (
+                                            <div className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
+                                                <GrowthChart data={data.chartData} />
+                                            </div>
+                                        )}
+                                        <div className="w-full">
+                                            <ContentTable items={data.contentItems} />
+                                        </div>
                                     </>
                                 )}
                             </>
