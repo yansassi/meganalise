@@ -163,9 +163,12 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                 let existingRecords = [];
                 let batchFetchFailed = false;
 
+                let minDate = '';
+                let maxDate = '';
+
                 if (dates.length > 0) {
-                    const minDate = dates[0];
-                    const maxDate = dates[dates.length - 1];
+                    minDate = dates[0];
+                    maxDate = dates[dates.length - 1];
 
                     try {
                         // Remove platform filter to catch case mismatches (e.g. 'Instagram' vs 'instagram')
