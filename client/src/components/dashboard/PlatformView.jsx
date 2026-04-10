@@ -145,16 +145,27 @@ const PlatformView = ({ platform }) => {
         let reach = 0, interactions = 0, followers = 0, websiteClicks = 0, profileVisits = 0, storyViews = 0;
         let impressions = 0;
         let likes = 0, comments = 0, shares = 0;
+        let watchTimeSum = 0, ctrSum = 0, ctrCount = 0;
+        let netFollowers = 0;
 
         const followersParams = { start: null, end: null };
         const chartMap = {};
-
         const followersData = [];
 
         dbData.metrics.forEach(m => {
-            if (m.metric === 'reach') reach += m.value;
+
+            if (m.metric === 'reach' || m.metric === 'impressions') reach += m.value;
             if (m.metric === 'impressions') impressions += m.value;
             if (m.metric === 'interactions') interactions += m.value;
+
+            // YouTube Specific Mappings
+            if (m.metric === 'watch_time') watchTimeSum = (watchTimeSum || 0) + m.value;
+            if (m.metric === 'views') impressions += m.value; // Map Views to Impressions for consistency if needed, or use separate
+            if (m.metric === 'subscribers') netFollowers += m.value;
+            if (m.metric === 'ctr') {
+                ctrSum = (ctrSum || 0) + m.value;
+                ctrCount = (ctrCount || 0) + 1;
+            }
 
             // TikTok Specific Mappings
             if (m.metric === 'video_views') impressions += m.value; // Map Video Views to Impressions
@@ -182,18 +193,29 @@ const PlatformView = ({ platform }) => {
             if (m.metric === 'website_clicks') websiteClicks += m.value;
             if (m.metric === 'profile_visits') profileVisits += m.value;
 
-            if (m.metric === 'reach' || m.metric === 'video_views') {
+            if (m.metric === 'reach' || m.metric === 'video_views' || m.metric === 'views') {
                 chartMap[m.date] = (chartMap[m.date] || 0) + m.value;
             }
         });
 
-        // TikTok Retention Processing
+        // YouTube/TikTok Retention Processing
         const retentionMap = {};
-        if (platform === 'TikTok') {
+        if (platform === 'TikTok' || platform === 'YouTube') {
             dbData.metrics.forEach(m => {
-                if (['total_viewers', 'new_viewers', 'returning_viewers'].includes(m.metric)) {
+                const metricName = m.metric.toLowerCase();
+                // TikTok mapping
+                if (['total_viewers', 'new_viewers', 'returning_viewers'].includes(metricName)) {
                     if (!retentionMap[m.date]) retentionMap[m.date] = { date: m.date };
-                    retentionMap[m.date][m.metric] = m.value;
+                    retentionMap[m.date][metricName] = m.value;
+                }
+                // YouTube mapping
+                if (metricName.includes('novos_espectadores')) {
+                    if (!retentionMap[m.date]) retentionMap[m.date] = { date: m.date };
+                    retentionMap[m.date].new_viewers = m.value;
+                }
+                if (metricName.includes('espectadores_recorrentes')) {
+                    if (!retentionMap[m.date]) retentionMap[m.date] = { date: m.date };
+                    retentionMap[m.date].returning_viewers = m.value;
                 }
             });
         }
@@ -211,7 +233,6 @@ const PlatformView = ({ platform }) => {
         }
 
         // Calculate Net Follower Growth Total
-        let netFollowers = 0;
         if (followersParams.start && followersParams.end) {
             netFollowers = followersParams.end.value - followersParams.start.value;
         }
@@ -335,6 +356,14 @@ const PlatformView = ({ platform }) => {
                 { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
                 { label: 'Cliques no Link', value: websiteClicks, trend: 0, icon: 'link', color: 'orange' },
                 { label: 'Views em Stories', value: storyViews, trend: 0, icon: 'amp_stories', color: 'pink' }
+            ];
+        } else if (platform === 'YouTube') {
+            stats = [
+                { label: 'Visualizações', value: impressions, trend: 0, icon: 'play_circle', color: 'red' },
+                { label: 'Tempo de Exibição', value: watchTimeSum, trend: 0, icon: 'schedule', color: 'blue', suffix: 'h' },
+                { label: 'Inscritos Ganhos', value: netFollowers, trend: 0, icon: 'person_add', color: 'orange' },
+                { label: 'Impressões', value: reach, trend: 0, icon: 'visibility', color: 'indigo' },
+                { label: 'Taxa de Cliques (CTR)', value: ctrCount > 0 ? (ctrSum / ctrCount).toFixed(2) : 0, trend: 0, icon: 'touch_app', color: 'teal', suffix: '%' }
             ];
         } else {
             // Default Fallback
@@ -589,6 +618,55 @@ const PlatformView = ({ platform }) => {
                                             </div>
                                         )}
                                         <div className="w-full">
+                                            <ContentTable items={data.contentItems} />
+                                        </div>
+                                    </div>
+                                ) : platform === 'YouTube' ? (
+                                    /* YouTube specific layout */
+                                    <div className="space-y-12">
+                                        {/* Retention Chart - Novos vs Recorrentes */}
+                                        {data.retentionData.length > 0 && (
+                                            <div className="w-full">
+                                                <div className="flex items-center gap-3 mb-4 px-2">
+                                                    <div className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center">
+                                                        <span className="material-icons-round text-red-500 text-lg">supervised_user_circle</span>
+                                                    </div>
+                                                    <h3 className="text-base font-bold text-gray-800">Comportamento do Público</h3>
+                                                </div>
+                                                <RetentionChart data={data.retentionData} />
+                                            </div>
+                                        )}
+
+                                        {/* Evolução de Visualizações */}
+                                        {data.chartData.length > 0 && (
+                                            <section className="w-full bg-white rounded-2xl p-6 shadow-sm border border-gray-100 h-[350px]">
+                                                <div className="flex items-center gap-3 mb-5">
+                                                    <div className="w-9 h-9 bg-blue-50 rounded-xl flex items-center justify-center">
+                                                        <span className="material-icons-round text-blue-500 text-lg">show_chart</span>
+                                                    </div>
+                                                    <h3 className="text-base font-bold text-gray-800">Evolução de Visualizações</h3>
+                                                </div>
+                                                <GrowthChart data={data.chartData} />
+                                            </section>
+                                        )}
+
+                                        {/* Conteúdo mais recente do YouTube */}
+                                        <section className="w-full overflow-hidden">
+                                            <MediaReel
+                                                title="Vídeos Recentes"
+                                                items={(data.contentItems || []).slice(0, 25)}
+                                                onItemClick={(item) => setSelectedStory(item)}
+                                            />
+                                        </section>
+
+                                        {/* Tabela detalhada de vídeos */}
+                                        <div className="w-full">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center">
+                                                    <span className="material-icons-round text-purple-500 text-lg">video_library</span>
+                                                </div>
+                                                <h3 className="text-base font-bold text-gray-800">Desempenho dos Vídeos</h3>
+                                            </div>
                                             <ContentTable items={data.contentItems} />
                                         </div>
                                     </div>

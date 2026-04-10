@@ -232,7 +232,7 @@ export const dataService = {
             const formData = new FormData();
             formData.append('image_file', imageFile);
 
-            const collectionName = platform === 'tiktok' ? 'tiktok_content' : platform === 'facebook' ? 'facebook_content' : 'instagram_content';
+            const collectionName = platform === 'tiktok' ? 'tiktok_content' : platform === 'facebook' ? 'facebook_content' : platform === 'youtube' ? 'youtube_content' : 'instagram_content';
 
             const result = await pb.collection(collectionName).update(
                 contentId,
@@ -266,6 +266,8 @@ export const dataService = {
                 collection = 'tiktok_content';
             } else if (item.social_network === 'facebook' || item.platform === 'facebook') {
                 collection = 'facebook_content';
+            } else if (item.social_network === 'youtube' || item.platform === 'youtube') {
+                collection = 'youtube_content';
             }
 
             const recordId = item.pbId || item.id;

@@ -197,6 +197,39 @@ router.get('/:country/:platform', async (req, res) => {
                 platform_type: 'social' // Default to social post
             }));
 
+        } else if (socialNetwork === 'youtube') {
+            const metricsFilter = `country = "${country}" && platform = "youtube"${dateFilter}`;
+            const contentFilter = `country = "${country}"${dateFilter}`;
+
+            const [metricsResult, contentResult] = await Promise.all([
+                pb.collection('youtube_daily_metrics').getFullList({
+                    filter: metricsFilter,
+                    sort: 'date',
+                    requestKey: null
+                }).catch(e => {
+                    console.log('Error fetching youtube metrics:', e.message);
+                    return [];
+                }),
+                pb.collection('youtube_content').getList(1, 1000, {
+                    filter: contentFilter,
+                    sort: '-date',
+                    requestKey: null
+                }).then(res => res.items).catch(e => {
+                    console.log('Error fetching youtube content:', e.message);
+                    return [];
+                })
+            ]);
+
+            metrics = metricsResult;
+            content = contentResult;
+
+            // Normalize Content
+            content = content.map(c => ({
+                ...c,
+                social_network: 'youtube',
+                platform_type: 'video'
+            }));
+
         } else {
             // Instagram (Default)
             const metricsFilter = `country = "${country}" && platform = "${socialNetwork}"${dateFilter}`;

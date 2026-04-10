@@ -57,8 +57,8 @@ const parseDate = (dateStr) => {
     }
 
     // 3. EN/PT Text formats: "Jan 11, 2025", "11 Jan 2025", "11 de Jan", "11 de Janeiro"
-    // Normalize: remove "de "
-    const cleanStr = str.replace(/\sde\s/gi, ' ').toLowerCase();
+    // Normalize: remove "de ", periods, and extra spaces
+    const cleanStr = str.replace(/\sde\s/gi, ' ').replace(/\./g, '').toLowerCase();
 
     // Regex for "DD Month YYYY" or "Month DD YYYY"
     // Month can be full name or 3 chars
@@ -107,14 +107,11 @@ const parseDate = (dateStr) => {
             if (!yearPart) {
                 const currentYear = new Date().getFullYear();
                 const tempDate = new Date(currentYear, parseInt(month) - 1, parseInt(day));
-                // If the date in current year is in the future (e.g., "Jan 25" when today is "Jan 12"),
-                // assume it belongs to the previous year.
-                // WARNING: Same heuristic limitation as above.
                 if (tempDate > new Date()) {
                     year = currentYear - 1;
                 }
             }
-            return `${year}-${month}-${day.toString().padStart(2, '0')}`;
+            return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
         }
     }
 
@@ -829,4 +826,98 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
     });
 };
 
-module.exports = { parseInstagramCSV, parseTikTokCSV, parseFacebookCSV };
+const parseYouTubeCSV = (fileBuffer, fileName) => {
+    return new Promise((resolve, reject) => {
+        let decodedContent = decodeBuffer(fileBuffer);
+
+        // Remove "sep=," if present
+        if (decodedContent.trim().startsWith('sep=,')) {
+            decodedContent = decodedContent.replace(/^sep=,[\r\n]+/, '');
+        }
+
+        Papa.parse(decodedContent, {
+            header: true,
+            skipEmptyLines: true,
+            transformHeader: h => h.trim(),
+            complete: (results) => {
+                const data = results.data;
+                const headers = results.meta.fields || [];
+                const headersLower = headers.map(h => h.toLowerCase());
+
+                // 1. Content Detection (Vídeos individuais)
+                // Colunas esperadas: Conteúdo, Título do vídeo, Horário de publicação do vídeo, Duração, Visualizações, Impressões...
+                if (headersLower.includes('título do vídeo') || headersLower.includes('video title')) {
+                    const contentData = data.map(row => {
+                        // Skip summary rows
+                        if (row['Conteúdo'] === 'Total' || row['Content'] === 'Total') return null;
+
+                        const id = row['Conteúdo'] || row['Content'];
+                        const title = row['Título do vídeo'] || row['Video title'];
+                        const dateRaw = row['Horário de publicação do vídeo'] || row['Video publication time'];
+                        const views = parseInt(row['Visualizações'] || row['Views'] || 0, 10);
+                        const impressions = parseInt(row['Impressões'] || row['Impressions'] || 0, 10);
+                        const watchTime = parseFloat((row['Tempo de exibição (horas)'] || row['Watch time (hours)'] || '0').replace(',', '.'));
+                        const subs = parseInt(row['Inscritos'] || row['Subscribers'] || 0, 10);
+                        const ctr = parseFloat((row['Taxa de cliques de impressões (%)'] || row['Impressions click-through rate (%)'] || '0').replace(',', '.'));
+                        const duration = parseInt(row['Duração'] || row['Duration'] || 0, 10);
+
+                        return {
+                            id,
+                            title,
+                            date: parseDate(dateRaw),
+                            views,
+                            reach: impressions, // Mapeamos impressions para reach para consistência
+                            impressions,
+                            watch_time: watchTime,
+                            subscribers: subs,
+                            ctr,
+                            duration,
+                            social_network: 'youtube',
+                            platform: 'video'
+                        };
+                    }).filter(item => item !== null && item.date);
+
+                    resolve({ type: 'content', data: contentData });
+                    return;
+                }
+
+                // 2. Daily Metrics (Gráficos)
+                // Formato: Data, [Categoria], [Métrica]
+                if (headersLower.includes('data') || headersLower.includes('date')) {
+                    const dateKey = headers.find(h => h.toLowerCase() === 'data' || h.toLowerCase() === 'date');
+                    const categoryKey = headers.find(h => h !== dateKey && h.toLowerCase() !== 'visualizações' && h.toLowerCase() !== 'views');
+                    const valueKey = headers.find(h => h.toLowerCase() === 'visualizações' || h.toLowerCase() === 'views');
+
+                    if (dateKey && valueKey) {
+                        const metricsData = data.map(row => {
+                            const dateVal = row[dateKey];
+                            if (!dateVal || dateVal === 'Total') return null;
+
+                            // Se houver uma categoria (ex: Novos espectadores), prefixamos a métrica
+                            let metricSuffix = '';
+                            if (categoryKey && row[categoryKey]) {
+                                metricSuffix = '_' + normalize(row[categoryKey]);
+                            }
+
+                            return {
+                                date: parseDate(dateVal),
+                                value: parseInt(row[valueKey] || 0, 10),
+                                metric: `views${metricSuffix}`,
+                                platform: 'youtube'
+                            };
+                        }).filter(item => item !== null && item.date);
+
+                        resolve({ type: 'metric', data: metricsData });
+                        return;
+                    }
+                }
+
+                console.warn('Unknown YouTube CSV format:', fileName, 'Headers found:', headers);
+                resolve({ type: 'unknown', data: [], message: `Formato desconhecido para: ${fileName}.` });
+            },
+            error: (err) => reject(err)
+        });
+    });
+};
+
+module.exports = { parseInstagramCSV, parseTikTokCSV, parseFacebookCSV, parseYouTubeCSV };

@@ -1,7 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const { pb } = require('../services/db');
-const { parseInstagramCSV, parseTikTokCSV, parseFacebookCSV } = require('../services/parser');
+const { parseInstagramCSV, parseTikTokCSV, parseFacebookCSV, parseYouTubeCSV } = require('../services/parser');
 
 const router = express.Router();
 const upload = multer(); // Memory storage
@@ -506,6 +506,164 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
 
     } catch (error) {
         console.error('TikTok Upload parse error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.post('/youtube', upload.single('file'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+
+        const { country } = req.body;
+        if (!country) return res.status(400).json({ error: 'País é obrigatório' });
+
+        const buffer = req.file.buffer;
+        const filename = req.file.originalname;
+
+        console.log(`Processando arquivo YouTube: ${filename} para ${country}`);
+
+        const result = await parseYouTubeCSV(buffer, filename);
+        let savedCount = 0;
+        let errors = [];
+
+        if (result.type === 'unknown') {
+            return res.status(400).json({ error: result.message || 'Formato de arquivo YouTube desconhecido' });
+        }
+
+        if (result.type === 'content') {
+            const BATCH_SIZE = 50;
+            const items = result.data;
+
+            for (let i = 0; i < items.length; i += BATCH_SIZE) {
+                const chunk = items.slice(i, i + BATCH_SIZE);
+                const originalIds = chunk.map(item => item.id).filter(Boolean);
+
+                if (originalIds.length === 0) continue;
+
+                try {
+                    const idFilter = originalIds.map(id => `original_id = "${id}"`).join(' || ');
+                    const fullFilter = `(${idFilter}) && country = "${country}"`;
+
+                    let existingItems = [];
+                    try {
+                        existingItems = await pb.collection('youtube_content').getFullList({
+                            filter: fullFilter,
+                            requestKey: null,
+                            fields: 'id,original_id'
+                        });
+                    } catch (err) {
+                        console.error('Erro ao buscar registros existentes YouTube:', err.message);
+                    }
+
+                    const existingMap = new Map();
+                    existingItems.forEach(rec => existingMap.set(rec.original_id, rec));
+
+                    await Promise.all(chunk.map(async (item) => {
+                        try {
+                            const recordData = {
+                                original_id: item.id,
+                                title: item.title,
+                                date: item.date ? new Date(item.date + 'T12:00:00.000Z').toISOString() : new Date().toISOString(),
+                                views: item.views,
+                                reach: item.reach,
+                                impressions: item.impressions,
+                                watch_time: item.watch_time,
+                                subscribers: item.subscribers,
+                                ctr: item.ctr,
+                                duration: item.duration,
+                                social_network: 'youtube',
+                                country: country
+                            };
+
+                            const existingRecord = existingMap.get(item.id);
+
+                            if (existingRecord) {
+                                await pb.collection('youtube_content').update(existingRecord.id, recordData, { requestKey: null });
+                            } else {
+                                await pb.collection('youtube_content').create(recordData, { requestKey: null });
+                            }
+                            savedCount++;
+                        } catch (err) {
+                            console.error(`Erro ao salvar vídeo YouTube ${item.id}:`, err.message);
+                            errors.push({ id: item.id, error: err.message });
+                        }
+                    }));
+                } catch (batchErr) {
+                    console.error(`Erro crítico no lote YouTube começando em ${i}:`, batchErr);
+                    errors.push({ error: `Falha no processamento do lote: ${batchErr.message}` });
+                }
+            }
+        } else if (result.type === 'metric') {
+            const BATCH_SIZE = 50;
+            for (let i = 0; i < result.data.length; i += BATCH_SIZE) {
+                const chunk = result.data.slice(i, i + BATCH_SIZE);
+                const dates = chunk.map(item => item.date).sort();
+                
+                let existingRecords = [];
+                if (dates.length > 0) {
+                    try {
+                        existingRecords = await pb.collection('youtube_daily_metrics').getFullList({
+                            filter: `country = "${country}" && date >= "${dates[0]} 00:00:00.000Z" && date <= "${dates[dates.length-1]} 23:59:59.999Z"`,
+                            requestKey: null
+                        });
+                    } catch (err) {
+                        console.error('Erro ao buscar métricas YouTube:', err.message);
+                    }
+                }
+
+                const existingMap = new Map();
+                for (const record of existingRecords) {
+                    const dateKey = record.date.substring(0, 10);
+                    const key = `${dateKey}_${record.metric.toLowerCase()}`;
+                    existingMap.set(key, record);
+                }
+
+                await Promise.all(chunk.map(async (item) => {
+                    try {
+                        const key = `${item.date}_${item.metric.toLowerCase()}`;
+                        const existingRecord = existingMap.get(key);
+
+                        const recordData = {
+                            date: new Date(item.date + 'T12:00:00.000Z').toISOString(),
+                            metric: item.metric,
+                            value: item.value,
+                            platform: 'youtube',
+                            country: country
+                        };
+
+                        if (existingRecord) {
+                            await pb.collection('youtube_daily_metrics').update(existingRecord.id, recordData, { requestKey: null });
+                        } else {
+                            try {
+                                await pb.collection('youtube_daily_metrics').create(recordData, { requestKey: null });
+                            } catch (createErr) {
+                                if (createErr.status === 400) {
+                                    const found = await pb.collection('youtube_daily_metrics').getFirstListItem(`date = "${recordData.date}" && metric = "${recordData.metric}" && country = "${country}"`, { requestKey: null });
+                                    await pb.collection('youtube_daily_metrics').update(found.id, recordData, { requestKey: null });
+                                } else {
+                                    throw createErr;
+                                }
+                            }
+                        }
+                        savedCount++;
+                    } catch (err) {
+                        console.error(`Erro ao salvar métrica YouTube ${item.metric}:`, err.message);
+                        errors.push({ date: item.date, metric: item.metric, error: err.message });
+                    }
+                }));
+            }
+        }
+
+        res.json({
+            success: true,
+            type: result.type,
+            processed: result.data.length,
+            saved: savedCount,
+            errors: errors.length > 0 ? errors : undefined
+        });
+
+    } catch (error) {
+        console.error('Erro no handler de upload YouTube:', error);
         res.status(500).json({ error: error.message });
     }
 });
