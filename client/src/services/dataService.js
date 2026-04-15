@@ -200,13 +200,18 @@ export const dataService = {
                 : `platform = "instagram" && country = "${country}"`;
 
             // Get latest record
+            console.log(`dataService: Buscando audiência para ${platformLower} no país ${country}. Koleção: ${collectionName}, Filtro: ${filter}`);
+            
             const records = await pb.collection(collectionName).getList(1, 1, {
                 filter: filter,
                 sort: '-import_date',
                 requestKey: null
             });
 
-            if (records.items.length === 0) return null;
+            if (records.items.length === 0) {
+                console.log(`dataService: Nenhuma audiência encontrada para ${platformLower}/${country}`);
+                return null;
+            }
 
             const item = records.items[0];
             return {
@@ -217,7 +222,13 @@ export const dataService = {
                 countries: typeof item.countries === 'string' ? JSON.parse(item.countries) : item.countries || item.countries_data || []
             };
         } catch (err) {
-            console.error("Error fetching audience demographics", err);
+            console.error("Error fetching audience demographics Details:", {
+                platform,
+                country,
+                collection: collectionName,
+                error: err.message,
+                originalError: err
+            });
             return null;
         }
     },

@@ -46,9 +46,20 @@ const FacebookAudienceTab = () => {
             {audienceData ? (
                 <AudienceView data={audienceData} />
             ) : (
-                <div className="bg-white dark:bg-card-dark p-12 rounded-3xl shadow-soft text-center text-slate-400">
-                    <span className="material-icons-round text-5xl mb-4 opacity-20">group_off</span>
-                    <p>Dados de público do Facebook não disponíveis para este período/país.</p>
+                <div className="bg-white dark:bg-card-dark p-20 rounded-[2.5rem] shadow-sm border border-gray-100 text-center animate-fade-in">
+                    <div className="w-20 h-20 bg-blue-50 text-blue-500 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-inner">
+                        <span className="material-icons-round text-4xl">analytics</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">Análise de Público em Processamento</h3>
+                    <p className="text-gray-400 max-w-md mx-auto leading-relaxed">
+                        No momento, as métricas demográficas para o Facebook estão sendo sincronizadas ou não foram encontradas para este filtro. 
+                        Nossa equipe técnica já foi notificada para verificar a integridade da conexão.
+                    </p>
+                    <div className="mt-8 flex justify-center gap-4">
+                        <button onClick={() => window.location.reload()} className="px-6 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-100 hover:scale-105 transition-all">
+                            Recarregar Dashboard
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
