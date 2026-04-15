@@ -32,20 +32,22 @@ const FacebookContentDashboard = () => {
 
         dbData.content.forEach(c => {
             const item = {
-                id: c.original_id,
+                id: c.original_id || c.id,
                 pbId: c.id,
                 title: c.title,
                 imageUrl: c.image_url,
                 imageFile: c.image_file,
-                platform: c.platform_type,
+                platform: c.platform_type || 'social',
                 social_network: 'facebook',
                 manager: 'Time Social',
                 date: formatDate(c.date),
-                reach: c.reach,
-                views: c.views,
-                likes: c.likes,
-                shares: c.shares,
-                comments: c.comments,
+                reach: Number(c.reach || 0),
+                views: Number(c.views || 0),
+                likes: Number(c.likes || 0),
+                shares: Number(c.shares || 0),
+                comments: Number(c.comments || 0),
+                saved: Number(c.saved || 0),
+                virality: c.virality_score || c.virality || 0,
                 permalink: c.permalink
             };
 

@@ -85,7 +85,9 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
                 item.pbId = result.id; // Ensure pbId is set
 
                 // Generate the uploaded image URL immediately
-                const collectionName = platform === 'tiktok' ? 'tiktok_content' : 'instagram_content';
+                const collectionName = platform === 'tiktok' ? 'tiktok_content' : 
+                                     platform === 'facebook' ? 'facebook_content' : 
+                                     platform === 'youtube' ? 'youtube_content' : 'instagram_content';
                 const newImageUrl = `https://auth.meganalise.pro/api/files/${collectionName}/${result.id}/${result.image_file}`;
                 setUploadedImageUrl(newImageUrl);
 
@@ -131,8 +133,12 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
 
     if (!isOpen || !item) return null;
 
+    console.log('ContentDetailsModal: Renderizando com item:', item);
+
+    const isFacebook = item.social_network === 'facebook';
+
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose}>
             <div
                 className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl transform scale-100 transition-all p-0"
                 onClick={e => e.stopPropagation()}
@@ -187,7 +193,7 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="absolute bottom-3 right-3 p-2 bg-white/90 rounded-full text-[#2563EB] shadow-sm hover:scale-110 transition-transform"
-                                    title="Ver no Instagram"
+                                    title={isFacebook ? "Ver no Facebook" : "Ver no Instagram"}
                                 >
                                     <span className="material-icons-round text-lg">open_in_new</span>
                                 </a>
@@ -337,21 +343,21 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
                             <div className="p-4 bg-purple-50 dark:bg-purple-900/10 rounded-2xl border border-purple-100 dark:border-purple-500/20">
                                 <div className="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase mb-1">Taxa de Engajamento</div>
                                 <div className="text-2xl font-black text-purple-700 dark:text-purple-300">
-                                    {((((item.likes || 0) + (item.comments || 0) + (item.shares || 0) + (item.saved || 0)) / (item.reach || 1)) * 100).toFixed(2)}%
+                                    {((((Number(item.likes) || 0) + (Number(item.comments) || 0) + (Number(item.shares) || 0) + (Number(item.saved) || 0)) / (Number(item.reach) || 1)) * 100).toFixed(2)}%
                                 </div>
                                 <div className="text-[10px] text-purple-400">Sobre Alcance</div>
                             </div>
                             <div className="p-4 bg-yellow-50 dark:bg-yellow-900/10 rounded-2xl border border-yellow-100 dark:border-yellow-500/20">
                                 <div className="text-xs font-bold text-yellow-600 dark:text-yellow-400 uppercase mb-1">Taxa de Salvamento</div>
                                 <div className="text-2xl font-black text-yellow-700 dark:text-yellow-300">
-                                    {(((item.saved || 0) / (item.reach || 1)) * 100).toFixed(2)}%
+                                    {(((Number(item.saved) || 0) / (Number(item.reach) || 1)) * 100).toFixed(2)}%
                                 </div>
                                 <div className="text-[10px] text-yellow-400">Retenção de Valor</div>
                             </div>
                             <div className="p-4 bg-green-50 dark:bg-green-900/10 rounded-2xl border border-green-100 dark:border-green-500/20">
                                 <div className="text-xs font-bold text-green-600 dark:text-green-400 uppercase mb-1">Viralidade (Shares)</div>
                                 <div className="text-2xl font-black text-green-700 dark:text-green-300">
-                                    {(((item.shares || 0) / (item.reach || 1)) * 100).toFixed(2)}%
+                                    {(((Number(item.shares) || 0) / (Number(item.reach) || 1)) * 100).toFixed(2)}%
                                 </div>
                                 <div className="text-[10px] text-green-400">Potencial de Rede</div>
                             </div>

@@ -264,7 +264,7 @@ export const dataService = {
             let collection = 'instagram_content';
             if (item.social_network === 'tiktok' || item.platform === 'tiktok') {
                 collection = 'tiktok_content';
-            } else if (item.social_network === 'facebook' || item.platform === 'facebook') {
+            } else if (item.social_network === 'facebook' || item.platform === 'facebook' || item.social_network?.toLowerCase() === 'facebook') {
                 collection = 'facebook_content';
             } else if (item.social_network === 'youtube' || item.platform === 'youtube') {
                 collection = 'youtube_content';
