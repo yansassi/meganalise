@@ -159,7 +159,7 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
                         </div>
                         <div>
                             <h3 className="text-xl font-bold text-[#1F2937]">Detalhes do Conteúdo</h3>
-                            <p className="text-sm text-gray-500">{item.date} • {item.platform?.toUpperCase() || 'POST'}</p>
+                            <p className="text-sm text-gray-500">{item.date} • {(item.platform && typeof item.platform === 'string') ? item.platform.toUpperCase() : 'POST'}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-white/10 rounded-full transition-colors">

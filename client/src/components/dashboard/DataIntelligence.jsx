@@ -95,7 +95,7 @@ const DataIntelligence = ({ contentItems }) => {
 
         // Calculate averages
         return Object.keys(stats).map(type => ({
-            name: type?.toUpperCase() || 'OUTROS',
+            name: (type && typeof type === 'string') ? type.toUpperCase() : 'OUTROS',
             avgReach: stats[type].count ? Math.round(stats[type].reach / stats[type].count) : 0,
             avgEngagement: stats[type].count ? Math.round(stats[type].engagement / stats[type].count) : 0
         })).filter(s => s.avgReach > 0);
