@@ -11,7 +11,7 @@ echo    AUTOMACAO DE UPLOAD - REPOSITORIO MEGANALISE
 echo ======================================================
 echo.
 
-:: Verifica se a pasta .git existe
+:: 1. Garantir que o repositório está configurado
 if not exist ".git" (
     echo [INFO] Inicializando repositorio Git local...
     git init
@@ -20,23 +20,21 @@ if not exist ".git" (
     git remote set-url origin %REPO_URL%
 )
 
-:: 1. Puxar alterações do servidor para evitar conflitos
-echo [1/4] Sincronizando com o servidor (Pull)...
-git pull origin %BRANCH% --rebase
-
-:: 2. Adicionar arquivos
-echo [2/4] Detectando alteracoes...
+:: 2. Primeiro, registrar as suas mudanças locais
+echo [1/4] Preparando arquivos locais...
 git add .
 
-:: 3. Commit
 set /p commit_msg="Digite a descricao do que foi feito: "
 if "%commit_msg%"=="" set commit_msg="Update automatico: %date% %time%"
 
-echo [3/4] Criando commit local...
 git commit -m "%commit_msg%"
 
-:: 4. Enviar
-echo [4/4] Enviando para o GitHub...
+:: 3. Agora sim, puxar o que está no servidor para mesclar
+echo [2/4] Sincronizando com o GitHub (Pull/Merge)...
+git pull origin %BRANCH% --rebase
+
+:: 4. Enviar tudo
+echo [3/4] Enviando para o GitHub...
 git push origin %BRANCH%
 
 echo.
