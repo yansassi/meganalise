@@ -292,6 +292,7 @@ const UploadMetrics = () => {
                             </>
                         )}
                     </div>
+                </div>
             </div>
         </div>
     );
