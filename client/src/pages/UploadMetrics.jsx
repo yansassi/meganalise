@@ -23,6 +23,50 @@ const UploadMetrics = () => {
         { id: 'YouTube', label: 'YouTube', icon: 'smart_display', color: 'bg-red-600' },
     ];
 
+    // Platform-specific upload instructions
+    const platformInstructions = {
+        Instagram: {
+            title: 'Arquivos do Instagram',
+            description: 'Exporte do Instagram Insights ou Meta Business Suite.',
+            files: ['Alcance.csv', 'Interações.csv', 'Seguidores.csv', 'Público.csv', 'Conteúdo publicado.csv'],
+            color: 'from-yellow-400 to-purple-600',
+            bg: 'bg-purple-50',
+            text: 'text-purple-600'
+        },
+        Facebook: {
+            title: 'Arquivos do Facebook',
+            description: 'Exporte do Facebook Insights ou Meta Business Suite.',
+            files: ['Visualizações.csv', 'Seguidores.csv', 'Interações.csv', 'Visitas.csv', 'Publicações.csv'],
+            color: 'from-blue-500 to-blue-700',
+            bg: 'bg-blue-50',
+            text: 'text-blue-600'
+        },
+        TikTok: {
+            title: 'Arquivos do TikTok',
+            description: 'Exporte do TikTok Studio em Análise > Exportar.',
+            files: ['Overview.csv', 'Content.csv', 'Followers.csv', 'FollowerGender.csv', 'FollowerTopTerritories.csv'],
+            color: 'from-gray-700 to-black',
+            bg: 'bg-gray-50',
+            text: 'text-gray-700'
+        },
+        YouTube: {
+            title: 'Arquivos do YouTube Studio',
+            description: 'Acesse YouTube Studio > Análises > Exportar e envie os CSVs das pastas abaixo:',
+            files: [
+                '📊 Conteúdo → Dados da tabela.csv (lista de vídeos)',
+                '📈 Conteúdo → Dados do gráfico.csv (visualizações por dia)',
+                '👥 Espectadores novos e recorrentes → Dados do gráfico.csv',
+                '🌍 País → Dados do gráfico.csv',
+                '🔀 Origem do tráfego → Dados do gráfico.csv',
+            ],
+            color: 'from-red-500 to-red-700',
+            bg: 'bg-red-50',
+            text: 'text-red-600'
+        }
+    };
+
+    const currentInstructions = selectedPlatform ? platformInstructions[selectedPlatform] : null;
+
     const handleFileUpload = async (uploadedFiles) => {
         if (!selectedPlatform) {
             alert('Por favor, selecione uma rede social primeiro.');
@@ -144,6 +188,25 @@ const UploadMetrics = () => {
                         </div>
                     </section>
 
+                    {/* 3. Platform Instructions */}
+                    {currentInstructions && (
+                        <section className={`${currentInstructions.bg} border border-gray-100 dark:bg-opacity-20 rounded-2xl p-5`}>
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className={`material-icons-round text-base ${currentInstructions.text}`}>info</span>
+                                <h4 className={`font-bold text-sm ${currentInstructions.text}`}>{currentInstructions.title}</h4>
+                            </div>
+                            <p className="text-xs text-gray-500 mb-3">{currentInstructions.description}</p>
+                            <ul className="space-y-1.5">
+                                {currentInstructions.files.map((file, i) => (
+                                    <li key={i} className="flex items-start gap-2 text-xs text-gray-600">
+                                        <span className="material-icons-round text-gray-400 text-xs mt-0.5">check_circle</span>
+                                        <span>{file}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </section>
+                    )}
+
                 </div>
 
                 {/* Right Column: Upload Area */}
@@ -229,8 +292,6 @@ const UploadMetrics = () => {
                             </>
                         )}
                     </div>
-                </div>
-
             </div>
         </div>
     );

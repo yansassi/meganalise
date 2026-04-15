@@ -306,7 +306,12 @@ const PlatformView = ({ platform }) => {
                 likes: c.likes,
                 shares: c.shares,
                 comments: c.comments,
-                social_network: c.social_network
+                social_network: c.social_network,
+                // YouTube-specific fields
+                watch_time: c.watch_time,
+                subscribers: c.subscribers,
+                ctr: c.ctr,
+                impressions: c.impressions,
             };
 
             if (platform === 'Instagram') {
@@ -659,15 +664,100 @@ const PlatformView = ({ platform }) => {
                                             />
                                         </section>
 
-                                        {/* Tabela detalhada de vídeos */}
+                                        {/* Tabela detalhada de vídeos YouTube */}
                                         <div className="w-full">
                                             <div className="flex items-center gap-3 mb-4">
-                                                <div className="w-9 h-9 bg-purple-50 rounded-xl flex items-center justify-center">
-                                                    <span className="material-icons-round text-purple-500 text-lg">video_library</span>
+                                                <div className="w-9 h-9 bg-red-50 rounded-xl flex items-center justify-center">
+                                                    <span className="material-icons-round text-red-500 text-lg">video_library</span>
                                                 </div>
                                                 <h3 className="text-base font-bold text-gray-800">Desempenho dos Vídeos</h3>
+                                                {data.contentItems?.length > 0 && (
+                                                    <span className="ml-auto text-xs text-gray-400 font-medium">{data.contentItems.length} vídeos</span>
+                                                )}
                                             </div>
-                                            <ContentTable items={data.contentItems} />
+
+                                            {data.contentItems?.length > 0 ? (
+                                                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                                                    <div className="overflow-x-auto">
+                                                        <table className="w-full text-left border-collapse">
+                                                            <thead>
+                                                                <tr className="text-gray-400 text-xs uppercase font-extrabold tracking-wider border-b border-gray-100 bg-gray-50">
+                                                                    <th className="pb-3 pl-5 pt-3 whitespace-nowrap">Vídeo</th>
+                                                                    <th className="pb-3 px-3 pt-3 whitespace-nowrap text-right">
+                                                                        <span className="material-icons-round text-xs mr-1 align-middle">play_circle</span>Views
+                                                                    </th>
+                                                                    <th className="pb-3 px-3 pt-3 whitespace-nowrap text-right">
+                                                                        <span className="material-icons-round text-xs mr-1 align-middle">visibility</span>Impressões
+                                                                    </th>
+                                                                    <th className="pb-3 px-3 pt-3 whitespace-nowrap text-right">
+                                                                        <span className="material-icons-round text-xs mr-1 align-middle">touch_app</span>CTR
+                                                                    </th>
+                                                                    <th className="pb-3 px-3 pt-3 whitespace-nowrap text-right">
+                                                                        <span className="material-icons-round text-xs mr-1 align-middle">schedule</span>Exibição
+                                                                    </th>
+                                                                    <th className="pb-3 pr-5 pt-3 whitespace-nowrap text-right">
+                                                                        <span className="material-icons-round text-xs mr-1 align-middle">person_add</span>Inscritos
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody className="text-sm">
+                                                                {data.contentItems.map((item, index) => (
+                                                                    <tr
+                                                                        key={item.id || index}
+                                                                        onClick={() => setSelectedStory(item)}
+                                                                        className="group hover:bg-red-50/40 transition-colors border-b last:border-0 border-gray-100 cursor-pointer"
+                                                                    >
+                                                                        <td className="py-3 pl-5 max-w-[280px]">
+                                                                            <div className="flex items-center gap-3">
+                                                                                <div className="w-9 h-9 bg-red-100 text-red-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                                                                                    <span className="material-icons-round text-lg">smart_display</span>
+                                                                                </div>
+                                                                                <div className="flex flex-col min-w-0">
+                                                                                    <span className="font-semibold text-gray-800 truncate max-w-[220px]" title={item.title}>
+                                                                                        {item.title || 'Sem título'}
+                                                                                    </span>
+                                                                                    <span className="text-xs text-gray-400">{item.date}</span>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td className="py-3 px-3 text-right font-bold text-gray-700">
+                                                                            {item.views ? formatNumber(item.views) : <span className="text-gray-300">—</span>}
+                                                                        </td>
+                                                                        <td className="py-3 px-3 text-right font-semibold text-gray-500">
+                                                                            {item.reach ? formatNumber(item.reach) : <span className="text-gray-300">—</span>}
+                                                                        </td>
+                                                                        <td className="py-3 px-3 text-right">
+                                                                            {item.ctr != null && item.ctr > 0 ? (
+                                                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${
+                                                                                    item.ctr >= 10 ? 'bg-green-100 text-green-700' :
+                                                                                    item.ctr >= 5 ? 'bg-yellow-100 text-yellow-700' :
+                                                                                    'bg-gray-100 text-gray-500'
+                                                                                }`}>
+                                                                                    {Number(item.ctr).toFixed(1)}%
+                                                                                </span>
+                                                                            ) : <span className="text-gray-300">—</span>}
+                                                                        </td>
+                                                                        <td className="py-3 px-3 text-right font-semibold text-gray-500">
+                                                                            {item.watch_time ? `${Number(item.watch_time).toFixed(1)}h` : <span className="text-gray-300">—</span>}
+                                                                        </td>
+                                                                        <td className="py-3 pr-5 text-right">
+                                                                            {item.subscribers != null && item.subscribers > 0 ? (
+                                                                                <span className="text-green-600 font-bold">+{formatNumber(item.subscribers)}</span>
+                                                                            ) : <span className="text-gray-300">—</span>}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="bg-white rounded-2xl p-10 text-center border border-gray-100">
+                                                    <span className="material-icons-round text-5xl text-gray-200 mb-3">video_library</span>
+                                                    <p className="text-gray-400 text-sm">Nenhum vídeo encontrado no período selecionado.</p>
+                                                    <p className="text-xs text-gray-300 mt-1">Envie o arquivo "Dados da tabela.csv" do YouTube Studio.</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ) : (

@@ -844,29 +844,71 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
                 const headers = results.meta.fields || [];
                 const headersLower = headers.map(h => h.toLowerCase());
 
-                // 1. Content Detection (Vídeos individuais)
-                // Colunas esperadas: Conteúdo, Título do vídeo, Horário de publicação do vídeo, Duração, Visualizações, Impressões...
-                if (headersLower.includes('título do vídeo') || headersLower.includes('video title')) {
+                const hasDate = headersLower.includes('data') || headersLower.includes('date');
+                const hasTituloVideo = headersLower.some(h => h.includes('título do vídeo') || h === 'video title' || h === 'título do video');
+                const hasConteudo = headersLower.includes('conteúdo') || headersLower.includes('content');
+                const hasVisualizacoes = headersLower.some(h => h === 'visualizações' || h === 'views');
+
+                const dateKey = headers.find(h => h.toLowerCase() === 'data' || h.toLowerCase() === 'date');
+                const conteudoKey = headers.find(h => h.toLowerCase() === 'conteúdo' || h.toLowerCase() === 'content');
+                const tituloKey = headers.find(h => h.toLowerCase().includes('título do vídeo') || h.toLowerCase() === 'video title' || h.toLowerCase() === 'título do video');
+                const pubTimeKey = headers.find(h => h.toLowerCase().includes('horário de publicação') || h.toLowerCase().includes('publication time'));
+                const viewsKey = headers.find(h => h.toLowerCase() === 'visualizações' || h.toLowerCase() === 'views');
+                const impressoesKey = headers.find(h => h.toLowerCase() === 'impressões' || h.toLowerCase() === 'impressions');
+                const watchTimeKey = headers.find(h => h.toLowerCase().includes('tempo de exibição') || h.toLowerCase().includes('watch time'));
+                const inscritosKey = headers.find(h => h.toLowerCase() === 'inscritos' || h.toLowerCase() === 'subscribers');
+                const ctrKey = headers.find(h => h.toLowerCase().includes('taxa de cliques') || h.toLowerCase().includes('click-through rate'));
+                const durationKey = headers.find(h => h.toLowerCase() === 'duração' || h.toLowerCase() === 'duration');
+
+                // 1. DETECT: "Dados do gráfico.csv"
+                // Format: Data, Conteúdo, Título do vídeo, Horário de publicação, Duração, Visualizações
+                // Key: Has BOTH 'Data' column AND 'Título do vídeo' column + 'Conteúdo'
+                // Each row = one video on one date. Must AGGREGATE by date.
+                if (hasDate && hasTituloVideo && hasConteudo && dateKey && viewsKey) {
+                    console.log('[YouTube] Detected: Dados do gráfico (daily views per video) ->', fileName);
+                    const aggregatedByDate = {};
+                    for (const row of data) {
+                        const dateVal = row[dateKey];
+                        if (!dateVal || dateVal === 'Total') continue;
+                        const parsedDate = parseDate(dateVal);
+                        if (!parsedDate) continue;
+                        const views = parseInt(row[viewsKey] || 0, 10);
+                        if (!aggregatedByDate[parsedDate]) aggregatedByDate[parsedDate] = 0;
+                        aggregatedByDate[parsedDate] += views;
+                    }
+                    const metricsData = Object.entries(aggregatedByDate).map(([date, totalViews]) => ({
+                        date,
+                        value: totalViews,
+                        metric: 'views',
+                        platform: 'youtube'
+                    }));
+                    resolve({ type: 'metric', data: metricsData });
+                    return;
+                }
+
+                // 2. DETECT: "Dados da tabela.csv"
+                // Format: Conteúdo, Título do vídeo, Horário de publicação, Duração, Visualizações, ...
+                // Key: Has 'Título do vídeo' but NO 'Data' column as primary key
+                if (hasTituloVideo && !hasDate && tituloKey) {
+                    console.log('[YouTube] Detected: Dados da tabela (video list/content) ->', fileName);
                     const contentData = data.map(row => {
-                        // Skip summary rows
-                        if (row['Conteúdo'] === 'Total' || row['Content'] === 'Total') return null;
-
-                        const id = row['Conteúdo'] || row['Content'];
-                        const title = row['Título do vídeo'] || row['Video title'];
-                        const dateRaw = row['Horário de publicação do vídeo'] || row['Video publication time'];
-                        const views = parseInt(row['Visualizações'] || row['Views'] || 0, 10);
-                        const impressions = parseInt(row['Impressões'] || row['Impressions'] || 0, 10);
-                        const watchTime = parseFloat((row['Tempo de exibição (horas)'] || row['Watch time (hours)'] || '0').replace(',', '.'));
-                        const subs = parseInt(row['Inscritos'] || row['Subscribers'] || 0, 10);
-                        const ctr = parseFloat((row['Taxa de cliques de impressões (%)'] || row['Impressions click-through rate (%)'] || '0').replace(',', '.'));
-                        const duration = parseInt(row['Duração'] || row['Duration'] || 0, 10);
-
+                        if (conteudoKey && (row[conteudoKey] === 'Total' || row[conteudoKey] === 'total')) return null;
+                        const id = conteudoKey ? row[conteudoKey] : null;
+                        if (!id) return null;
+                        const title = tituloKey ? row[tituloKey] : '';
+                        const dateRaw = pubTimeKey ? row[pubTimeKey] : null;
+                        const views = viewsKey ? parseInt(row[viewsKey] || 0, 10) : 0;
+                        const impressions = impressoesKey ? parseInt(row[impressoesKey] || 0, 10) : 0;
+                        const watchTime = watchTimeKey ? parseFloat((row[watchTimeKey] || '0').toString().replace(',', '.')) : 0;
+                        const subs = inscritosKey ? parseInt(row[inscritosKey] || 0, 10) : 0;
+                        const ctr = ctrKey ? parseFloat((row[ctrKey] || '0').toString().replace(',', '.')) : 0;
+                        const duration = durationKey ? parseInt(row[durationKey] || 0, 10) : 0;
                         return {
                             id,
                             title,
                             date: parseDate(dateRaw),
                             views,
-                            reach: impressions, // Mapeamos impressions para reach para consistência
+                            reach: impressions,
                             impressions,
                             watch_time: watchTime,
                             subscribers: subs,
@@ -876,37 +918,39 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
                             platform: 'video'
                         };
                     }).filter(item => item !== null && item.date);
-
                     resolve({ type: 'content', data: contentData });
                     return;
                 }
 
-                // 2. Daily Metrics (Gráficos)
-                // Formato: Data, [Categoria], [Métrica]
-                if (headersLower.includes('data') || headersLower.includes('date')) {
-                    const dateKey = headers.find(h => h.toLowerCase() === 'data' || h.toLowerCase() === 'date');
-                    const categoryKey = headers.find(h => h !== dateKey && h.toLowerCase() !== 'visualizações' && h.toLowerCase() !== 'views');
-                    const valueKey = headers.find(h => h.toLowerCase() === 'visualizações' || h.toLowerCase() === 'views');
-
-                    if (dateKey && valueKey) {
-                        const metricsData = data.map(row => {
-                            const dateVal = row[dateKey];
-                            if (!dateVal || dateVal === 'Total') return null;
-
-                            // Se houver uma categoria (ex: Novos espectadores), prefixamos a métrica
-                            let metricSuffix = '';
-                            if (categoryKey && row[categoryKey]) {
-                                metricSuffix = '_' + normalize(row[categoryKey]);
-                            }
-
-                            return {
-                                date: parseDate(dateVal),
-                                value: parseInt(row[valueKey] || 0, 10),
-                                metric: `views${metricSuffix}`,
-                                platform: 'youtube'
-                            };
-                        }).filter(item => item !== null && item.date);
-
+                // 3. DETECT: Simple daily metric files (Espectadores, Tráfego etc.)
+                // Format: Data, [Categoria opcional], Visualizações
+                if (hasDate && dateKey && viewsKey) {
+                    const categoryKey = headers.find(h => {
+                        const hl = h.toLowerCase();
+                        return h !== dateKey && !hl.includes('visualizações') && !hl.includes('views') && hl !== 'data' && hl !== 'date';
+                    });
+                    const metricsData = data.map(row => {
+                        const dateVal = row[dateKey];
+                        if (!dateVal || dateVal === 'Total') return null;
+                        const parsedDate = parseDate(dateVal);
+                        if (!parsedDate) return null;
+                        let metricName = 'views';
+                        if (categoryKey && row[categoryKey]) {
+                            const normalizedCategory = row[categoryKey]
+                                .toLowerCase()
+                                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                                .replace(/[^a-z0-9]+/g, '_')
+                                .replace(/^_|_$/g, '');
+                            metricName = 'views_' + normalizedCategory;
+                        }
+                        return {
+                            date: parsedDate,
+                            value: parseInt(row[viewsKey] || 0, 10),
+                            metric: metricName,
+                            platform: 'youtube'
+                        };
+                    }).filter(item => item !== null && item.date);
+                    if (metricsData.length > 0) {
                         resolve({ type: 'metric', data: metricsData });
                         return;
                     }
