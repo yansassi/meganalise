@@ -2,43 +2,41 @@
 setlocal
 cls
 
-:: Configurações Pessoais
-set REPO_URL=https://yansassi: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@github.com/yansassi/meganalise.git
+:: Configurações
+set REPO_URL=https://github.com/yansassi/meganalise.git
 set BRANCH=main
 
 echo ======================================================
-echo    AUTOMACAO DE UPLOAD - REPOSITORIO MEGANALISE
+echo    AUTOMAÇÃO DE UPLOAD - REPOSITÓRIO MEGANALISE
 echo ======================================================
 echo.
 
-:: 1. Garantir que o repositório está configurado
+:: Verifica se a pasta .git existe, se não, inicia o repositório
 if not exist ".git" (
-    echo [INFO] Inicializando repositorio Git local...
+    echo [INFO] Inicializando repositório Git...
     git init
     git remote add origin %REPO_URL%
-) else (
-    git remote set-url origin %REPO_URL%
 )
 
-:: 2. Primeiro, registrar as suas mudanças locais
-echo [1/4] Preparando arquivos locais...
+:: Adiciona todas as mudanças
+echo [1/3] Adicionando arquivos...
 git add .
 
-set /p commit_msg="Digite a descricao do que foi feito: "
-if "%commit_msg%"=="" set commit_msg="Update automatico: %date% %time%"
+:: Solicita a mensagem do commit
+set /p commit_msg="Digite a mensagem do commit: "
 
+:: Se a mensagem estiver vazia, define uma padrão
+if "%commit_msg%"=="" set commit_msg="Atualizacao automatica via script .bat %date% %time%"
+
+echo [2/3] Criando commit...
 git commit -m "%commit_msg%"
 
-:: 3. Agora sim, puxar o que está no servidor para mesclar
-echo [2/4] Sincronizando com o GitHub (Pull/Merge)...
-git pull origin %BRANCH% --rebase
-
-:: 4. Enviar tudo
-echo [3/4] Enviando para o GitHub...
+:: Envia para o GitHub
+echo [3/3] Enviando para o GitHub (Branch: %BRANCH%)...
 git push origin %BRANCH%
 
 echo.
 echo ======================================================
-echo    PROCESSO CONCLUIDO!
+echo    PROCESSO CONCLUÍDO COM SUCESSO!
 echo ======================================================
 pause

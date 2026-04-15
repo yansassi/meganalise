@@ -268,10 +268,11 @@ const normalizeContentData = (data, isUSFormat = false) => {
             platform = 'video';
         }
 
-        let title = getValue(['Descrição', 'TÃ\xadtulo da legenda', 'Legenda', 'Título/Legenda', 'Caption']);
+        const titleRaw = getValue(['Descrição', 'TÃ\xadtulo da legenda', 'Legenda', 'Título/Legenda', 'Caption']);
+        let title = titleRaw;
         if (!title || title.trim() === '') {
             if (platform === 'story') {
-                title = `Story - ${dateFormatted || 'Instagram'}`;
+                title = `Story - ${dateFormatted || ''}`;
             } else {
                 title = 'Post sem legenda';
             }

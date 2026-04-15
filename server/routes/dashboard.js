@@ -193,8 +193,7 @@ router.get('/:country/:platform', async (req, res) => {
             // Normalize Content
             content = content.map(c => ({
                 ...c,
-                social_network: 'facebook',
-                platform_type: 'social' // Default to social post
+                social_network: 'facebook'
             }));
 
         } else if (socialNetwork === 'youtube') {
