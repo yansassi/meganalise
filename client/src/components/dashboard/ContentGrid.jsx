@@ -98,9 +98,17 @@ const ContentGrid = ({ items = [], title = "Conteúdo", limit = 45, showPaginati
                                                 </span>
                                             </div>
                                             {/* Platform Badge */}
-                                            <div className={`w-5 h-5 rounded-full flex items-center justify-center border border-white/20 backdrop-blur-sm ${item.social_network === 'facebook' ? 'bg-blue-600/80' : item.social_network === 'tiktok' ? 'bg-black/60' : 'bg-pink-600/80'}`}>
+                                            <div className={`w-5 h-5 rounded-full flex items-center justify-center border border-white/20 backdrop-blur-sm ${
+                                                item.social_network === 'facebook' ? 'bg-blue-600/80' :
+                                                item.social_network === 'tiktok' ? 'bg-black/60' :
+                                                item.social_network === 'youtube' ? 'bg-red-600/80' :
+                                                'bg-pink-600/80'
+                                            }`}>
                                                 <span className="material-icons-round text-white text-[10px]">
-                                                    {item.social_network === 'facebook' ? 'facebook' : item.social_network === 'tiktok' ? 'music_note' : 'photo_camera'}
+                                                    {item.social_network === 'facebook' ? 'facebook' :
+                                                     item.social_network === 'tiktok' ? 'music_note' :
+                                                     item.social_network === 'youtube' ? 'play_circle' :
+                                                     'photo_camera'}
                                                 </span>
                                             </div>
                                         </div>

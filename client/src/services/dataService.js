@@ -419,13 +419,15 @@ export const dataService = {
             // Query Multiple Collections based on filter
             let collections = [];
             if (platformFilter === 'all') {
-                collections = ['instagram_content', 'tiktok_content', 'facebook_content'];
+                collections = ['instagram_content', 'tiktok_content', 'facebook_content', 'youtube_content'];
             } else if (platformFilter === 'instagram') {
                 collections = ['instagram_content'];
             } else if (platformFilter === 'tiktok') {
                 collections = ['tiktok_content'];
             } else if (platformFilter === 'facebook') {
                 collections = ['facebook_content'];
+            } else if (platformFilter === 'youtube') {
+                collections = ['youtube_content'];
             }
 
             // Execute queries in parallel
@@ -439,8 +441,8 @@ export const dataService = {
                 // Append Keyword Filter - Conditioned on Collection
                 if (keywords.length > 0) {
                     const keywordConditions = keywords.map(k => {
-                        // Facebook content does not have an 'author' field in current schema
-                        if (collectionName === 'facebook_content') {
+                        // Facebook e YouTube não têm campo 'author' no schema atual
+                        if (collectionName === 'facebook_content' || collectionName === 'youtube_content') {
                             return `title ~ "${k}"`;
                         }
                         return `title ~ "${k}" || author ~ "${k}"`;
@@ -467,8 +469,14 @@ export const dataService = {
                     return {
                         items: items.map(item => ({
                             ...item,
-                            social_network: collectionName === 'tiktok_content' ? 'tiktok' : collectionName === 'facebook_content' ? 'facebook' : 'instagram',
-                            platform: collectionName === 'tiktok_content' ? 'video' : collectionName === 'facebook_content' ? 'social' : (item.platform_type || 'social')
+                            social_network: collectionName === 'tiktok_content' ? 'tiktok'
+                                : collectionName === 'facebook_content' ? 'facebook'
+                                : collectionName === 'youtube_content' ? 'youtube'
+                                : 'instagram',
+                            platform: collectionName === 'tiktok_content' ? 'video'
+                                : collectionName === 'facebook_content' ? 'social'
+                                : collectionName === 'youtube_content' ? 'video'
+                                : (item.platform_type || 'social')
                         }))
                     };
                 }).catch(err => {
