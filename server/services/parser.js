@@ -14,9 +14,27 @@ const decodeBuffer = (buffer) => {
     else if (buffer.length >= 2 && buffer[0] === 0xFE && buffer[1] === 0xFF) {
         return new TextDecoder('utf-16be').decode(buffer);
     }
-    // Default to UTF-8
-    return new TextDecoder('utf-8').decode(buffer);
+    // Try UTF-8 first
+    try {
+        const utf8Text = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+        // Check if result looks like Windows-1252 mis-decoded as UTF-8
+        // Telltale: sequences like Ã¡ (á), Ã§ (ç), Ã£ (ã), Ã© (é), Ã­ (í), Ã³ (ó), Ãº (ú)
+        if (/Ã[¡-¿]/.test(utf8Text) || /Ã\u00a3/.test(utf8Text)) {
+            // Re-decode as latin1 (windows-1252 compatible)
+            return new TextDecoder('iso-8859-1').decode(buffer);
+        }
+        return utf8Text;
+    } catch (e) {
+        // UTF-8 failed, try latin1 as fallback
+        return new TextDecoder('iso-8859-1').decode(buffer);
+    }
 };
+
+// Helper: normalize a string removing accents for robust comparison
+const stripAccents = (str) => str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 
 /**
  * Normalizes daily metric data
@@ -842,23 +860,32 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
             complete: (results) => {
                 const data = results.data;
                 const headers = results.meta.fields || [];
-                const headersLower = headers.map(h => h.toLowerCase());
+                // Use accent-stripped comparison for robust encoding support
+                const headersNorm = headers.map(h => stripAccents(h.trim()));
 
-                const hasDate = headersLower.includes('data') || headersLower.includes('date');
-                const hasTituloVideo = headersLower.some(h => h.includes('título do vídeo') || h === 'video title' || h === 'título do video');
-                const hasConteudo = headersLower.includes('conteúdo') || headersLower.includes('content');
-                const hasVisualizacoes = headersLower.some(h => h === 'visualizações' || h === 'views');
+                console.log('[YouTube] Headers detected:', headers.slice(0, 6));
 
-                const dateKey = headers.find(h => h.toLowerCase() === 'data' || h.toLowerCase() === 'date');
-                const conteudoKey = headers.find(h => h.toLowerCase() === 'conteúdo' || h.toLowerCase() === 'content');
-                const tituloKey = headers.find(h => h.toLowerCase().includes('título do vídeo') || h.toLowerCase() === 'video title' || h.toLowerCase() === 'título do video');
-                const pubTimeKey = headers.find(h => h.toLowerCase().includes('horário de publicação') || h.toLowerCase().includes('publication time'));
-                const viewsKey = headers.find(h => h.toLowerCase() === 'visualizações' || h.toLowerCase() === 'views');
-                const impressoesKey = headers.find(h => h.toLowerCase() === 'impressões' || h.toLowerCase() === 'impressions');
-                const watchTimeKey = headers.find(h => h.toLowerCase().includes('tempo de exibição') || h.toLowerCase().includes('watch time'));
-                const inscritosKey = headers.find(h => h.toLowerCase() === 'inscritos' || h.toLowerCase() === 'subscribers');
-                const ctrKey = headers.find(h => h.toLowerCase().includes('taxa de cliques') || h.toLowerCase().includes('click-through rate'));
-                const durationKey = headers.find(h => h.toLowerCase() === 'duração' || h.toLowerCase() === 'duration');
+                // Detect column presence (normalized, accent-insensitive)
+                const hasDate = headersNorm.some(h => h === 'data' || h === 'date');
+                const hasTituloVideo = headersNorm.some(h =>
+                    h.includes('titulo do video') || h === 'video title'
+                );
+                const hasConteudo = headersNorm.some(h => h === 'conteudo' || h === 'content');
+                const hasVisualizacoes = headersNorm.some(h => h === 'visualizacoes' || h === 'views');
+
+                // Find actual header keys using normalized comparison
+                const findKey = (matchFn) => headers.find((h, i) => matchFn(headersNorm[i]));
+
+                const dateKey = findKey(n => n === 'data' || n === 'date');
+                const conteudoKey = findKey(n => n === 'conteudo' || n === 'content');
+                const tituloKey = findKey(n => n.includes('titulo do video') || n === 'video title');
+                const pubTimeKey = findKey(n => n.includes('horario de publicacao') || n.includes('publication time'));
+                const viewsKey = findKey(n => n === 'visualizacoes' || n === 'views');
+                const impressoesKey = findKey(n => n === 'impressoes' || n === 'impressions');
+                const watchTimeKey = findKey(n => n.includes('tempo de exibicao') || n.includes('watch time'));
+                const inscritosKey = findKey(n => n.includes('inscritos conquistados') || n === 'inscritos' || n === 'subscribers gained' || n === 'subscribers');
+                const ctrKey = findKey(n => n.includes('taxa de cliques') || n.includes('click-through rate') || n.includes('ctr'));
+                const durationKey = findKey(n => n === 'duracao' || n === 'duration');
 
                 // 1. DETECT: "Dados do gráfico.csv"
                 // Format: Data, Conteúdo, Título do vídeo, Horário de publicação, Duração, Visualizações
