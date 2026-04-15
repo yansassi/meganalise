@@ -11,35 +11,36 @@ echo    AUTOMACAO DE UPLOAD - REPOSITORIO MEGANALISE
 echo ======================================================
 echo.
 
-:: Verifica se a pasta .git existe, se não, inicia o repositório
+:: Verifica se a pasta .git existe
 if not exist ".git" (
     echo [INFO] Inicializando repositorio Git local...
     git init
     git remote add origin %REPO_URL%
 ) else (
-    :: Garante que a URL do remote esteja sempre atualizada com o Token
     git remote set-url origin %REPO_URL%
 )
 
-:: Adiciona todas as mudancas
-echo [1/3] Detectando alteracoes...
+:: 1. Puxar alterações do servidor para evitar conflitos
+echo [1/4] Sincronizando com o servidor (Pull)...
+git pull origin %BRANCH% --rebase
+
+:: 2. Adicionar arquivos
+echo [2/4] Detectando alteracoes...
 git add .
 
-:: Solicita a mensagem do commit
+:: 3. Commit
 set /p commit_msg="Digite a descricao do que foi feito: "
-
-:: Se a mensagem estiver vazia, define uma padrao
 if "%commit_msg%"=="" set commit_msg="Update automatico: %date% %time%"
 
-echo [2/3] Criando commit local...
+echo [3/4] Criando commit local...
 git commit -m "%commit_msg%"
 
-:: Envia para o GitHub usando o Token configurado
-echo [3/3] Enviando para o GitHub (Branch: %BRANCH%)...
+:: 4. Enviar
+echo [4/4] Enviando para o GitHub...
 git push origin %BRANCH%
 
 echo.
 echo ======================================================
-echo    PROCESSO CONCLUIDO! VERIFIQUE SEU GITHUB.
+echo    PROCESSO CONCLUIDO!
 echo ======================================================
 pause
