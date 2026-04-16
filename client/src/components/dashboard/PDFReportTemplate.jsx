@@ -143,11 +143,11 @@ const PDFReportTemplate = ({ registry, items, chartData, totalReach, totalEng, t
 
                             {/* Metrics */}
                             <div className="w-64 flex-shrink-0 grid grid-cols-3 gap-2">
-                                <div className="p-2 bg-[#EFF6FF]/50 rounded-lg text-center">
+                                <div className="p-2 bg-[rgba(239,246,255,0.5)] rounded-lg text-center">
                                     <p className="text-[10px] uppercase text-[#3B82F6] font-bold mb-0.5">Views</p>
                                     <p className="text-sm font-bold text-[#111827]">{item.views?.toLocaleString() || '-'}</p>
                                 </div>
-                                <div className="p-2 bg-[#FAF5FF]/50 rounded-lg text-center">
+                                <div className="p-2 bg-[rgba(250,245,255,0.5)] rounded-lg text-center">
                                     <p className="text-[10px] uppercase text-[#A855F7] font-bold mb-0.5">Engaj.</p>
                                     <p className="text-sm font-bold text-[#111827]">
                                         {((item.likes || 0) + (item.comments || 0) + (item.shares || 0)).toLocaleString()}
