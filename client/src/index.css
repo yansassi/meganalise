@@ -83,3 +83,19 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #9CA3AF;
 }
+
+/* ─── HTML2CANVAS OKLCH FIX ───────────────────────────────────────────────
+   Tailwind v4 uses OKLCH natively, but html2canvas crashes on OKLCH. 
+   This reset forces all elements inside the PDF to use HEX/RGBA defaults 
+   so html2canvas doesn't encounter oklch() when parsing computed styles.
+*/
+#pdf-report-content {
+    --color-gray-200: #e5e7eb;
+}
+
+:where(#pdf-report-content, #pdf-report-content *) {
+    border-color: inherit;
+    outline-color: transparent;
+    text-decoration-color: transparent;
+    -webkit-tap-highlight-color: transparent;
+}
