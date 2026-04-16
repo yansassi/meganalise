@@ -7,27 +7,27 @@ const PDFReportTemplate = ({ registry, items, chartData, totalReach, totalEng, t
     if (!registry || !items) return null;
 
     return (
-        <div id="pdf-report-content" className="bg-white text-gray-900 font-sans w-[800px] mx-auto">
+        <div id="pdf-report-content" className="bg-[#ffffff] text-[#111827] font-sans w-[800px] mx-auto">
             {/* Cover Page */}
-            <div className="min-h-[1100px] flex flex-col justify-between p-16 bg-[#0F172A] text-white relative overflow-hidden break-after-page">
+            <div className="min-h-[1100px] flex flex-col justify-between p-16 bg-[#0F172A] text-[#ffffff] relative overflow-hidden break-after-page">
                 {/* Background Decor */}
                 <div className="absolute top-0 right-0 w-96 h-96 bg-[#2563EB] rounded-full blur-[150px] opacity-20 transform translate-x-1/3 -translate-y-1/3" />
                 <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#9333EA] rounded-full blur-[150px] opacity-20 transform -translate-x-1/3 translate-y-1/3" />
 
                 <div className="relative z-10">
-                    <div className="inline-block px-4 py-2 rounded-full border border-white/20 bg-white/10 text-[#93C5FD] text-sm font-bold tracking-widest uppercase mb-8">
+                    <div className="inline-block px-4 py-2 rounded-full border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.1)] text-[#93C5FD] text-sm font-bold tracking-widest uppercase mb-8">
                         Relatório de Performance
                     </div>
                     <h1 className="text-6xl font-black mb-4 leading-tight">
                         {registry.brand_name}
                     </h1>
                     <p className="text-3xl text-[#D1D5DB] font-light">
-                        Campanha <span className="font-semibold text-white">{registry.product_name}</span>
+                        Campanha <span className="font-semibold text-[#ffffff]">{registry.product_name}</span>
                     </p>
                 </div>
 
                 <div className="relative z-10">
-                    <div className="grid grid-cols-2 gap-8 mb-12 border-t border-white/10 pt-8">
+                    <div className="grid grid-cols-2 gap-8 mb-12 border-t border-[rgba(255,255,255,0.1)] pt-8">
                         <div>
                             <p className="text-xs text-[#9CA3AF] uppercase tracking-widest mb-1">Período</p>
                             <p className="text-xl font-medium">
@@ -113,7 +113,7 @@ const PDFReportTemplate = ({ registry, items, chartData, totalReach, totalEng, t
 
                 <div className="space-y-6">
                     {items.map((item, index) => (
-                        <div key={item.id} className="flex gap-6 p-4 border border-[#F3F4F6] rounded-xl break-inside-avoid bg-white shadow-sm">
+                        <div key={item.id} className="flex gap-6 p-4 border border-[#F3F4F6] rounded-xl break-inside-avoid bg-[#ffffff] shadow-none">
                             {/* Identifier / Index */}
                             <div className="w-8 flex-shrink-0 flex items-center justify-center font-bold text-[#D1D5DB]">
                                 #{index + 1}
@@ -122,7 +122,7 @@ const PDFReportTemplate = ({ registry, items, chartData, totalReach, totalEng, t
                             {/* Info */}
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
-                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-white uppercase
+                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold text-[#ffffff] uppercase
                                         ${item.platform === 'instagram' ? 'bg-[#DB2777]' :
                                             item.platform === 'tiktok' ? 'bg-[#000000]' :
                                                 item.platform === 'facebook' ? 'bg-[#2563EB]' : 'bg-[#6B7280]'}
