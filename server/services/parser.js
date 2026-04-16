@@ -876,21 +876,15 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
             complete: (results) => {
                 const data = results.data;
                 const headers = results.meta.fields || [];
-                // Use accent-stripped comparison for robust encoding support
                 const headersNorm = headers.map(h => stripAccents(h.trim()));
 
                 console.log('[YouTube] Headers detected:', headers.slice(0, 6));
 
-                // Detect column presence (normalized, accent-insensitive)
-                const hasDate = headersNorm.some(h => h === 'data' || h === 'date');
-                const hasTituloVideo = headersNorm.some(h =>
-                    h.includes('titulo do video') || h === 'video title'
-                );
-                const hasConteudo = headersNorm.some(h => h === 'conteudo' || h === 'content');
-                const hasVisualizacoes = headersNorm.some(h => h === 'visualizacoes' || h === 'views');
-
-                // Find actual header keys using normalized comparison
                 const findKey = (matchFn) => headers.find((h, i) => matchFn(headersNorm[i]));
+
+                const hasDate = headersNorm.some(h => h === 'data' || h === 'date');
+                const hasTituloVideo = headersNorm.some(h => h.includes('titulo do video') || h === 'video title');
+                const hasConteudo = headersNorm.some(h => h === 'conteudo' || h === 'content');
 
                 const dateKey = findKey(n => n === 'data' || n === 'date');
                 const conteudoKey = findKey(n => n === 'conteudo' || n === 'content');
@@ -903,60 +897,65 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
                 const ctrKey = findKey(n => n.includes('taxa de cliques') || n.includes('click-through rate') || n.includes('ctr'));
                 const durationKey = findKey(n => n === 'duracao' || n === 'duration');
 
-                // 1. DETECT: "Dados do gráfico.csv"
-                // Format: Data, Conteúdo, Título do vídeo, Horário de publicação, Duração, Visualizações
-                // Key: Has BOTH 'Data' column AND 'Título do vídeo' column + 'Conteúdo'
-                // Each row = one video on one date. Must AGGREGATE by date.
+                // 1. DETECT: Dados do gráfico (Daily Video Level)
                 if (hasDate && hasTituloVideo && hasConteudo && dateKey && viewsKey) {
-                    console.log('[YouTube] Detected: Dados do gráfico (daily views per video) ->', fileName);
+                    console.log('[YouTube] Detected: Dados do gráfico (daily views per video)');
                     const aggregatedByDate = {};
+                    const metricKeys = {
+                        views: viewsKey,
+                        impressions: impressoesKey,
+                        watch_time: watchTimeKey,
+                        subscribers: inscritosKey
+                    };
+
                     for (const row of data) {
                         const dateVal = row[dateKey];
                         if (!dateVal || dateVal === 'Total') continue;
                         const parsedDate = parseDate(dateVal);
                         if (!parsedDate) continue;
-                        const views = parseInt(row[viewsKey] || 0, 10);
-                        if (!aggregatedByDate[parsedDate]) aggregatedByDate[parsedDate] = 0;
-                        aggregatedByDate[parsedDate] += views;
+
+                        if (!aggregatedByDate[parsedDate]) {
+                            aggregatedByDate[parsedDate] = { views: 0, impressions: 0, watch_time: 0, subscribers: 0 };
+                        }
+
+                        Object.entries(metricKeys).forEach(([key, header]) => {
+                            if (header && row[header]) {
+                                const val = parseFloat(row[header].toString().replace(',', '.').replace('%', '')) || 0;
+                                aggregatedByDate[parsedDate][key] += val;
+                            }
+                        });
                     }
-                    const metricsData = Object.entries(aggregatedByDate).map(([date, totalViews]) => ({
-                        date,
-                        value: totalViews,
-                        metric: 'views',
-                        platform: 'youtube'
-                    }));
+
+                    const metricsData = [];
+                    Object.entries(aggregatedByDate).forEach(([date, values]) => {
+                        Object.entries(values).forEach(([metric, value]) => {
+                            if (value > 0) {
+                                metricsData.push({ date, value, metric, platform: 'youtube' });
+                            }
+                        });
+                    });
                     resolve({ type: 'metric', data: metricsData });
                     return;
                 }
 
-                // 2. DETECT: "Dados da tabela.csv"
-                // Format: Conteúdo, Título do vídeo, Horário de publicação, Duração, Visualizações, ...
-                // Key: Has 'Título do vídeo' but NO 'Data' column as primary key
+                // 2. DETECT: Dados da tabela (Video List)
                 if (hasTituloVideo && !hasDate && tituloKey) {
-                    console.log('[YouTube] Detected: Dados da tabela (video list/content) ->', fileName);
+                    console.log('[YouTube] Detected: Dados da tabela (video list/content)');
                     const contentData = data.map(row => {
                         if (conteudoKey && (row[conteudoKey] === 'Total' || row[conteudoKey] === 'total')) return null;
                         const id = conteudoKey ? row[conteudoKey] : null;
                         if (!id) return null;
-                        const title = tituloKey ? row[tituloKey] : '';
-                        const dateRaw = pubTimeKey ? row[pubTimeKey] : null;
-                        const views = viewsKey ? parseInt(row[viewsKey] || 0, 10) : 0;
-                        const impressions = impressoesKey ? parseInt(row[impressoesKey] || 0, 10) : 0;
-                        const watchTime = watchTimeKey ? parseFloat((row[watchTimeKey] || '0').toString().replace(',', '.')) : 0;
-                        const subs = inscritosKey ? parseInt(row[inscritosKey] || 0, 10) : 0;
-                        const ctr = ctrKey ? parseFloat((row[ctrKey] || '0').toString().replace(',', '.')) : 0;
-                        const duration = durationKey ? parseInt(row[durationKey] || 0, 10) : 0;
                         return {
                             id,
-                            title,
-                            date: parseDate(dateRaw),
-                            views,
-                            reach: impressions,
-                            impressions,
-                            watch_time: watchTime,
-                            subscribers: subs,
-                            ctr,
-                            duration,
+                            title: row[tituloKey] || '',
+                            date: parseDate(row[pubTimeKey]),
+                            views: parseInt(row[viewsKey] || 0, 10),
+                            reach: parseInt(row[impressoesKey] || 0, 10),
+                            impressions: parseInt(row[impressoesKey] || 0, 10),
+                            watch_time: parseFloat((row[watchTimeKey] || '0').toString().replace(',', '.')),
+                            subscribers: parseInt(row[inscritosKey] || 0, 10),
+                            ctr: parseFloat((row[ctrKey] || '0').toString().replace(',', '.')),
+                            duration: parseInt(row[durationKey] || 0, 10),
                             social_network: 'youtube',
                             platform: 'video'
                         };
@@ -965,41 +964,105 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
                     return;
                 }
 
-                // 3. DETECT: Simple daily metric files (Espectadores, Tráfego etc.)
-                // Format: Data, [Categoria opcional], Visualizações
-                if (hasDate && dateKey && viewsKey) {
-                    const categoryKey = headers.find(h => {
-                        const hl = h.toLowerCase();
-                        return h !== dateKey && !hl.includes('visualizações') && !hl.includes('views') && hl !== 'data' && hl !== 'date';
+                // 3. DETECT: Dimension Reports (Daily Chart with specific categories)
+                if (hasDate && dateKey) {
+                    console.log('[YouTube] Detected: Dimension daily report');
+                    const dimensionHeader = headers.find((h, i) => {
+                        const hn = headersNorm[i];
+                        return h !== dateKey && 
+                               hn !== 'visualizacoes' && hn !== 'views' && 
+                               !hn.includes('tempo de exibicao') && !hn.includes('watch time') &&
+                               !hn.includes('impressoes') && !hn.includes('impressions') &&
+                               !hn.includes('inscritos') && !hn.includes('subscribers') &&
+                               hn !== 'data' && hn !== 'date' && hn !== 'total';
                     });
-                    const metricsData = data.map(row => {
+
+                    const readableNameHeader = findKey(n => n.includes('nome da cidade') || n.includes('city name')) || 
+                                             findKey(n => n === 'pais' || n === 'country') ||
+                                             dimensionHeader;
+
+                    const metricKeys = {
+                        views: viewsKey,
+                        watch_time: watchTimeKey,
+                        impressions: impressoesKey,
+                        subscribers: inscritosKey
+                    };
+
+                    let prefix = 'other_';
+                    const dimNorm = stripAccents((dimensionHeader || '').toLowerCase());
+                    if (dimNorm.includes('origem do trafego') || dimNorm.includes('traffic source')) prefix = 'traffic_source_';
+                    else if (dimNorm.includes('cidade') || dimNorm.includes('city')) prefix = 'geography_city_';
+                    else if (dimNorm.includes('pais') || dimNorm.includes('country')) prefix = 'geography_country_';
+                    else if (dimNorm.includes('genero') || dimNorm.includes('gender')) prefix = 'gender_';
+                    else if (dimNorm.includes('idade') || dimNorm.includes('age')) prefix = 'age_';
+                    else if (dimNorm.includes('dispositivo') || dimNorm.includes('device')) prefix = 'device_';
+
+                    const metricsData = [];
+                    data.forEach(row => {
                         const dateVal = row[dateKey];
-                        if (!dateVal || dateVal === 'Total') return null;
+                        if (!dateVal || dateVal === 'Total') return;
                         const parsedDate = parseDate(dateVal);
-                        if (!parsedDate) return null;
-                        let metricName = 'views';
-                        if (categoryKey && row[categoryKey]) {
-                            const normalizedCategory = row[categoryKey]
-                                .toLowerCase()
-                                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-                                .replace(/[^a-z0-9]+/g, '_')
-                                .replace(/^_|_$/g, '');
-                            metricName = 'views_' + normalizedCategory;
-                        }
-                        return {
-                            date: parsedDate,
-                            value: parseInt(row[viewsKey] || 0, 10),
-                            metric: metricName,
-                            platform: 'youtube'
-                        };
-                    }).filter(item => item !== null && item.date);
+                        if (!parsedDate) return;
+
+                        const categoryName = readableNameHeader ? row[readableNameHeader] : 'unknown';
+                        if (!categoryName || categoryName === 'Total' || categoryName === 'total') return;
+
+                        const normalizedCategory = categoryName
+                            .toLowerCase()
+                            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                            .replace(/[^a-z0-9]+/g, '_')
+                            .replace(/^_|_$/g, '');
+
+                        Object.entries(metricKeys).forEach(([metric, header]) => {
+                            if (header && row[header]) {
+                                const value = parseFloat(row[header].toString().replace(',', '.').replace('%', '')) || 0;
+                                if (value > 0) {
+                                    metricsData.push({
+                                        date: parsedDate,
+                                        value,
+                                        metric: `${prefix}${metric}_${normalizedCategory}`,
+                                        platform: 'youtube'
+                                    });
+                                }
+                            }
+                        });
+                    });
+
                     if (metricsData.length > 0) {
                         resolve({ type: 'metric', data: metricsData });
                         return;
                     }
                 }
 
-                console.warn('Unknown YouTube CSV format:', fileName, 'Headers found:', headers);
+                // 4. DETECT: Table Summary (Demographics)
+                if (!hasDate) {
+                    const genderKey = findKey(n => n.includes('genero') || n.includes('gender'));
+                    const ageKey = findKey(n => n.includes('idade') || n.includes('age'));
+                    const countryKey = findKey(n => n.includes('pais') || n.includes('country'));
+                    const cityKey = findKey(n => n.includes('nome da cidade') || n.includes('city name'));
+
+                    if (genderKey || ageKey || countryKey || cityKey) {
+                        console.log('[YouTube] Detected: Summary Table (Demographics)');
+                        const dimKey = genderKey || ageKey || countryKey || cityKey;
+                        resolve({
+                            type: 'demographics',
+                            data: {
+                                type: genderKey ? 'gender' : (ageKey ? 'age' : (countryKey ? 'country' : 'city')),
+                                data: data.map(row => {
+                                    if (!row[dimKey] || row[dimKey] === 'Total') return null;
+                                    return {
+                                        name: row[dimKey],
+                                        value: parseInt(row[viewsKey] || 0, 10),
+                                        percentage: headers.find(h => h.includes('%')) ? parseFloat(row[headers.find(h => h.includes('%'))].toString().replace(',', '.')) : 0
+                                    };
+                                }).filter(Boolean)
+                            }
+                        });
+                        return;
+                    }
+                }
+
+                console.warn('Unknown YouTube CSV format:', fileName);
                 resolve({ type: 'unknown', data: [], message: `Formato desconhecido para: ${fileName}.` });
             },
             error: (err) => reject(err)

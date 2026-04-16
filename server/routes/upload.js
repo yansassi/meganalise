@@ -652,6 +652,33 @@ router.post('/youtube', upload.single('file'), async (req, res) => {
                     }
                 }));
             }
+        } else if (result.type === 'demographics') {
+            const today = new Date().toISOString().split('T')[0];
+            const demo = result.data; 
+            
+            await Promise.all(demo.data.slice(0, 15).map(async (item) => {
+                try {
+                    const metricName = `demographics_${demo.type}_${item.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '_')}`;
+                    const recordData = {
+                        date: new Date(today + 'T12:00:00.000Z').toISOString(),
+                        metric: metricName,
+                        value: item.value || item.percentage,
+                        platform: 'youtube',
+                        country: country
+                    };
+
+                    try {
+                        const existing = await pb.collection('youtube_daily_metrics').getFirstListItem(`date = "${recordData.date}" && metric = "${recordData.metric}" && country = "${country}"`, { requestKey: null });
+                        await pb.collection('youtube_daily_metrics').update(existing.id, recordData, { requestKey: null });
+                    } catch (notFound) {
+                        await pb.collection('youtube_daily_metrics').create(recordData, { requestKey: null });
+                    }
+                    savedCount++;
+                } catch (err) {
+                    console.error('Error saving YouTube demo metric:', err.message);
+                    errors.push(err.message);
+                }
+            }));
         }
 
         res.json({
