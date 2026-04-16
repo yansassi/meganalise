@@ -3,7 +3,8 @@ import { useParams } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { dataService } from '../../services/dataService';
-import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas-pro';
+import { jsPDF } from 'jspdf';
 import PDFReportTemplate from './PDFReportTemplate';
 
 // --- Utility Components ---
@@ -197,20 +198,40 @@ const PresentationView = () => {
         setGeneratingPdf(true);
         const element = document.getElementById('pdf-report-content');
 
-        // Wait for images to load? Usually html2pdf handles visible images, 
-        // but since it's hidden, we might need to ensure it renders.
-        // The hidden div technique usually works fine with html2pdf/html2canvas.
-
-        const opt = {
-            margin: 0,
-            filename: `Relatorio-${registry?.brand_name?.replace(/[^a-z0-9]/gi, '_') || 'Campanha'}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, letterRendering: true },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
         try {
-            await html2pdf().set(opt).from(element).save();
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+            
+            const imgData = canvas.toDataURL('image/jpeg', 0.98);
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const ratio = pdfWidth / imgWidth;
+            const totalPdfHeight = imgHeight * ratio;
+            
+            let heightLeft = totalPdfHeight;
+            let position = 0;
+            
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalPdfHeight);
+            heightLeft -= pageHeight;
+            
+            while (heightLeft >= 0) {
+                position = heightLeft - totalPdfHeight;
+                if (heightLeft > 5) {
+                   pdf.addPage();
+                   pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalPdfHeight);
+                }
+                heightLeft -= pageHeight;
+            }
+            
+            pdf.save(`Relatorio-${registry?.brand_name?.replace(/[^a-z0-9]/gi, '_') || 'Campanha'}.pdf`);
         } catch (err) {
             console.error("PDF Generation Error", err);
             alert("Erro ao gerar PDF. Tente novamente.");

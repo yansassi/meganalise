@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { formatDate } from '../utils/formatters';
 import { useParams, useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
-import html2pdf from 'html2pdf.js';
+import html2canvas from 'html2canvas-pro';
+import { jsPDF } from 'jspdf';
 import PDFReportTemplate from '../components/dashboard/PDFReportTemplate';
 
 import ContentGrid from '../components/dashboard/ContentGrid';
@@ -251,15 +252,42 @@ export default function EvidenceDashboard() {
     const generatePDF = async () => {
         setGeneratingPdf(true);
         const element = document.getElementById('pdf-report-content');
-        const opt = {
-            margin: 0,
-            filename: `Relatorio-${data?.registry?.title?.replace(/[^a-z0-9]/gi, '_') || 'Evidence'}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false, letterRendering: true, backgroundColor: '#ffffff' },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
+        
         try {
-            await html2pdf().set(opt).from(element).save();
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#ffffff'
+            });
+            
+            const imgData = canvas.toDataURL('image/jpeg', 0.98);
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            
+            const imgWidth = canvas.width;
+            const imgHeight = canvas.height;
+            const ratio = pdfWidth / imgWidth;
+            const totalPdfHeight = imgHeight * ratio;
+            
+            let heightLeft = totalPdfHeight;
+            let position = 0;
+            
+            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalPdfHeight);
+            heightLeft -= pageHeight;
+            
+            while (heightLeft >= 0) {
+                position = heightLeft - totalPdfHeight;
+                // Avoid empty trailing page if rounding makes heightLeft very small
+                if (heightLeft > 5) {
+                   pdf.addPage();
+                   pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalPdfHeight);
+                }
+                heightLeft -= pageHeight;
+            }
+            
+            pdf.save(`Relatorio-${data?.registry?.title?.replace(/[^a-z0-9]/gi, '_') || 'Evidence'}.pdf`);
         } catch (err) {
             console.error("PDF Generation Error", err);
             alert("Erro ao gerar PDF. Tente novamente.");
