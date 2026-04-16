@@ -69,9 +69,9 @@ const parseDate = (dateStr) => {
         return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
     }
 
-    // 2. YYYY-MM-DD
-    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
-        return str.split('T')[0];
+    // 2. YYYY-MM-DD or YYYY/MM/DD
+    if (/^\d{4}[\/\-]\d{2}[\/\-]\d{2}/.test(str)) {
+        return str.substring(0, 10).replace(/\//g, '-');
     }
 
     // 3. EN/PT Text formats: "Jan 11, 2025", "11 Jan 2025", "11 de Jan", "11 de Janeiro"
@@ -613,7 +613,7 @@ const parseTikTokCSV = async (buffer, fileName) => {
 
                 // 1. Content
                 // 1. Content
-                const linkHeader = headers.find(h => h.toLowerCase() === 'video link' || h.toLowerCase() === 'link do vídeo' || h.toLowerCase() === 'link do video');
+                const linkHeader = headers.find(h => h.toLowerCase() === 'video link' || h.toLowerCase() === 'link do vídeo' || h.toLowerCase() === 'link do video' || h.toLowerCase() === 'link para o vídeo' || h.toLowerCase() === 'link para o video');
                 const titleHeader = headers.find(h => h.toLowerCase() === 'video title' || h.toLowerCase() === 'título do vídeo' || h.toLowerCase() === 'titulo do video');
 
                 if (linkHeader && titleHeader) {
@@ -623,11 +623,12 @@ const parseTikTokCSV = async (buffer, fileName) => {
                         const original_id = idMatch ? idMatch[1] : link;
 
                         // Find other headers dynamically
-                        const postTimeHeader = headers.find(h => h.toLowerCase() === 'post time' || h.toLowerCase() === 'tempo de publicação' || h.toLowerCase() === 'tempo de publicacao');
+                        const postTimeHeader = headers.find(h => h.toLowerCase() === 'post time' || h.toLowerCase() === 'tempo de publicação' || h.toLowerCase() === 'tempo de publicacao' || h.toLowerCase() === 'hora da publicação' || h.toLowerCase() === 'hora da publicacao');
                         const likesHeader = headers.find(h => h.toLowerCase() === 'total likes' || h.toLowerCase() === 'curtidas' || h.toLowerCase() === 'total curtidas');
                         const commentsHeader = headers.find(h => h.toLowerCase() === 'total comments' || h.toLowerCase() === 'comentários' || h.toLowerCase() === 'total comentários' || h.toLowerCase() === 'comentarios');
                         const sharesHeader = headers.find(h => h.toLowerCase() === 'total shares' || h.toLowerCase() === 'compartilhamentos' || h.toLowerCase() === 'total compartilhamentos');
-                        const viewsHeader = headers.find(h => h.toLowerCase() === 'total views' || h.toLowerCase() === 'visualizações' || h.toLowerCase() === 'total visualizações' || h.toLowerCase() === 'visualizacoes');
+                        const viewsHeader = headers.find(h => h.toLowerCase() === 'total views' || h.toLowerCase() === 'visualizações' || h.toLowerCase() === 'total visualizações' || h.toLowerCase() === 'visualizacoes' || h.toLowerCase() === 'visualizações do vídeo' || h.toLowerCase() === 'visualizacoes do video');
+                        const savedHeader = headers.find(h => h.toLowerCase() === 'adicionar aos favoritos' || h.toLowerCase() === 'salvamentos' || h.toLowerCase() === 'favoritos');
 
                         return {
                             original_id,
@@ -639,6 +640,7 @@ const parseTikTokCSV = async (buffer, fileName) => {
                             comments: parseInt(row[commentsHeader] || 0, 10),
                             shares: parseInt(row[sharesHeader] || 0, 10),
                             views: parseInt(row[viewsHeader] || 0, 10),
+                            saved: parseInt(row[savedHeader] || 0, 10),
                             platform: 'tiktok'
                         };
                     });
@@ -706,11 +708,30 @@ const parseTikTokCSV = async (buffer, fileName) => {
                 }
 
                 // 7. Activity - FollowerActivity
-                if (headersLower.includes('hour') && headersLower.includes('active followers')) {
-                    // This is hourly data. We might want to compress it or store as is?
-                    // Proposal: Store as one JSON record per day? OR return 'activity' type.
-                    // Let's resolve as 'activity'
-                    resolve({ type: 'activity', data: data });
+                if ((headersLower.includes('hour') && headersLower.includes('active followers')) || (headersLower.includes('hora') && headersLower.includes('seguidores ativos'))) {
+                    const activityMap = {};
+                    let daysCount = new Set();
+                    
+                    data.forEach(row => {
+                        const date = row['Date'] || row['Data'];
+                        const hourStr = row['Hour'] || row['Hora'];
+                        const followers = parseInt(row['Active followers'] || row['Seguidores ativos'] || row['Active Followers'] || 0, 10);
+                        
+                        if (hourStr !== undefined && !isNaN(followers)) {
+                            if (date) daysCount.add(date);
+                            const hour = parseInt(hourStr, 10);
+                            if (!activityMap[hour]) activityMap[hour] = 0;
+                            activityMap[hour] += followers;
+                        }
+                    });
+                    
+                    const numDays = Math.max(1, daysCount.size);
+                    const avgActivity = Object.keys(activityMap).map(hour => ({
+                        hour: parseInt(hour, 10),
+                        value: Math.round(activityMap[hour] / numDays)
+                    })).sort((a,b) => a.hour - b.hour);
+
+                    resolve({ type: 'activity', data: avgActivity });
                     return;
                 }
 

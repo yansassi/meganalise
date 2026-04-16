@@ -375,6 +375,7 @@ const PlatformView = ({ platform }) => {
         if (platform === 'TikTok') {
             stats = [
                 { label: 'Visualizações', value: impressions, trend: calcTrend(impressions, prevImpressions), icon: 'play_circle', color: 'red' },
+                { label: 'Seguidores (Saldo)', value: netFollowers, trend: calcTrend(netFollowers, prevNetFollowers), icon: 'group_add', color: 'cyan' },
                 { label: 'Visitas ao Perfil', value: profileVisits, trend: calcTrend(profileVisits, prevProfileVisits), icon: 'person_search', color: 'teal' },
                 { label: 'Interações', value: interactions, trend: calcTrend(interactions, prevInteractions), icon: 'favorite_border', color: 'purple' },
                 { label: 'Curtidas', value: likes, trend: calcTrend(likes, prevLikes), icon: 'favorite', color: 'pink' },

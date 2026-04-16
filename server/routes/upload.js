@@ -338,6 +338,7 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                     comments: item.comments,
                     shares: item.shares,
                     views: item.views,
+                    saved: item.saved,
                     country: country,
                     date: item.date_published ? new Date(item.date_published + 'T12:00:00.000Z').toISOString() : new Date().toISOString(),
                     author: item.author || '',
