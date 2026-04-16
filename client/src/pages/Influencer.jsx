@@ -9,6 +9,7 @@ export default function Influencer() {
     const [registries, setRegistries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [influencerList, setInfluencerList] = useState([]);
 
     // Metrics Caches
     const [metricsCache, setMetricsCache] = useState({}); // Cache for "My Influencers" (Contract Date)
@@ -77,7 +78,25 @@ export default function Influencer() {
 
     useEffect(() => {
         fetchRegistries();
+        loadInfluencerChoices();
     }, []);
+
+    const loadInfluencerChoices = async () => {
+        const data = await dataService.getInfluencers();
+        setInfluencerList(data);
+    };
+
+    const handleInfluencerChoice = (infId) => {
+        const inf = influencerList.find(i => i.id === infId);
+        if (inf) {
+            setFormData(prev => ({
+                ...prev,
+                title: inf.name,
+                user_handle: `@${inf.handle.replace('@', '')}`,
+                type: 'influencer'
+            }));
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -377,12 +396,23 @@ export default function Influencer() {
 
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Nome do Influencer</label>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Selecionar Influenciador Cadastrado</label>
+                                <select 
+                                    className="w-full px-4 py-3 rounded-xl bg-purple-50 border border-purple-100 focus:border-purple-500 outline-none transition-all font-bold text-purple-600 appearance-none mb-4"
+                                    onChange={(e) => handleInfluencerChoice(e.target.value)}
+                                >
+                                    <option value="">-- Escolha um influenciador --</option>
+                                    {influencerList.map(inf => (
+                                        <option key={inf.id} value={inf.id}>{inf.name} (@{inf.handle})</option>
+                                    ))}
+                                </select>
+
+                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Nome da Análise / Campanha</label>
                                 <input
                                     type="text"
                                     name="title"
                                     required
-                                    placeholder="Ex: Yan Casa"
+                                    placeholder="Ex: Monitoramento Yan Casa"
                                     className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all font-medium"
                                     value={formData.title}
                                     onChange={handleInputChange}

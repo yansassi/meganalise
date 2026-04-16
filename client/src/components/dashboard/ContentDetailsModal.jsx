@@ -63,8 +63,8 @@ const ContentDetailsModal = ({ isOpen, onClose, item, onUpdate }) => {
         if (!imageFile || !item) return;
         setIsUploading(true);
         try {
-            const recordId = item.pbId || item.id;
-            const platform = item.social_network || 'instagram';
+            const recordId = safeItem.pbId || safeItem.id;
+            const platform = safeItem.social_network || 'instagram';
             const result = await dataService.updateContentImage(recordId, imageFile, platform);
 
             if (result && result.image_file) {

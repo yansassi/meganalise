@@ -13,6 +13,7 @@ const Sidebar = ({ country }) => {
       submenu: [
         { name: 'Geral', path: '/platform/youtube' },
         { name: 'Conteúdo', path: '/platform/youtube/content' },
+        { name: 'Estratégia', path: '/platform/youtube/intelligence' },
         { name: 'Público', path: '/platform/youtube/audience' },
       ]
     },

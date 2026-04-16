@@ -327,7 +327,7 @@ const PlatformView = ({ platform }) => {
                 likes: c.likes,
                 shares: c.shares,
                 comments: c.comments,
-                social_network: c.social_network,
+                social_network: c.social_network || platform.toLowerCase(),
                 // YouTube-specific fields
                 watch_time: c.watch_time,
                 subscribers: c.subscribers,
@@ -588,24 +588,8 @@ const PlatformView = ({ platform }) => {
                                 ) : platform === 'Facebook' ? (
                                     /* Facebook specific layout */
                                     <div className="space-y-10">
-                                        {/* Engajamento Highlights - Mini cards */}
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                            {[
-                                                { label: 'Visualizações', value: data.impressions, icon: 'visibility', color: '#2563EB', bg: '#EFF6FF' },
-                                                { label: 'Visualizadores', value: data.reach, icon: 'groups', color: '#6366F1', bg: '#EEF2FF' },
-                                                { label: 'Interações', value: data.interactions, icon: 'favorite', color: '#9333EA', bg: '#F5F3FF' },
-                                                { label: 'Visitas ao Perfil', value: data.profileVisits, icon: 'person_search', color: '#0D9488', bg: '#F0FDFA' },
-                                            ].map(card => (
-                                                <div key={card.label} className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 flex items-center gap-4">
-                                                    <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: card.bg }}>
-                                                        <span className="material-icons-round text-xl" style={{ color: card.color }}>{card.icon}</span>
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-xs text-gray-400 font-medium">{card.label}</p>
-                                                        <p className="text-xl font-bold text-gray-800">{formatNumber(card.value || 0)}</p>
-                                                    </div>
-                                                </div>
-                                            ))}
+                                        <div className="w-full">
+                                            {/* O StatCards já foi renderizado acima na linha 546 para todas as redes */}
                                         </div>
 
                                         {/* Gráfico de Alcance */}

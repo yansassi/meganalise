@@ -210,9 +210,10 @@ const normalizeContentData = (data, isUSFormat = false) => {
         const shares = parseInt(getValue(['Compartilhamentos', 'Shares', 'Share']) || 0, 10);
         const comments = parseInt(getValue(['Respostas', 'Comentários', 'Comments', 'Comentarios', 'Comentario', 'Comment', 'Res']) || 0, 10);
         const saved = parseInt(getValue(['Salvamentos', 'Saved', 'Save']) || 0, 10);
-        const views = parseInt(getValue(['Visualizações de 3 segundos', 'Visualizações', 'Views', 'Visualizacoes', 'View', 'Impressões do anúncio', 'Impressões']) || 0, 10); // Facebook usually gives Impressions
+        // Facebook video reports use 'Visualizações de 3 segundos', general reports use 'Visualizações' or 'Impressões'
+        const views = parseInt(getValue(['Visualizações de 3 segundos', 'Visualizações', 'Views', 'Visualizacoes', 'View', 'Impressões do anúncio', 'Impressões']) || 0, 10);
         const duration = parseInt(getValue(['Duração (s)', 'Duration (s)', 'Duracao']) || 0, 10);
-        const clicks = parseInt(getValue(['Cliques no link', 'Link Clicks']) || 0, 10);
+        const clicks = parseInt(getValue(['Cliques no link', 'Link Clicks', 'Cliques']) || 0, 10);
 
         const permalink = getValue(['Link permanente', 'Permalink', 'Link']) || '';
         const author = getValue(['Nome de usuário da conta', 'Account username', 'Username', 'Nome da Página']) || '';
@@ -262,19 +263,28 @@ const normalizeContentData = (data, isUSFormat = false) => {
         const typeLower = rawType.toLowerCase();
 
         let platform = 'social';
+        const isVideoReport = getValue(['Número de identificação do ativo de vídeo', 'Identificação do vídeo universal']) !== undefined;
+
         if (typeLower.includes('story') || typeLower.includes('historia') || typeLower.includes('história')) {
             platform = 'story';
-        } else if (typeLower.includes('reel') || typeLower.includes('video') || typeLower.includes('vídeo')) {
+        } else if (typeLower.includes('reel') || typeLower.includes('video') || typeLower.includes('vídeo') || isVideoReport) {
             platform = 'video';
         }
 
-        const titleRaw = getValue(['Descrição', 'TÃ\xadtulo da legenda', 'Legenda', 'Título/Legenda', 'Caption', 'Título']);
+        const titleRaw = getValue(['Descrição', 'TÃ\xadtulo da legenda', 'Legenda', 'Título/Legenda', 'Caption', 'Título', 'TÃ\xadtulo']);
         let title = titleRaw;
 
-        // Fallback para Facebook Stories que às vezes não trazem tipo mas o título indica
+        // Fallback para Facebook Stories: se não tem link e veio de relatório de vídeo, ou título indica
+        if (permalink === '' || permalink === 'N/A') {
+            if (isVideoReport || !title || title.trim() === '') {
+                platform = 'story';
+            }
+        }
+
         if (platform === 'social' && title && (title.toLowerCase().startsWith('story') || title.toLowerCase().startsWith('história'))) {
             platform = 'story';
         }
+
         if (!title || title.trim() === '') {
             if (platform === 'story') {
                 title = `Story - ${dateFormatted || ''}`;
@@ -289,8 +299,8 @@ const normalizeContentData = (data, isUSFormat = false) => {
         }
 
         // Robust ID generation
-        let id = getValue(['Identificação do post', 'Identificador multimídia', 'Identificador', 'Post ID', 'ID']);
-        if (!id) {
+        let id = getValue(['Identificação do post', 'Número de identificação do ativo de vídeo', 'Identificação do vídeo universal', 'Identificador multimídia', 'Identificador', 'Post ID', 'ID']);
+        if (!id || id === 'Total') {
             // Fallback: Generate hash from unique-ish content
             const uniqueString = `${title}-${dateFormatted}-${timeFormatted}-${platform}`;
             id = `gen-${crypto.createHash('md5').update(uniqueString).digest('hex')}`;
@@ -811,8 +821,8 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                 const headers = results.meta.fields || [];
                 const headersLower = headers.map(h => h.toLowerCase());
 
-                if (headersLower.some(h => h.includes('dentificação do post') || h.includes('número de identificação') || h.includes('active video id') || h.includes('identificação'))) {
-                    const rawContent = normalizeContentData(data);
+                if (headersLower.some(h => h.includes('dentificacao') || h.includes('id') || h.includes('link'))) {
+                    const rawContent = normalizeContentData(data, true); // Use US Format detection for FB slashed dates
 
                     // Aggregate by ID to handle daily breakdown rows
                     const aggregated = {};
