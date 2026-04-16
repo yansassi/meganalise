@@ -159,7 +159,7 @@ const PlatformView = ({ platform }) => {
     const calcTrend = (current, previous) => {
         if (!previous || previous === 0) return null;
         const delta = ((current - previous) / previous) * 100;
-        return Math.round(delta);
+        return Number(delta.toFixed(2));
     };
 
     const processDbData = (dbData, prevDbData = { metrics: [], content: [] }) => {

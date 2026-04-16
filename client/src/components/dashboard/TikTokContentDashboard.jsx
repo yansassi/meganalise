@@ -35,7 +35,8 @@ const TikTokContentDashboard = () => {
     const processDbData = (dbData, prevDbData) => {
         const calcTrend = (current, previous) => {
             if (!previous || previous === 0) return 0;
-            return ((current - previous) / previous) * 100;
+            const delta = ((current - previous) / previous) * 100;
+            return Number(delta.toFixed(2));
         };
         let videos = [];
         let totalViews = 0;

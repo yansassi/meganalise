@@ -7,7 +7,7 @@ const PDFReportTemplate = ({ registry, items, chartData, totalReach, totalEng, t
     if (!registry || !items) return null;
 
     return (
-        <div id="pdf-report-content" className="bg-white text-gray-900 font-sans w-[800px] mx-auto hidden print:block">
+        <div id="pdf-report-content" className="bg-white text-gray-900 font-sans w-[800px] mx-auto">
             {/* Cover Page */}
             <div className="min-h-[1100px] flex flex-col justify-between p-16 bg-[#0F172A] text-white relative overflow-hidden break-after-page">
                 {/* Background Decor */}
