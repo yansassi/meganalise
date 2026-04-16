@@ -19,6 +19,14 @@ const testFiles = [
     {
         name: 'Gênero (Demographics Summary)',
         path: 'Dados/Youtube/BR/Gênero do espectador 2025-04-13_2026-04-13 Mega Eletrônicos/Dados da tabela.csv'
+    },
+    {
+        name: 'Tráfego (Summary Table)',
+        path: 'Dados/Youtube/BR/Origem do tráfego 2025-04-13_2026-04-13 Mega Eletrônicos/Dados da tabela.csv'
+    },
+    {
+        name: 'Dispositivo (Summary Table)',
+        path: 'Dados/Youtube/BR/Tipo de dispositivo 2025-04-13_2026-04-13 Mega Eletrônicos/Dados da tabela.csv'
     }
 ];
 

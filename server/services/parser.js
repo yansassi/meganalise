@@ -1034,25 +1034,40 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
                     }
                 }
 
-                // 4. DETECT: Table Summary (Demographics)
+                // 4. DETECT: Table Summary (Totals per Dimension)
                 if (!hasDate) {
                     const genderKey = findKey(n => n.includes('genero') || n.includes('gender'));
                     const ageKey = findKey(n => n.includes('idade') || n.includes('age'));
                     const countryKey = findKey(n => n.includes('pais') || n.includes('country'));
                     const cityKey = findKey(n => n.includes('nome da cidade') || n.includes('city name'));
+                    const trafficKey = findKey(n => n.includes('origem do trafego') || n.includes('traffic source'));
+                    const deviceKey = findKey(n => n.includes('dispositivo') || n.includes('device'));
+                    const osKey = findKey(n => n.includes('sistema operacional') || n.includes('operating system'));
 
-                    if (genderKey || ageKey || countryKey || cityKey) {
-                        console.log('[YouTube] Detected: Summary Table (Demographics)');
-                        const dimKey = genderKey || ageKey || countryKey || cityKey;
+                    const dimKey = genderKey || ageKey || countryKey || cityKey || trafficKey || deviceKey || osKey;
+
+                    if (dimKey) {
+                        console.log('[YouTube] Detected: Summary Table (Totals) ->', fileName);
+                        
+                        let type = 'other';
+                        const dimNorm = stripAccents(dimKey.toLowerCase());
+                        if (dimNorm.includes('genero') || dimNorm.includes('gender')) type = 'gender';
+                        else if (dimNorm.includes('idade') || dimNorm.includes('age')) type = 'age';
+                        else if (dimNorm.includes('pais') || dimNorm.includes('country')) type = 'country';
+                        else if (dimNorm.includes('cidade') || dimNorm.includes('city')) type = 'city';
+                        else if (dimNorm.includes('origem do trafego') || dimNorm.includes('traffic source')) type = 'traffic_source';
+                        else if (dimNorm.includes('dispositivo') || dimNorm.includes('device')) type = 'device';
+                        else if (dimNorm.includes('sistema operacional') || dimNorm.includes('operating system')) type = 'operating_system';
+
                         resolve({
                             type: 'demographics',
                             data: {
-                                type: genderKey ? 'gender' : (ageKey ? 'age' : (countryKey ? 'country' : 'city')),
+                                type: type,
                                 data: data.map(row => {
                                     if (!row[dimKey] || row[dimKey] === 'Total') return null;
                                     return {
                                         name: row[dimKey],
-                                        value: parseInt(row[viewsKey] || 0, 10),
+                                        value: viewsKey ? parseInt(row[viewsKey] || 0, 10) : 0,
                                         percentage: headers.find(h => h.includes('%')) ? parseFloat(row[headers.find(h => h.includes('%'))].toString().replace(',', '.')) : 0
                                     };
                                 }).filter(Boolean)
