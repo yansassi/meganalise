@@ -243,7 +243,10 @@ export const dataService = {
             const formData = new FormData();
             formData.append('image_file', imageFile);
 
-            const collectionName = platform === 'tiktok' ? 'tiktok_content' : platform === 'facebook' ? 'facebook_content' : platform === 'youtube' ? 'youtube_content' : 'instagram_content';
+            const platformLower = platform?.toLowerCase();
+            const collectionName = platformLower === 'tiktok' ? 'tiktok_content' : 
+                                 platformLower === 'facebook' ? 'facebook_content' : 
+                                 platformLower === 'youtube' ? 'youtube_content' : 'instagram_content';
 
             const result = await pb.collection(collectionName).update(
                 contentId,
@@ -265,28 +268,20 @@ export const dataService = {
     getContentImageUrl(item) {
         if (!item) return null;
 
-        // Check if we have imageFile field (from mapped data) or image_file (from raw PB data)
         const imageField = item.imageFile || item.image_file;
+        const pbUrl = import.meta.env.VITE_PB_URL || 'https://auth.meganalise.pro';
 
         if (imageField && (item.pbId || item.id)) {
-            // Construct PocketBase file URL manually
-            // Format: https://auth.meganalise.pro/api/files/COLLECTION_NAME/RECORD_ID/FILENAME
-
             let collection = 'instagram_content';
-            if (item.social_network === 'tiktok' || item.platform === 'tiktok') {
-                collection = 'tiktok_content';
-            } else if (item.social_network === 'facebook' || item.platform === 'facebook' || item.social_network?.toLowerCase() === 'facebook') {
-                collection = 'facebook_content';
-            } else if (item.social_network === 'youtube' || item.platform === 'youtube') {
-                collection = 'youtube_content';
-            }
+            const network = (item.social_network || item.platform || '').toLowerCase();
+            
+            if (network === 'tiktok') collection = 'tiktok_content';
+            else if (network === 'facebook') collection = 'facebook_content';
+            else if (network === 'youtube') collection = 'youtube_content';
 
-            const recordId = item.pbId || item.id;
-            const pbUrl = import.meta.env.VITE_PB_URL || 'https://auth.meganalise.pro';
-            return `${pbUrl}/api/files/${collection}/${recordId}/${imageField}`;
+            return `${pbUrl}/api/files/${collection}/${item.pbId || item.id}/${imageField}`;
         }
 
-        // Senão, usa URL externa (compatibilidade)
         return item.imageUrl || item.image_url || null;
     },
 
@@ -612,5 +607,25 @@ export const dataService = {
         if (!registry || !registry.image_file) return null;
         const pbUrl = import.meta.env.VITE_PB_URL || 'https://auth.meganalise.pro';
         return `${pbUrl}/api/files/evidence_registries/${registry.id}/${registry.image_file}`;
+    },
+
+    /**
+     * INFLUENCERS METHODS
+     */
+    async getInfluencers() {
+        try {
+            return await pb.collection('influencers').getFullList({ sort: 'name' });
+        } catch (err) {
+            console.error("Error fetching influencers", err);
+            return [];
+        }
+    },
+
+    async createInfluencer(data) {
+        return await pb.collection('influencers').create(data);
+    },
+
+    async deleteInfluencer(id) {
+        return await pb.collection('influencers').delete(id);
     }
 };

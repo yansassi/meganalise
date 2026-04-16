@@ -47,16 +47,8 @@ const Sidebar = ({ country }) => {
         { name: 'Público', path: '/platform/facebook/audience' }
       ]
     },
-    {
-      name: 'Evidência',
-      icon: 'folder_special',
-      path: '/evidence'
-    },
-    {
-      name: 'Influenciadores',
-      icon: 'person',
-      path: '/influencer'
-    },
+    { name: 'Influenciadores', icon: 'groups', path: '/influencers' },
+    { name: 'Evidências', icon: 'folder_special', path: '/evidence' },
     { name: 'Configurações', icon: 'settings', path: '/settings' },
   ];
 
@@ -64,7 +56,6 @@ const Sidebar = ({ country }) => {
     setOpenSubmenu(openSubmenu === name ? null : name);
   };
 
-  // Solid vibrant blue for sidebar
   const sidebarValues = country === 'BR'
     ? { bg: 'bg-[#2563EB]', activeText: 'text-[#2563EB]' }
     : { bg: 'bg-[#DC2626]', activeText: 'text-[#DC2626]' };
@@ -83,7 +74,6 @@ const Sidebar = ({ country }) => {
           {navItems.map((item) => (
             <div key={item.name}>
               {item.submenu ? (
-                // Parent Item with Submenu
                 <div>
                   <button
                     onClick={() => toggleSubmenu(item.name)}
@@ -100,7 +90,6 @@ const Sidebar = ({ country }) => {
                     <span className={`material-icons-round transition-transform duration-300 opacity-70 ${openSubmenu === item.name ? 'rotate-180' : ''}`}>expand_more</span>
                   </button>
 
-                  {/* Submenu Items */}
                   <div className={`pl-4 pr-2 space-y-1 overflow-hidden transition-all duration-500 ease-out ${openSubmenu === item.name ? 'max-h-96 mt-2 mb-2 opacity-100' : 'max-h-0 opacity-0'}`}>
                     {item.submenu.map(sub => (
                       <NavLink
@@ -119,7 +108,6 @@ const Sidebar = ({ country }) => {
                   </div>
                 </div>
               ) : (
-                // Regular Item
                 <NavLink
                   to={item.path}
                   className={({ isActive }) => `flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 group relative font-medium

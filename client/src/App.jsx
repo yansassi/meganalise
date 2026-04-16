@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useOutletContext } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
+import Influencers from './pages/Influencers';
 
 import React, { useState } from 'react';
 import PlatformView from './components/dashboard/PlatformView';
@@ -64,7 +65,8 @@ function App() {
               <Route path="platform/facebook/content" element={<FacebookContentDashboard />} />
               <Route path="platform/facebook/stories" element={<FacebookStoriesDashboard />} />
               <Route path="platform/facebook/audience" element={<FacebookAudienceTab />} />
-              <Route path="evidence" element={<Evidence />} />
+              <Route path="influencers" element={<Influencers />} />
+            <Route path="evidence" element={<Evidence />} />
               <Route path="influencer" element={<Influencer />} />
               <Route path="evidence/:id" element={<EvidenceDashboard />} />
               <Route path="settings" element={<Settings />} />

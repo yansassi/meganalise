@@ -258,18 +258,23 @@ const normalizeContentData = (data, isUSFormat = false) => {
             }
         }
 
-        const rawType = (getValue(['Tipo de post', 'Tipo de conteúdo', 'Tipo de conteÃºdo', 'Content type']) || '');
+        const rawType = (getValue(['Tipo de post', 'Tipo de conteúdo', 'Tipo de conteÃºdo', 'Content type', 'Formato']) || '');
         const typeLower = rawType.toLowerCase();
 
         let platform = 'social';
-        if (typeLower.includes('story')) {
+        if (typeLower.includes('story') || typeLower.includes('historia') || typeLower.includes('história')) {
             platform = 'story';
-        } else if (typeLower.includes('reel') || typeLower.includes('video')) {
+        } else if (typeLower.includes('reel') || typeLower.includes('video') || typeLower.includes('vídeo')) {
             platform = 'video';
         }
 
-        const titleRaw = getValue(['Descrição', 'TÃ\xadtulo da legenda', 'Legenda', 'Título/Legenda', 'Caption']);
+        const titleRaw = getValue(['Descrição', 'TÃ\xadtulo da legenda', 'Legenda', 'Título/Legenda', 'Caption', 'Título']);
         let title = titleRaw;
+
+        // Fallback para Facebook Stories que às vezes não trazem tipo mas o título indica
+        if (platform === 'social' && title && (title.toLowerCase().startsWith('story') || title.toLowerCase().startsWith('história'))) {
+            platform = 'story';
+        }
         if (!title || title.trim() === '') {
             if (platform === 'story') {
                 title = `Story - ${dateFormatted || ''}`;

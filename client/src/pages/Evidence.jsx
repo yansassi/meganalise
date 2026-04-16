@@ -7,6 +7,7 @@ export default function Evidence() {
     const [registries, setRegistries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [influencers, setInfluencers] = useState([]);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -28,7 +29,26 @@ export default function Evidence() {
 
     useEffect(() => {
         fetchRegistries();
+        fetchInfluencers();
     }, []);
+
+    const fetchInfluencers = async () => {
+        const data = await dataService.getInfluencers();
+        setInfluencers(data);
+    };
+
+    const handleInfluencerSelect = (infId) => {
+        if (!infId) return;
+        const inf = influencers.find(i => i.id === infId);
+        if (inf) {
+            setFormData(prev => ({
+                ...prev,
+                title: `Relatório: ${inf.name}`,
+                keywords: `@${inf.handle}, ${inf.name}`,
+                type: 'influencer'
+            }));
+        }
+    };
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -155,7 +175,18 @@ export default function Evidence() {
                         <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">Novo Registro</h2>
 
                         <form onSubmit={handleSubmit} className="space-y-5">
-                            <div>
+                             <div>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Vincular Influenciador (Opcional)</label>
+                                <select
+                                    onChange={(e) => handleInfluencerSelect(e.target.value)}
+                                    className="w-full px-4 py-3 rounded-xl bg-blue-50 border border-blue-100 focus:border-blue-500 outline-none transition-all font-bold text-blue-600 appearance-none mb-4"
+                                >
+                                    <option value="">-- Selecione para preencher automaticamente --</option>
+                                    {influencers.map(inf => (
+                                        <option key={inf.id} value={inf.id}>{inf.name} (@{inf.handle})</option>
+                                    ))}
+                                </select>
+                                
                                 <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Título do Registro</label>
                                 <input
                                     type="text"
