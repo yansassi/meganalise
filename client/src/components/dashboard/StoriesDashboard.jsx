@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { formatDate } from '../../utils/formatters';
 import { useOutletContext } from 'react-router-dom';
 import { dataService } from '../../services/dataService';
+import { calcPreviousPeriod } from '../../utils/dateUtils';
 import StatCards from './StatCards';
 import ContentGrid from './ContentGrid';
 import DateRangeFilter from './DateRangeFilter';
@@ -20,11 +21,23 @@ const StoriesDashboard = () => {
     }, [country, dateRange]);
 
     const loadData = async () => {
-        const dbData = await dataService.getDashboardData(country, 'Instagram', dateRange.startDate, dateRange.endDate);
-        processStoriesData(dbData);
+        const prevPeriod = calcPreviousPeriod(dateRange.startDate, dateRange.endDate, dateRange.preset);
+
+        const [dbData, prevDbData] = await Promise.all([
+            dataService.getDashboardData(country, 'Instagram', dateRange.startDate, dateRange.endDate),
+            prevPeriod 
+                ? dataService.getDashboardData(country, 'Instagram', prevPeriod.startDate, prevPeriod.endDate)
+                : Promise.resolve({ content: [], metrics: [] })
+        ]);
+
+        processStoriesData(dbData, prevDbData);
     };
 
-    const processStoriesData = (dbData) => {
+    const processStoriesData = (dbData, prevDbData) => {
+        const calcTrend = (current, previous) => {
+            if (!previous || previous === 0) return 0;
+            return ((current - previous) / previous) * 100;
+        };
         let totalReach = 0;
         let totalImpressions = 0;
         let totalStories = 0;
@@ -63,12 +76,31 @@ const StoriesDashboard = () => {
             shares: c.shares
         }));
 
+        // Calcular totais do período anterior para tendências
+        let prevStories = 0;
+        let prevReach = 0;
+        let prevImpressions = 0;
+        let prevInteractions = 0;
+
+        if (prevDbData && prevDbData.content) {
+            const prevStoriesList = prevDbData.content.filter(c =>
+                c.platform_type === 'story' ||
+                (c.platform_type === 'social' && c.title && c.title.startsWith('Story -'))
+            );
+            prevStories = prevStoriesList.length;
+            prevStoriesList.forEach(s => {
+                prevReach += (s.reach || 0);
+                prevImpressions += (s.views || 0);
+                prevInteractions += (s.likes || 0) + (s.shares || 0) + (s.comments || 0) + (s.saved || 0);
+            });
+        }
+
         setData({
             stats: [
-                { label: 'Stories Publicados', value: totalStories, trend: 0, icon: 'amp_stories', color: 'pink' },
-                { label: 'Alcance Total', value: totalReach, trend: 0, icon: 'visibility', color: 'blue' },
-                { label: 'Impressões (Views)', value: totalImpressions, trend: 0, icon: 'remove_red_eye', color: 'purple' },
-                { label: 'Interações', value: totalInteractions, trend: 0, icon: 'favorite', color: 'red' },
+                { label: 'Stories Publicados', value: totalStories, trend: calcTrend(totalStories, prevStories), icon: 'amp_stories', color: 'pink' },
+                { label: 'Alcance Total', value: totalReach, trend: calcTrend(totalReach, prevReach), icon: 'visibility', color: 'blue' },
+                { label: 'Impressões (Views)', value: totalImpressions, trend: calcTrend(totalImpressions, prevImpressions), icon: 'remove_red_eye', color: 'purple' },
+                { label: 'Interações', value: totalInteractions, trend: calcTrend(totalInteractions, prevInteractions), icon: 'favorite', color: 'red' },
             ],
             contentItems: storyItems,
             isLoaded: true

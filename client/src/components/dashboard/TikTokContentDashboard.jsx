@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { formatDate } from '../../utils/formatters';
 import { useOutletContext } from 'react-router-dom';
 import { dataService } from '../../services/dataService';
+import { calcPreviousPeriod } from '../../utils/dateUtils';
 import ContentGrid from './ContentGrid';
 import StatCards from './StatCards';
 import DateRangeFilter from './DateRangeFilter';
@@ -19,11 +20,23 @@ const TikTokContentDashboard = () => {
     }, [country, dateRange]);
 
     const loadFromDatabase = async () => {
-        const dbData = await dataService.getDashboardData(country, 'TikTok', dateRange.startDate, dateRange.endDate);
-        processDbData(dbData);
+        const prevPeriod = calcPreviousPeriod(dateRange.startDate, dateRange.endDate, dateRange.preset);
+
+        const [dbData, prevDbData] = await Promise.all([
+            dataService.getDashboardData(country, 'TikTok', dateRange.startDate, dateRange.endDate),
+            prevPeriod 
+                ? dataService.getDashboardData(country, 'TikTok', prevPeriod.startDate, prevPeriod.endDate)
+                : Promise.resolve({ content: [], metrics: [] })
+        ]);
+
+        processDbData(dbData, prevDbData);
     };
 
-    const processDbData = (dbData) => {
+    const processDbData = (dbData, prevDbData) => {
+        const calcTrend = (current, previous) => {
+            if (!previous || previous === 0) return 0;
+            return ((current - previous) / previous) * 100;
+        };
         let videos = [];
         let totalViews = 0;
         let totalLikes = 0;
@@ -60,11 +73,26 @@ const TikTokContentDashboard = () => {
         // Calculate total interactions
         const totalInteractions = totalLikes + totalComments + totalShares;
 
+        // Calcular totais do período anterior para tendências
+        let prevViews = 0;
+        let prevLikes = 0;
+        let prevComments = 0;
+        let prevShares = 0;
+
+        if (prevDbData && prevDbData.content) {
+            prevDbData.content.forEach(c => {
+                prevViews += (c.views || 0);
+                prevLikes += (c.likes || 0);
+                prevComments += (c.comments || 0);
+                prevShares += (c.shares || 0);
+            });
+        }
+
         const stats = [
-            { label: 'Visualizações Totais', value: totalViews, trend: 0, icon: 'play_circle', color: 'red' },
-            { label: 'Curtidas', value: totalLikes, trend: 0, icon: 'favorite', color: 'pink' },
-            { label: 'Comentários', value: totalComments, trend: 0, icon: 'chat_bubble', color: 'blue' },
-            { label: 'Compartilhamentos', value: totalShares, trend: 0, icon: 'share', color: 'green' }
+            { label: 'Visualizações Totais', value: totalViews, trend: calcTrend(totalViews, prevViews), icon: 'play_circle', color: 'red' },
+            { label: 'Curtidas', value: totalLikes, trend: calcTrend(totalLikes, prevLikes), icon: 'favorite', color: 'pink' },
+            { label: 'Comentários', value: totalComments, trend: calcTrend(totalComments, prevComments), icon: 'chat_bubble', color: 'blue' },
+            { label: 'Compartilhamentos', value: totalShares, trend: calcTrend(totalShares, prevShares), icon: 'share', color: 'green' }
         ];
 
         setData({

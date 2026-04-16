@@ -11,6 +11,8 @@ import Evidence from './pages/Evidence';
 import Influencer from './pages/Influencer';
 import EvidenceDashboard from './pages/EvidenceDashboard';
 import TikTokContentDashboard from './components/dashboard/TikTokContentDashboard';
+import YouTubeContentDashboard from './components/dashboard/YouTubeContentDashboard';
+import YouTubeAudienceTab from './components/dashboard/YouTubeAudienceTab';
 
 
 // Dashboard retrieves country from Outlet context
@@ -49,6 +51,8 @@ function App() {
             <Route path="/" element={<Layout country={country} setCountry={setCountry} />}>
               <Route index element={<Dashboard />} />
               <Route path="platform/youtube" element={<PlatformView platform="YouTube" />} />
+              <Route path="platform/youtube/content" element={<YouTubeContentDashboard />} />
+              <Route path="platform/youtube/audience" element={<YouTubeAudienceTab />} />
               <Route path="platform/instagram" element={<PlatformView platform="Instagram" />} />
               <Route path="platform/instagram/content" element={<ContentDashboard />} />
               <Route path="platform/instagram/stories" element={<StoriesDashboard />} />

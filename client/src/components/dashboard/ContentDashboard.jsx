@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { formatDate } from '../../utils/formatters';
 import { useOutletContext } from 'react-router-dom';
 import { dataService } from '../../services/dataService';
+import { calcPreviousPeriod } from '../../utils/dateUtils';
 import ContentGrid from './ContentGrid';
 import StatCards from './StatCards';
 import DateRangeFilter from './DateRangeFilter';
@@ -20,11 +21,23 @@ const ContentDashboard = () => {
     }, [country, dateRange]);
 
     const loadFromDatabase = async () => {
-        const dbData = await dataService.getDashboardData(country, 'Instagram', dateRange.startDate, dateRange.endDate);
-        processDbData(dbData);
+        const prevPeriod = calcPreviousPeriod(dateRange.startDate, dateRange.endDate, dateRange.preset);
+
+        const [dbData, prevDbData] = await Promise.all([
+            dataService.getDashboardData(country, 'Instagram', dateRange.startDate, dateRange.endDate),
+            prevPeriod 
+                ? dataService.getDashboardData(country, 'Instagram', prevPeriod.startDate, prevPeriod.endDate)
+                : Promise.resolve({ content: [], metrics: [] })
+        ]);
+
+        processDbData(dbData, prevDbData);
     };
 
-    const processDbData = (dbData) => {
+    const processDbData = (dbData, prevDbData) => {
+        const calcTrend = (current, previous) => {
+            if (!previous || previous === 0) return 0;
+            return ((current - previous) / previous) * 100;
+        };
         let reels = [];
         // Stats accumulators for Reels ONLY
         let totalReach = 0;
@@ -72,11 +85,29 @@ const ContentDashboard = () => {
             }
         });
 
+        // Totais do período anterior para tendências
+        let prevReach = 0;
+        let prevInteractions = 0;
+        let prevViews = 0;
+        let prevSaved = 0;
+
+        if (prevDbData && prevDbData.content) {
+            prevDbData.content.forEach(c => {
+                const isStory = c.platform_type === 'story' || (c.platform_type === 'social' && c.title?.startsWith('Story -'));
+                if (!isStory) {
+                    prevReach += (c.reach || 0);
+                    prevViews += (c.views || 0);
+                    prevSaved += (c.saved || 0);
+                    prevInteractions += (c.likes || 0) + (c.shares || 0) + (c.comments || 0) + (c.saved || 0);
+                }
+            });
+        }
+
         const stats = [
-            { label: 'Alcance (Reels/Feed)', value: totalReach, trend: 0, icon: 'visibility', color: 'blue' },
-            { label: 'Interações', value: totalInteractions, trend: 0, icon: 'favorite', color: 'purple' },
-            { label: 'Visualizações', value: totalViews, trend: 0, icon: 'play_circle', color: 'red' },
-            { label: 'Salvamentos', value: totalSaved, trend: 0, icon: 'bookmark', color: 'yellow' }
+            { label: 'Alcance (Reels/Feed)', value: totalReach, trend: calcTrend(totalReach, prevReach), icon: 'visibility', color: 'blue' },
+            { label: 'Interações', value: totalInteractions, trend: calcTrend(totalInteractions, prevInteractions), icon: 'favorite', color: 'purple' },
+            { label: 'Visualizações', value: totalViews, trend: calcTrend(totalViews, prevViews), icon: 'play_circle', color: 'red' },
+            { label: 'Salvamentos', value: totalSaved, trend: calcTrend(totalSaved, prevSaved), icon: 'bookmark', color: 'yellow' }
         ];
 
         setData({

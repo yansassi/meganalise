@@ -14,7 +14,8 @@ export default function Evidence() {
         start_date: '',
         end_date: '',
         keywords: '',
-        country: 'BR' // Default country
+        country: 'BR',
+        platforms: ['instagram', 'tiktok', 'facebook', 'youtube'] // todas por padrão
     });
 
     const fetchRegistries = async () => {
@@ -34,20 +35,31 @@ export default function Evidence() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handlePlatformToggle = (platform) => {
+        setFormData(prev => {
+            const current = prev.platforms || [];
+            return {
+                ...prev,
+                platforms: current.includes(platform)
+                    ? current.filter(p => p !== platform)
+                    : [...current, platform]
+            };
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // Split keywords by comma
             const keywordList = formData.keywords.split(',').map(k => k.trim()).filter(k => k);
 
             await dataService.saveEvidenceRegistry({
                 ...formData,
-                keywords: keywordList
+                keywords: keywordList,
+                platforms: formData.platforms || ['instagram', 'tiktok', 'facebook', 'youtube']
             });
 
             setShowModal(false);
-            setShowModal(false);
-            setFormData({ title: '', start_date: '', end_date: '', keywords: '', country: 'BR' });
+            setFormData({ title: '', start_date: '', end_date: '', keywords: '', country: 'BR', platforms: ['instagram', 'tiktok', 'facebook', 'youtube'] });
             fetchRegistries();
         } catch (error) {
             alert('Erro ao salvar registro: ' + error.message);
@@ -193,6 +205,39 @@ export default function Evidence() {
                                         onChange={handleInputChange}
                                     />
                                 </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Plataformas a Monitorar</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {[
+                                        { id: 'instagram', label: 'Instagram', icon: 'photo_camera', color: 'bg-gradient-to-br from-pink-500 to-purple-600' },
+                                        { id: 'tiktok', label: 'TikTok', icon: 'music_note', color: 'bg-gray-800' },
+                                        { id: 'facebook', label: 'Facebook', icon: 'facebook', color: 'bg-blue-600' },
+                                        { id: 'youtube', label: 'YouTube', icon: 'play_circle', color: 'bg-red-600' },
+                                    ].map(p => {
+                                        const selected = (formData.platforms || []).includes(p.id);
+                                        return (
+                                            <button
+                                                key={p.id}
+                                                type="button"
+                                                onClick={() => handlePlatformToggle(p.id)}
+                                                className={`flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm border-2 transition-all ${
+                                                    selected
+                                                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                                        : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300'
+                                                }`}
+                                            >
+                                                <span className={`w-6 h-6 rounded-lg ${p.color} flex items-center justify-center`}>
+                                                    <span className="material-icons-round text-white text-sm">{p.icon}</span>
+                                                </span>
+                                                {p.label}
+                                                {selected && <span className="material-icons-round text-blue-500 text-sm">check_circle</span>}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <p className="text-xs text-slate-400 mt-2 ml-1">Selecione em quais redes sociais buscar o conteúdo.</p>
                             </div>
 
                             <div>

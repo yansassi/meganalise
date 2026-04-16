@@ -27,10 +27,10 @@ const DateRangeFilter = ({ onFilterChange, className, initialRange }) => {
     // Determine initial preset if straightforward, else 'custom'
     const [activePreset, setActivePreset] = useState('custom');
 
-    // Notify parent whenever dates change
+    // Notify parent whenever dates change — also sends the active preset
     useEffect(() => {
-        onFilterChange({ startDate, endDate });
-    }, [startDate, endDate]);
+        onFilterChange({ startDate, endDate, preset: activePreset });
+    }, [startDate, endDate, activePreset]);
 
     const handlePresetChange = (preset) => {
         const end = new Date();
@@ -45,6 +45,12 @@ const DateRangeFilter = ({ onFilterChange, className, initialRange }) => {
                 break;
             case 'last30':
                 start.setDate(end.getDate() - 30);
+                break;
+            case 'last60':
+                start.setDate(end.getDate() - 60);
+                break;
+            case 'last90':
+                start.setDate(end.getDate() - 90);
                 break;
             case 'thisMonth':
                 start.setDate(1); // 1st day of current month
@@ -69,33 +75,27 @@ const DateRangeFilter = ({ onFilterChange, className, initialRange }) => {
         setActivePreset('custom');
     };
 
+    const presets = [
+        { id: 'today', label: 'Hoje' },
+        { id: 'last7', label: '7 Dias' },
+        { id: 'last30', label: '30 Dias' },
+        { id: 'last60', label: '60 Dias' },
+        { id: 'last90', label: '90 Dias' },
+        { id: 'thisMonth', label: 'Este Mês' },
+    ];
+
     return (
         <div className={`bg-white rounded-2xl p-4 shadow-sm border border-gray-100 flex flex-col md:flex-row items-center gap-4 ${className}`}>
-            <div className="flex bg-gray-50 p-1 rounded-xl">
-                <button
-                    onClick={() => handlePresetChange('today')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'today' ? 'bg-white text-[#2563EB] shadow-sm' : 'text-gray-600 hover:text-[#1F2937]'}`}
-                >
-                    Hoje
-                </button>
-                <button
-                    onClick={() => handlePresetChange('last7')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'last7' ? 'bg-white text-[#2563EB] shadow-sm' : 'text-gray-600 hover:text-[#1F2937]'}`}
-                >
-                    7 Dias
-                </button>
-                <button
-                    onClick={() => handlePresetChange('last30')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'last30' ? 'bg-white text-[#2563EB] shadow-sm' : 'text-gray-600 hover:text-[#1F2937]'}`}
-                >
-                    30 Dias
-                </button>
-                <button
-                    onClick={() => handlePresetChange('thisMonth')}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === 'thisMonth' ? 'bg-white text-[#2563EB] shadow-sm' : 'text-gray-600 hover:text-[#1F2937]'}`}
-                >
-                    Este Mês
-                </button>
+            <div className="flex flex-wrap bg-gray-50 p-1 rounded-xl gap-0.5">
+                {presets.map(preset => (
+                    <button
+                        key={preset.id}
+                        onClick={() => handlePresetChange(preset.id)}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${activePreset === preset.id ? 'bg-white text-[#2563EB] shadow-sm' : 'text-gray-600 hover:text-[#1F2937]'}`}
+                    >
+                        {preset.label}
+                    </button>
+                ))}
             </div>
 
             <div className="flex items-center gap-2">

@@ -300,16 +300,15 @@ export const dataService = {
      */
     async saveEvidenceRegistry(data) {
         try {
-            // Keywords stored as JSON
+            // Keywords e platforms armazenados como JSON
             const payload = {
                 ...data,
                 keywords: JSON.stringify(data.keywords),
-                // Ensure type and country are saved if provided, defaults if not
+                platforms: JSON.stringify(data.platforms || ['instagram', 'tiktok', 'facebook', 'youtube']),
                 type: data.type || 'keyword',
-                country: data.country || 'Brazil' // Default to Brazil if not specified
+                country: data.country || 'Brazil'
             };
 
-            // Check if we are updating or creating (if ID exists)
             if (data.id) {
                 return await pb.collection('evidence_registries').update(data.id, payload);
             } else {
@@ -332,6 +331,11 @@ export const dataService = {
             return records.map(r => ({
                 ...r,
                 keywords: typeof r.keywords === 'string' ? JSON.parse(r.keywords) : r.keywords,
+                platforms: (() => {
+                    try {
+                        return typeof r.platforms === 'string' ? JSON.parse(r.platforms) : (r.platforms || ['instagram', 'tiktok', 'facebook', 'youtube']);
+                    } catch { return ['instagram', 'tiktok', 'facebook', 'youtube']; }
+                })()
             }));
         } catch (err) {
             console.error("Error fetching registries", err);
@@ -354,7 +358,12 @@ export const dataService = {
             const record = await pb.collection('evidence_registries').getOne(id);
             return {
                 ...record,
-                keywords: typeof record.keywords === 'string' ? JSON.parse(record.keywords) : record.keywords
+                keywords: typeof record.keywords === 'string' ? JSON.parse(record.keywords) : record.keywords,
+                platforms: (() => {
+                    try {
+                        return typeof record.platforms === 'string' ? JSON.parse(record.platforms) : (record.platforms || ['instagram', 'tiktok', 'facebook', 'youtube']);
+                    } catch { return ['instagram', 'tiktok', 'facebook', 'youtube']; }
+                })()
             };
         } catch (err) {
             console.error("Error fetching registry details", err);
@@ -428,9 +437,20 @@ export const dataService = {
             }
 
             // Query Multiple Collections based on filter
+            // Usa registry.platforms se definido, caso contrário todas
+            const platformList = registry.platforms && registry.platforms.length > 0
+                ? registry.platforms
+                : ['instagram', 'tiktok', 'facebook', 'youtube'];
+
             let collections = [];
             if (platformFilter === 'all') {
-                collections = ['instagram_content', 'tiktok_content', 'facebook_content', 'youtube_content'];
+                const collMap = {
+                    instagram: 'instagram_content',
+                    tiktok: 'tiktok_content',
+                    facebook: 'facebook_content',
+                    youtube: 'youtube_content',
+                };
+                collections = platformList.map(p => collMap[p]).filter(Boolean);
             } else if (platformFilter === 'instagram') {
                 collections = ['instagram_content'];
             } else if (platformFilter === 'tiktok') {

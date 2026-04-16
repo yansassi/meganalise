@@ -102,13 +102,20 @@ const StatCards = ({ stats = [], onCardClick }) => {
                             <h3 className={`${styles.labelText} text-[11px] font-bold uppercase tracking-[0.2em] mb-1 opacity-90`}>
                                 {stat.label}
                             </h3>
-                            <div className="flex items-end gap-2">
+                            <div className="flex items-end gap-2 flex-wrap">
                                 <p className={`${styles.valueText} text-3xl font-black tracking-tight`}>
-                                    {formatNumber(stat.value)}
+                                    {formatNumber(stat.value)}{stat.suffix ? stat.suffix : ''}
                                 </p>
-                                {stat.trend > 0 && (
-                                    <span className="mb-1 text-sm font-bold text-white/90 bg-white/20 px-2 py-0.5 rounded-full flex items-center backdrop-blur-sm">
-                                        <span className="material-icons-round text-[12px] mr-0.5">trending_up</span> {stat.trend}%
+                                {stat.trend != null && stat.trend !== 0 && (
+                                    <span className={`mb-1 text-sm font-bold px-2 py-0.5 rounded-full flex items-center backdrop-blur-sm ${
+                                        stat.trend > 0
+                                            ? 'text-white/90 bg-white/20'
+                                            : 'text-red-100 bg-red-500/30'
+                                    }`}>
+                                        <span className="material-icons-round text-[12px] mr-0.5">
+                                            {stat.trend > 0 ? 'trending_up' : 'trending_down'}
+                                        </span>
+                                        {stat.trend > 0 ? '+' : ''}{stat.trend}%
                                     </span>
                                 )}
                             </div>

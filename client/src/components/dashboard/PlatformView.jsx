@@ -12,6 +12,7 @@ import DateRangeFilter from './DateRangeFilter';
 import AudienceView from './AudienceView';
 import DataIntelligence from './DataIntelligence';
 import RetentionChart from './RetentionChart';
+import { calcPreviousPeriod } from '../../utils/dateUtils';
 
 const ProgressModal = ({ isOpen, progress, action, details }) => {
     if (!isOpen) return null;
@@ -100,10 +101,12 @@ const UploadModal = ({ isOpen, onClose, onUpload }) => {
 
 import ReachInsightsModal from './ReachInsightsModal';
 
+
 const PlatformView = ({ platform }) => {
     const { country, dateRange, setDateRange } = useOutletContext();
     const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'audience'
     const [fbContentTab, setFbContentTab] = useState('posts'); // 'posts', 'stories', 'audience'
+    const [ytContentTab, setYtContentTab] = useState('all'); // 'all', 'videos', 'shorts'
     const [audienceData, setAudienceData] = useState(null);
     const [selectedStory, setSelectedStory] = useState(null); // State for Story Modal
     const [showReachModal, setShowReachModal] = useState(false); // State for Reach Modal
@@ -123,25 +126,43 @@ const PlatformView = ({ platform }) => {
 
 
     useEffect(() => {
-        // if (!dateRange.startDate || !dateRange.endDate) return; // Removed blocking check
         setData(prev => ({ ...prev, isLoaded: false }));
         loadFromDatabase();
     }, [country, platform, dateRange]);
 
     const loadFromDatabase = async () => {
-        const dbData = await dataService.getDashboardData(country, platform, dateRange.startDate, dateRange.endDate);
-        const audience = await dataService.getAudienceDemographics(country, platform);
+        // Busca atual e período anterior em paralelo
+        const prevPeriod = calcPreviousPeriod(dateRange.startDate, dateRange.endDate, dateRange.preset);
+
+        const [dbData, prevDbData, audience] = await Promise.all([
+            dataService.getDashboardData(country, platform, dateRange.startDate, dateRange.endDate),
+            prevPeriod
+                ? dataService.getDashboardData(country, platform, prevPeriod.startDate, prevPeriod.endDate)
+                : Promise.resolve({ metrics: [], content: [] }),
+            dataService.getAudienceDemographics(country, platform)
+        ]);
+
         setAudienceData(audience);
 
         if (dbData.metrics.length > 0 || dbData.content.length > 0) {
-            processDbData(dbData);
-
+            processDbData(dbData, prevDbData);
         } else {
             setData(prev => ({ ...prev, isLoaded: false }));
         }
     };
 
-    const processDbData = (dbData) => {
+    // Calcula sum de uma métrica em dbData.metrics
+    const sumMetric = (metrics, ...names) =>
+        metrics.filter(m => names.includes(m.metric)).reduce((s, m) => s + m.value, 0);
+
+    // Calcula percentual de variação com segurança
+    const calcTrend = (current, previous) => {
+        if (!previous || previous === 0) return null;
+        const delta = ((current - previous) / previous) * 100;
+        return Math.round(delta);
+    };
+
+    const processDbData = (dbData, prevDbData = { metrics: [], content: [] }) => {
         let reach = 0, interactions = 0, followers = 0, websiteClicks = 0, profileVisits = 0, storyViews = 0;
         let impressions = 0;
         let likes = 0, comments = 0, shares = 0;
@@ -332,51 +353,74 @@ const PlatformView = ({ platform }) => {
             return item;
         });
 
+        // ── Calcular métricas do período anterior ──────────────────────────────────
+        const prevImpressions = sumMetric(prevDbData.metrics, 'impressions', 'video_views', 'views');
+        const prevReach = sumMetric(prevDbData.metrics, 'reach', 'impressions');
+        const prevInteractions = sumMetric(prevDbData.metrics, 'interactions', 'likes', 'comments', 'shares');
+        const prevProfileVisits = sumMetric(prevDbData.metrics, 'profile_visits', 'profile_views');
+        const prevWebsiteClicks = sumMetric(prevDbData.metrics, 'website_clicks');
+        const prevLikes = sumMetric(prevDbData.metrics, 'likes');
+        const prevComments = sumMetric(prevDbData.metrics, 'comments');
+        const prevShares = sumMetric(prevDbData.metrics, 'shares');
+
+        // Calcula net followers anterior
+        const prevFollowersData = prevDbData.metrics.filter(m => m.metric === 'followers_total');
+        prevFollowersData.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const prevNetFollowers = prevFollowersData.length >= 2
+            ? prevFollowersData[prevFollowersData.length - 1].value - prevFollowersData[0].value
+            : 0;
+
         let stats = [];
 
         if (platform === 'TikTok') {
             stats = [
-                { label: 'Visualizações', value: impressions, trend: 0, icon: 'play_circle', color: 'red' },
-                { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
-                { label: 'Interações', value: interactions, trend: 0, icon: 'favorite_border', color: 'purple' },
-                { label: 'Curtidas', value: likes, trend: 0, icon: 'favorite', color: 'pink' },
-                { label: 'Comentários', value: comments, trend: 0, icon: 'chat_bubble', color: 'blue' },
-                { label: 'Compartilhamentos', value: shares, trend: 0, icon: 'share', color: 'green' }
+                { label: 'Visualizações', value: impressions, trend: calcTrend(impressions, prevImpressions), icon: 'play_circle', color: 'red' },
+                { label: 'Visitas ao Perfil', value: profileVisits, trend: calcTrend(profileVisits, prevProfileVisits), icon: 'person_search', color: 'teal' },
+                { label: 'Interações', value: interactions, trend: calcTrend(interactions, prevInteractions), icon: 'favorite_border', color: 'purple' },
+                { label: 'Curtidas', value: likes, trend: calcTrend(likes, prevLikes), icon: 'favorite', color: 'pink' },
+                { label: 'Comentários', value: comments, trend: calcTrend(comments, prevComments), icon: 'chat_bubble', color: 'blue' },
+                { label: 'Compartilhamentos', value: shares, trend: calcTrend(shares, prevShares), icon: 'share', color: 'green' }
             ];
         } else if (platform === 'Facebook') {
             stats = [
-                { label: 'Visualizações', value: impressions, trend: 0, icon: 'visibility', color: 'blue' },
-                { label: 'Visualizadores', value: reach, trend: 0, icon: 'groups', color: 'indigo' },
-                { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
-                { label: 'Seguidores (Saldo)', value: netFollowers, trend: 0, icon: 'group_add', color: 'cyan' },
-                { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
-                { label: 'Cliques no Link', value: websiteClicks, trend: 0, icon: 'link', color: 'orange' }
+                { label: 'Visualizações', value: impressions, trend: calcTrend(impressions, prevImpressions), icon: 'visibility', color: 'blue' },
+                { label: 'Visualizadores', value: reach, trend: calcTrend(reach, prevReach), icon: 'groups', color: 'indigo' },
+                { label: 'Interações', value: interactions, trend: calcTrend(interactions, prevInteractions), icon: 'favorite', color: 'purple' },
+                { label: 'Seguidores (Saldo)', value: netFollowers, trend: calcTrend(netFollowers, prevNetFollowers), icon: 'group_add', color: 'cyan' },
+                { label: 'Visitas ao Perfil', value: profileVisits, trend: calcTrend(profileVisits, prevProfileVisits), icon: 'person_search', color: 'teal' },
+                { label: 'Cliques no Link', value: websiteClicks, trend: calcTrend(websiteClicks, prevWebsiteClicks), icon: 'link', color: 'orange' }
             ];
         } else if (platform === 'Instagram') {
             stats = [
-                { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
-                { label: 'Visualizações', value: impressions, trend: 0, icon: 'trending_up', color: 'indigo' },
-                { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
-                { label: 'Seguidores (Saldo)', value: netFollowers, trend: 0, icon: 'group_add', color: 'green' },
-                { label: 'Visitas ao Perfil', value: profileVisits, trend: 0, icon: 'person_search', color: 'teal' },
-                { label: 'Cliques no Link', value: websiteClicks, trend: 0, icon: 'link', color: 'orange' },
-                { label: 'Views em Stories', value: storyViews, trend: 0, icon: 'amp_stories', color: 'pink' }
+                { label: 'Alcance Total', value: reach, trend: calcTrend(reach, prevReach), icon: 'visibility', color: 'blue' },
+                { label: 'Visualizações', value: impressions, trend: calcTrend(impressions, prevImpressions), icon: 'trending_up', color: 'indigo' },
+                { label: 'Interações', value: interactions, trend: calcTrend(interactions, prevInteractions), icon: 'favorite', color: 'purple' },
+                { label: 'Seguidores (Saldo)', value: netFollowers, trend: calcTrend(netFollowers, prevNetFollowers), icon: 'group_add', color: 'green' },
+                { label: 'Visitas ao Perfil', value: profileVisits, trend: calcTrend(profileVisits, prevProfileVisits), icon: 'person_search', color: 'teal' },
+                { label: 'Cliques no Link', value: websiteClicks, trend: calcTrend(websiteClicks, prevWebsiteClicks), icon: 'link', color: 'orange' },
+                { label: 'Views em Stories', value: storyViews, trend: null, icon: 'amp_stories', color: 'pink' }
             ];
         } else if (platform === 'YouTube') {
+            const prevWatchTime = sumMetric(prevDbData.metrics, 'watch_time');
+            const prevCtrMetrics = prevDbData.metrics.filter(m => m.metric === 'ctr');
+            const prevCtrAvg = prevCtrMetrics.length > 0
+                ? prevCtrMetrics.reduce((s, m) => s + m.value, 0) / prevCtrMetrics.length
+                : 0;
+            const currCtrAvg = ctrCount > 0 ? ctrSum / ctrCount : 0;
             stats = [
-                { label: 'Visualizações', value: impressions, trend: 0, icon: 'play_circle', color: 'red' },
-                { label: 'Tempo de Exibição', value: watchTimeSum, trend: 0, icon: 'schedule', color: 'blue', suffix: 'h' },
-                { label: 'Inscritos Ganhos', value: netFollowers, trend: 0, icon: 'person_add', color: 'orange' },
-                { label: 'Impressões', value: reach, trend: 0, icon: 'visibility', color: 'indigo' },
-                { label: 'Taxa de Cliques (CTR)', value: ctrCount > 0 ? (ctrSum / ctrCount).toFixed(2) : 0, trend: 0, icon: 'touch_app', color: 'teal', suffix: '%' }
+                { label: 'Visualizações', value: impressions, trend: calcTrend(impressions, prevImpressions), icon: 'play_circle', color: 'red' },
+                { label: 'Tempo de Exibição', value: watchTimeSum, trend: calcTrend(watchTimeSum, prevWatchTime), icon: 'schedule', color: 'blue', suffix: 'h' },
+                { label: 'Inscritos Ganhos', value: netFollowers, trend: calcTrend(netFollowers, prevNetFollowers), icon: 'person_add', color: 'orange' },
+                { label: 'Impressões', value: reach, trend: calcTrend(reach, prevReach), icon: 'visibility', color: 'indigo' },
+                { label: 'Taxa de Cliques (CTR)', value: currCtrAvg.toFixed(2), trend: calcTrend(currCtrAvg, prevCtrAvg), icon: 'touch_app', color: 'teal', suffix: '%' }
             ];
         } else {
             // Default Fallback
             stats = [
-                { label: 'Alcance Total', value: reach, trend: 0, icon: 'visibility', color: 'blue' },
-                { label: 'Visualizações', value: impressions, trend: 0, icon: 'trending_up', color: 'indigo' },
-                { label: 'Interações', value: interactions, trend: 0, icon: 'favorite', color: 'purple' },
-                { label: 'Seguidores', value: netFollowers, trend: 0, icon: 'group', color: 'green' }
+                { label: 'Alcance Total', value: reach, trend: calcTrend(reach, prevReach), icon: 'visibility', color: 'blue' },
+                { label: 'Visualizações', value: impressions, trend: calcTrend(impressions, prevImpressions), icon: 'trending_up', color: 'indigo' },
+                { label: 'Interações', value: interactions, trend: calcTrend(interactions, prevInteractions), icon: 'favorite', color: 'purple' },
+                { label: 'Seguidores', value: netFollowers, trend: calcTrend(netFollowers, prevNetFollowers), icon: 'group', color: 'green' }
             ];
         }
 
@@ -892,7 +936,69 @@ const PlatformView = ({ platform }) => {
                             </div>
                         )}
 
-                        {activeTab === 'content' && platform !== 'Facebook' && (
+                        {activeTab === 'content' && platform === 'YouTube' && (
+                            <div className="w-full space-y-6">
+                                {/* Sub-abas do YouTube */}
+                                <div className="flex items-center gap-1 bg-gray-100 dark:bg-white/10 rounded-2xl p-1.5 w-fit">
+                                    {[
+                                        { id: 'all', label: 'Todos', icon: 'video_library' },
+                                        { id: 'videos', label: 'Vídeos', icon: 'smart_display' },
+                                        { id: 'shorts', label: 'Shorts', icon: 'smartphone' },
+                                    ].map(tab => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setYtContentTab(tab.id)}
+                                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                                                ytContentTab === tab.id
+                                                    ? 'bg-white dark:bg-gray-800 text-red-600 shadow-sm'
+                                                    : 'text-gray-500 hover:text-gray-700'
+                                            }`}
+                                        >
+                                            <span className="material-icons-round text-base">{tab.icon}</span>
+                                            {tab.label}
+                                            {tab.id !== 'all' && (() => {
+                                                const count = tab.id === 'videos'
+                                                    ? (data.contentItems || []).filter(i => i.platform === 'video' || (i.duration && i.duration > 60)).length
+                                                    : (data.contentItems || []).filter(i => i.platform === 'short' || (i.duration && i.duration <= 60 && i.duration > 0)).length;
+                                                return count > 0 ? (
+                                                    <span className="ml-1 bg-red-100 text-red-600 text-xs font-bold px-1.5 py-0.5 rounded-full">{count}</span>
+                                                ) : null;
+                                            })()}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Conteúdo filtrado */}
+                                {(() => {
+                                    const allItems = data.contentItems || [];
+                                    const filtered = ytContentTab === 'videos'
+                                        ? allItems.filter(i => i.platform === 'video' || (i.duration && i.duration > 60))
+                                        : ytContentTab === 'shorts'
+                                            ? allItems.filter(i => i.platform === 'short' || (i.duration && i.duration <= 60 && i.duration > 0))
+                                            : allItems;
+
+                                    return filtered.length > 0 ? (
+                                        <>
+                                            <section className="w-full overflow-hidden">
+                                                <MediaReel
+                                                    title={`${ytContentTab === 'all' ? 'Vídeos Recentes' : ytContentTab === 'shorts' ? 'Shorts' : 'Vídeos Longos'} (${filtered.length})`}
+                                                    items={filtered.slice(0, 25)}
+                                                    onItemClick={(item) => setSelectedStory(item)}
+                                                />
+                                            </section>
+                                            <ContentTable items={filtered} />
+                                        </>
+                                    ) : (
+                                        <div className="text-center py-16 text-gray-400">
+                                            <span className="material-icons-round text-5xl mb-3 opacity-30">video_library</span>
+                                            <p className="text-sm">Nenhum conteúdo encontrado nesta categoria.</p>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        )}
+
+                        {activeTab === 'content' && platform !== 'Facebook' && platform !== 'YouTube' && (
                             <div className="w-full">
                                 <ContentTable items={data.contentItems} />
                             </div>
