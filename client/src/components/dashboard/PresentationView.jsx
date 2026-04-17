@@ -3,9 +3,8 @@ import { useParams } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 import { dataService } from '../../services/dataService';
-import html2canvas from 'html2canvas-pro';
-import { jsPDF } from 'jspdf';
-import PDFReportTemplate from './PDFReportTemplate';
+import { pdf } from '@react-pdf/renderer';
+import VectorPDFTemplate from './VectorPDFTemplate';
 
 // --- Utility Components ---
 const StatCounter = ({ label, value, color }) => (
@@ -196,45 +195,37 @@ const PresentationView = () => {
 
     const generatePDF = async () => {
         setGeneratingPdf(true);
-        const element = document.getElementById('pdf-report-content');
-
         try {
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff'
-            });
-            
-            const imgData = canvas.toDataURL('image/jpeg', 0.98);
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            
-            const imgWidth = canvas.width;
-            const imgHeight = canvas.height;
-            const ratio = pdfWidth / imgWidth;
-            const totalPdfHeight = imgHeight * ratio;
-            
-            let heightLeft = totalPdfHeight;
-            let position = 0;
-            
-            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalPdfHeight);
-            heightLeft -= pageHeight;
-            
-            while (heightLeft >= 0) {
-                position = heightLeft - totalPdfHeight;
-                if (heightLeft > 5) {
-                   pdf.addPage();
-                   pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalPdfHeight);
-                }
-                heightLeft -= pageHeight;
-            }
-            
-            pdf.save(`Relatorio-${registry?.brand_name?.replace(/[^a-z0-9]/gi, '_') || 'Campanha'}.pdf`);
+            const platformMap = items.reduce((acc, item) => {
+                const p = item.platform || 'Outros';
+                acc[p] = (acc[p] || 0) + (item.views || 0);
+                return acc;
+            }, {});
+            const chartData = Object.entries(platformMap).map(([name, value]) => ({ name, value }));
+            const totalReach = items.reduce((acc, item) => acc + (item.reach || 0), 0);
+            const totalEng = items.reduce((acc, item) => acc + (item.likes || 0) + (item.comments || 0) + (item.shares || 0), 0);
+            const totalViews = items.reduce((acc, item) => acc + (item.views || 0), 0);
+
+            const blob = await pdf(
+                <VectorPDFTemplate
+                    registry={registry}
+                    items={items}
+                    chartData={chartData}
+                    totalReach={totalReach}
+                    totalEng={totalEng}
+                    totalViews={totalViews}
+                />
+            ).toBlob();
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Relatorio-${registry?.brand_name?.replace(/[^a-z0-9]/gi, '_') || 'Campanha'}.pdf`;
+            link.click();
+            URL.revokeObjectURL(url);
         } catch (err) {
             console.error("PDF Generation Error", err);
-            alert("Erro ao gerar PDF. Tente novamente.");
+            alert("Erro ao gerar PDF em formato vetor. Tente novamente.");
         } finally {
             setGeneratingPdf(false);
         }
@@ -450,26 +441,13 @@ const PresentationView = () => {
                     >
                         <span className="material-icons-round text-sm">share</span>
                         Compartilhar Link
-                    </button>
+                     </button>
                 </div>
             </footer>
-
             {/* Detail Modal */}
             {selectedItem && (
                 <DetailModal item={selectedItem} onClose={() => setSelectedItem(null)} />
             )}
-
-            {/* Hidden PDF Template */}
-            <div style={{ position: 'absolute', top: '-10000px', left: '-10000px' }}>
-                <PDFReportTemplate
-                    registry={registry}
-                    items={items}
-                    chartData={chartData}
-                    totalReach={totalReach}
-                    totalEng={totalEng}
-                    totalViews={totalViews}
-                />
-            </div>
         </div>
     );
 };

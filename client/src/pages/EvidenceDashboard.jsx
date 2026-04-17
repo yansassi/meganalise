@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { formatDate } from '../utils/formatters';
 import { useParams, useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
-import PDFReportTemplate from '../components/dashboard/PDFReportTemplate';
+import { pdf } from '@react-pdf/renderer';
+import VectorPDFTemplate from '../components/dashboard/VectorPDFTemplate';
 
 import ContentGrid from '../components/dashboard/ContentGrid';
 
@@ -250,14 +251,39 @@ export default function EvidenceDashboard() {
     const generatePDF = async () => {
         setGeneratingPdf(true);
         try {
-            // Um pequeno atraso pra garantir que o React carregou a estilização de print e o loading apareça
-            setTimeout(() => {
-                window.print();
-                setGeneratingPdf(false);
-            }, 300);
+            const chartData = Object.entries(
+                (data.content || []).reduce((acc, item) => {
+                    const p = item.social_network || item.platform_type || item.platform || 'Outros';
+                    acc[p] = (acc[p] || 0) + (item.views || 0);
+                    return acc;
+                }, {})
+            ).map(([name, value]) => ({ name, value }));
+
+            const totalReach = (data.content || []).reduce((acc, item) => acc + (item.reach || 0), 0);
+            const totalEng = data.metrics?.total_interactions || 0;
+            const totalViews = data.metrics?.total_views || 0;
+
+            const blob = await pdf(
+                <VectorPDFTemplate
+                    registry={data.registry}
+                    items={data.content}
+                    chartData={chartData}
+                    totalReach={totalReach}
+                    totalEng={totalEng}
+                    totalViews={totalViews}
+                />
+            ).toBlob();
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Relatorio-${data?.registry?.title?.replace(/[^a-z0-9]/gi, '_') || 'Evidence'}.pdf`;
+            link.click();
+            URL.revokeObjectURL(url);
         } catch (err) {
             console.error("PDF Generation Error", err);
-            alert(`Erro ao inicializar o PDF: ${err.message}`);
+            alert(`Erro ao gerar o PDF: ${err.message}`);
+        } finally {
             setGeneratingPdf(false);
         }
     };
@@ -306,11 +332,8 @@ export default function EvidenceDashboard() {
     const activePlatforms = PLATFORM_ORDER.filter(p => contentByPlatform[p].length > 0);
 
     return (
-        <React.Fragment>
-            {/* O CONTEÚDO PRINCIPAL (OCULTO AO IMPRIMIR) */}
-            <div className="space-y-8 animate-fade-in pb-10 print:hidden">
-
-                {/* HEADER */}
+        <div className="space-y-8 animate-fade-in pb-10">
+            {/* HEADER */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-card-dark p-8 rounded-3xl shadow-soft gap-4">
                 <div>
                     <button
@@ -427,28 +450,6 @@ export default function EvidenceDashboard() {
                     />
                 ))
             )}
-            </div>
-
-            {/* O TEMPLATE DE IMPRESSÃO (EXIBIDO APENAS AO IMPRIMIR E EM TELA CHEIA) */}
-            <div className="hidden print:block w-full h-full">
-                {data && (
-                    <PDFReportTemplate
-                        registry={data.registry}
-                        items={data.content}
-                        chartData={(() => {
-                            const platformMap = data.content.reduce((acc, item) => {
-                                const p = item.social_network || item.platform_type || 'social';
-                                acc[p] = (acc[p] || 0) + (item.views || 0);
-                                return acc;
-                            }, {});
-                            return Object.entries(platformMap).map(([name, value]) => ({ name, value }));
-                        })()}
-                        totalReach={(data.content || []).reduce((acc, item) => acc + (item.reach || 0), 0)}
-                        totalEng={data.metrics?.total_interactions || 0}
-                        totalViews={data.metrics?.total_views || 0}
-                    />
-                )}
-            </div>
-        </React.Fragment>
+        </div>
     );
 }
