@@ -253,38 +253,36 @@ export default function EvidenceDashboard() {
         setGeneratingPdf(true);
         const element = document.getElementById('pdf-report-content');
         
-        const originalGetComputedStyle = window.getComputedStyle;
-        
-        // Proxy getComputedStyle para interceptar e remover funções de cor que quebram o html2canvas (oklch, color-mix) do Tailwind v4
-        window.getComputedStyle = function(el, pseudoElt) {
-            const computedStyle = originalGetComputedStyle(el, pseudoElt);
-            
-            return new Proxy(computedStyle, {
-                get(target, prop) {
-                    const val = target[prop];
-                    if (typeof val === 'function') {
-                        return function(...args) {
-                            const res = val.apply(target, args);
-                            if (typeof res === 'string' && (res.includes('oklch') || res.includes('color('))) {
-                                return 'rgba(0,0,0,0)'; 
-                            }
-                            return res;
-                        };
-                    }
-                    if (typeof val === 'string' && (val.includes('oklch') || val.includes('color('))) {
-                        return 'rgba(0,0,0,0)';
-                    }
-                    return val;
-                }
-            });
-        };
-        
         try {
             const canvas = await html2canvas(element, {
                 scale: 2,
                 useCORS: true,
                 logging: false,
-                backgroundColor: '#ffffff'
+                backgroundColor: '#ffffff',
+                onclone: (clonedDoc) => {
+                    const originalGetComputedStyle = clonedDoc.defaultView.getComputedStyle;
+                    clonedDoc.defaultView.getComputedStyle = function(el, pseudoElt) {
+                        const computedStyle = originalGetComputedStyle(el, pseudoElt);
+                        return new Proxy(computedStyle, {
+                            get(target, prop) {
+                                const val = target[prop];
+                                if (typeof val === 'function') {
+                                    return function(...args) {
+                                        const res = val.apply(target, args);
+                                        if (typeof res === 'string' && (res.includes('oklch') || res.includes('color('))) {
+                                            return 'rgba(0,0,0,0)'; 
+                                        }
+                                        return res;
+                                    };
+                                }
+                                if (typeof val === 'string' && (val.includes('oklch') || val.includes('color('))) {
+                                    return 'rgba(0,0,0,0)';
+                                }
+                                return val;
+                            }
+                        });
+                    };
+                }
             });
             
             const imgData = canvas.toDataURL('image/jpeg', 0.98);
@@ -318,7 +316,6 @@ export default function EvidenceDashboard() {
             console.error("PDF Generation Error", err);
             alert(`Erro ao gerar PDF: ${err.message}. Tente novamente.`);
         } finally {
-            window.getComputedStyle = originalGetComputedStyle;
             setGeneratingPdf(false);
         }
     };
