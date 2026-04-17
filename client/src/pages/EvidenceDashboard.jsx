@@ -2,8 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { formatDate } from '../utils/formatters';
 import { useParams, useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
-import html2canvas from 'html2canvas-pro';
-import { jsPDF } from 'jspdf';
 import PDFReportTemplate from '../components/dashboard/PDFReportTemplate';
 
 import ContentGrid from '../components/dashboard/ContentGrid';
@@ -251,71 +249,15 @@ export default function EvidenceDashboard() {
 
     const generatePDF = async () => {
         setGeneratingPdf(true);
-        const element = document.getElementById('pdf-report-content');
-        
         try {
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                backgroundColor: '#ffffff',
-                onclone: (clonedDoc) => {
-                    const originalGetComputedStyle = clonedDoc.defaultView.getComputedStyle;
-                    clonedDoc.defaultView.getComputedStyle = function(el, pseudoElt) {
-                        const computedStyle = originalGetComputedStyle(el, pseudoElt);
-                        return new Proxy(computedStyle, {
-                            get(target, prop) {
-                                const val = target[prop];
-                                if (typeof val === 'function') {
-                                    return function(...args) {
-                                        const res = val.apply(target, args);
-                                        if (typeof res === 'string' && (res.includes('oklch') || res.includes('color('))) {
-                                            return 'rgba(0,0,0,0)'; 
-                                        }
-                                        return res;
-                                    };
-                                }
-                                if (typeof val === 'string' && (val.includes('oklch') || val.includes('color('))) {
-                                    return 'rgba(0,0,0,0)';
-                                }
-                                return val;
-                            }
-                        });
-                    };
-                }
-            });
-            
-            const imgData = canvas.toDataURL('image/jpeg', 0.98);
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-            
-            const imgWidth = canvas.width;
-            const imgHeight = canvas.height;
-            const ratio = pdfWidth / imgWidth;
-            const totalPdfHeight = imgHeight * ratio;
-            
-            let heightLeft = totalPdfHeight;
-            let position = 0;
-            
-            pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalPdfHeight);
-            heightLeft -= pageHeight;
-            
-            while (heightLeft >= 0) {
-                position = heightLeft - totalPdfHeight;
-                // Avoid empty trailing page if rounding makes heightLeft very small
-                if (heightLeft > 5) {
-                   pdf.addPage();
-                   pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalPdfHeight);
-                }
-                heightLeft -= pageHeight;
-            }
-            
-            pdf.save(`Relatorio-${data?.registry?.title?.replace(/[^a-z0-9]/gi, '_') || 'Evidence'}.pdf`);
+            // Um pequeno atraso pra garantir que o React carregou a estilização de print e o loading apareça
+            setTimeout(() => {
+                window.print();
+                setGeneratingPdf(false);
+            }, 300);
         } catch (err) {
             console.error("PDF Generation Error", err);
-            alert(`Erro ao gerar PDF: ${err.message}. Tente novamente.`);
-        } finally {
+            alert(`Erro ao inicializar o PDF: ${err.message}`);
             setGeneratingPdf(false);
         }
     };
@@ -364,9 +306,11 @@ export default function EvidenceDashboard() {
     const activePlatforms = PLATFORM_ORDER.filter(p => contentByPlatform[p].length > 0);
 
     return (
-        <div className="space-y-8 animate-fade-in pb-10">
+        <React.Fragment>
+            {/* O CONTEÚDO PRINCIPAL (OCULTO AO IMPRIMIR) */}
+            <div className="space-y-8 animate-fade-in pb-10 print:hidden">
 
-            {/* HEADER */}
+                {/* HEADER */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white dark:bg-card-dark p-8 rounded-3xl shadow-soft gap-4">
                 <div>
                     <button
@@ -423,26 +367,7 @@ export default function EvidenceDashboard() {
                 </div>
             </div>
 
-            {/* Hidden PDF Template */}
-            <div style={{ position: 'absolute', top: 0, left: 0, zIndex: -50, opacity: 0.01, pointerEvents: 'none' }}>
-                {data && (
-                    <PDFReportTemplate
-                        registry={data.registry}
-                        items={data.content}
-                        chartData={(() => {
-                            const platformMap = data.content.reduce((acc, item) => {
-                                const p = item.social_network || item.platform_type || 'social';
-                                acc[p] = (acc[p] || 0) + (item.views || 0);
-                                return acc;
-                            }, {});
-                            return Object.entries(platformMap).map(([name, value]) => ({ name, value }));
-                        })()}
-                        totalReach={(data.content || []).reduce((acc, item) => acc + (item.reach || 0), 0)}
-                        totalEng={data.metrics?.total_interactions || 0}
-                        totalViews={data.metrics?.total_views || 0}
-                    />
-                )}
-            </div>
+
 
             {/* Edit Modal */}
             {showEditModal && (
@@ -502,6 +427,28 @@ export default function EvidenceDashboard() {
                     />
                 ))
             )}
-        </div>
+            </div>
+
+            {/* O TEMPLATE DE IMPRESSÃO (EXIBIDO APENAS AO IMPRIMIR E EM TELA CHEIA) */}
+            <div className="hidden print:block w-full h-full">
+                {data && (
+                    <PDFReportTemplate
+                        registry={data.registry}
+                        items={data.content}
+                        chartData={(() => {
+                            const platformMap = data.content.reduce((acc, item) => {
+                                const p = item.social_network || item.platform_type || 'social';
+                                acc[p] = (acc[p] || 0) + (item.views || 0);
+                                return acc;
+                            }, {});
+                            return Object.entries(platformMap).map(([name, value]) => ({ name, value }));
+                        })()}
+                        totalReach={(data.content || []).reduce((acc, item) => acc + (item.reach || 0), 0)}
+                        totalEng={data.metrics?.total_interactions || 0}
+                        totalViews={data.metrics?.total_views || 0}
+                    />
+                )}
+            </div>
+        </React.Fragment>
     );
 }

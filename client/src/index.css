@@ -84,19 +84,35 @@
   background: #9CA3AF;
 }
 
-/* ─── HTML2CANVAS OKLCH FIX ───────────────────────────────────────────────
-   Tailwind v4 uses OKLCH natively, but html2canvas crashes on OKLCH. 
-   This reset forces all elements AND pseudo-elements inside the PDF to use 
-   HEX/RGBA defaults so html2canvas doesn't encounter oklch().
+/* ─── NATIVE BROWSER PDF TEMPLATE SETUP ───────────────────────────────────────────────
+   Configures the browser to render the Evidence Dashboard as a perfect PDF using window.print()
 */
-#pdf-report-content {
-    --color-gray-200: #e5e7eb;
-}
+@media print {
+    @page { 
+        margin: 0; 
+        size: A4 portrait;
+    }
+    
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        background-color: #0F172A !important; 
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
 
-:where(#pdf-report-content, #pdf-report-content *, #pdf-report-content *::before, #pdf-report-content *::after) {
-    border-color: #e5e7eb !important;
-    outline-color: transparent !important;
-    text-decoration-color: transparent !important;
-    -webkit-tap-highlight-color: transparent !important;
-    box-shadow: none !important;
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    
+    /* Ensure nothing cuts off incorrectly */
+    .break-after-page {
+        page-break-after: always;
+        break-after: page;
+    }
+    .break-inside-avoid {
+        page-break-inside: avoid;
+        break-inside: avoid;
+    }
 }
