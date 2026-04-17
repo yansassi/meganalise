@@ -762,7 +762,7 @@ const PlatformView = ({ platform }) => {
                                                                                     item.ctr >= 5 ? 'bg-yellow-100 text-yellow-700' :
                                                                                     'bg-gray-100 text-gray-500'
                                                                                 }`}>
-                                                                                    {Number(item.ctr).toFixed(1)}%
+                                                                                    {Number(item.ctr).toFixed(2)}%
                                                                                 </span>
                                                                             ) : <span className="text-gray-300">—</span>}
                                                                         </td>

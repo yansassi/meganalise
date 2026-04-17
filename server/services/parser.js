@@ -184,7 +184,8 @@ const findValue = (row, keyMap, candidates) => {
     for (const c of candidates) {
         const normalizedCandidate = normalize(c);
         if (keyMap.has(normalizedCandidate)) {
-            return row[keyMap.get(normalizedCandidate)];
+            const val = row[keyMap.get(normalizedCandidate)];
+            if (val !== undefined && val !== null && val !== '') return val;
         }
     }
 
@@ -193,10 +194,20 @@ const findValue = (row, keyMap, candidates) => {
         const normalizedCandidate = normalize(c);
         for (const [normalizedKey, originalKey] of keyMap.entries()) {
             if (normalizedKey.includes(normalizedCandidate)) {
-                return row[originalKey];
+                const val = row[originalKey];
+                if (val !== undefined && val !== null && val !== '') return val;
             }
         }
     }
+
+    // 3. Fallback to first exact match even if empty (original behavior as last resort)
+    for (const c of candidates) {
+        const normalizedCandidate = normalize(c);
+        if (keyMap.has(normalizedCandidate)) {
+            return row[keyMap.get(normalizedCandidate)];
+        }
+    }
+
     return undefined;
 };
 
@@ -211,7 +222,7 @@ const normalizeContentData = (data, isUSFormat = false) => {
         const comments = parseInt(getValue(['Respostas', 'Comentários', 'Comments', 'Comentarios', 'Comentario', 'Comment', 'Res']) || 0, 10);
         const saved = parseInt(getValue(['Salvamentos', 'Saved', 'Save']) || 0, 10);
         // Facebook video reports use 'Visualizações de 3 segundos', general reports use 'Visualizações' or 'Impressões'
-        const views = parseInt(getValue(['Visualizações de 3 segundos', 'Visualizações', 'Views', 'Visualizacoes', 'View', 'Impressões do anúncio', 'Impressões']) || 0, 10);
+        const views = parseInt(getValue(['Visualizações de 3 segundos', 'Visualizações', 'Visualizacoes', 'Views', 'View', 'Impressões do anúncio', 'Impressões', 'Reproduções', 'Reproducoes']) || 0, 10);
         const duration = parseInt(getValue(['Duração (s)', 'Duration (s)', 'Duracao']) || 0, 10);
         const clicks = parseInt(getValue(['Cliques no link', 'Link Clicks', 'Cliques']) || 0, 10);
 
@@ -271,7 +282,7 @@ const normalizeContentData = (data, isUSFormat = false) => {
             platform = 'video';
         }
 
-        const titleRaw = getValue(['Descrição', 'TÃ\xadtulo da legenda', 'Legenda', 'Título/Legenda', 'Caption', 'Título', 'TÃ\xadtulo']);
+        const titleRaw = getValue(['Descrição', 'Descricao', 'TÃ\xadtulo da legenda', 'Legenda', 'Título/Legenda', 'Titulo/Legenda', 'Caption', 'Título', 'Titulo', 'TÃ\xadtulo', 'Texto do post', 'Texto']);
         let title = titleRaw;
 
         // Fallback para Facebook Stories: se não tem link e veio de relatório de vídeo, ou título indica

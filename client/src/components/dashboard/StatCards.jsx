@@ -115,7 +115,7 @@ const StatCards = ({ stats = [], onCardClick }) => {
                                         <span className="material-icons-round text-[12px] mr-0.5">
                                             {stat.trend > 0 ? 'trending_up' : 'trending_down'}
                                         </span>
-                                        {stat.trend > 0 ? '+' : ''}{stat.trend}%
+                                        {stat.trend > 0 ? '+' : ''}{stat.trend.toFixed(2)}%
                                     </span>
                                 )}
                             </div>
