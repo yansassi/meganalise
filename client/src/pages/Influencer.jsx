@@ -32,22 +32,34 @@ export default function Influencer() {
     });
 
     const fetchRegistries = async () => {
-        setLoading(true);
-        const data = await dataService.getEvidenceRegistries();
-        const influencers = data.filter(r => r.type === 'influencer');
-        setRegistries(influencers);
-        setLoading(false);
+        try {
+            setLoading(true);
+            console.log('Fetching evidence registries...');
+            const data = await dataService.getEvidenceRegistries();
+            console.log('Raw registries from DB:', data);
+            
+            const influencers = data.filter(r => {
+                const type = (r.type || '').toLowerCase();
+                return type === 'influencer';
+            });
+            
+            console.log('Filtered influencers:', influencers);
+            setRegistries(influencers);
+            setLoading(false);
 
-        // Fetch metrics for "My Influencers" (Contract Date)
-        influencers.forEach(async (reg) => {
-            try {
-                // Determine implicit date range if none saved? Actually registry has dates.
-                const { metrics } = await dataService.calculateRegistryMetrics(reg, null, activePlatform);
-                setMetricsCache(prev => ({ ...prev, [reg.id]: metrics }));
-            } catch (e) {
-                console.error("Failed to load metrics for", reg.title);
-            }
-        });
+            // Fetch metrics for "My Influencers" (Contract Date)
+            influencers.forEach(async (reg) => {
+                try {
+                    const { metrics } = await dataService.calculateRegistryMetrics(reg, null, activePlatform);
+                    setMetricsCache(prev => ({ ...prev, [reg.id]: metrics }));
+                } catch (e) {
+                    console.error("Failed to load metrics for", reg.title);
+                }
+            });
+        } catch (error) {
+            console.error('Error in fetchRegistries:', error);
+            setLoading(false);
+        }
     };
 
     // Refetch rankings when date range changes or registries load or platform changes
@@ -144,6 +156,15 @@ export default function Influencer() {
                 keywords.unshift(`@${handle}`);
             }
 
+            console.log('Saving influencer evidence with payload:', {
+                title: formData.title,
+                start_date: formData.start_date,
+                end_date: formData.end_date,
+                keywords: keywords,
+                type: 'influencer',
+                country: formData.country
+            });
+
             await dataService.saveEvidenceRegistry({
                 title: formData.title,
                 start_date: formData.start_date,
@@ -155,8 +176,10 @@ export default function Influencer() {
 
             setShowModal(false);
             setFormData({ title: '', start_date: '', end_date: '', user_handle: '', country: 'BR' });
-            fetchRegistries();
+            await fetchRegistries();
+            alert('Relatório de influenciador criado com sucesso! Ele aparecerá aqui na aba de Influenciadores.');
         } catch (error) {
+            console.error('Error saving influencer registry:', error);
             alert('Erro ao salvar influencer: ' + error.message);
         }
     };

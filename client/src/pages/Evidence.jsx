@@ -22,8 +22,8 @@ export default function Evidence() {
     const fetchRegistries = async () => {
         setLoading(true);
         const data = await dataService.getEvidenceRegistries();
-        // Filter out Influencer type registries
-        setRegistries(data.filter(r => r.type !== 'influencer'));
+        // Filtrar apenas o que NÃO é influenciador (que fica na outra aba)
+        setRegistries(data.filter(r => (r.type || '').toLowerCase() !== 'influencer'));
         setLoading(false);
     };
 
@@ -80,7 +80,13 @@ export default function Evidence() {
 
             setShowModal(false);
             setFormData({ title: '', start_date: '', end_date: '', keywords: '', country: 'BR', platforms: ['instagram', 'tiktok', 'facebook', 'youtube'] });
-            fetchRegistries();
+            await fetchRegistries();
+            
+            if (formData.type === 'influencer') {
+                alert('Registro de Influenciador criado! Por favor, verifique a aba "Influenciadores" para ver este relatório.');
+            } else {
+                alert('Registro de evidência criado com sucesso!');
+            }
         } catch (error) {
             alert('Erro ao salvar registro: ' + error.message);
         }
