@@ -1,643 +1,162 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
-import { formatNumber } from '../utils/formatters';
-import DateRangeFilter from '../components/dashboard/DateRangeFilter';
 
 export default function Influencer() {
-    const navigate = useNavigate();
-    const [registries, setRegistries] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
-    const [showTalentModal, setShowTalentModal] = useState(false);
     const [influencerList, setInfluencerList] = useState([]);
-    const [isSavingTalent, setIsSavingTalent] = useState(false);
-    const [talentFormData, setTalentFormData] = useState({ name: '', handle: '' });
-
-    // Metrics Caches
-    const [metricsCache, setMetricsCache] = useState({}); // Cache for "My Influencers" (Contract Date)
-    const [rankingMetricsCache, setRankingMetricsCache] = useState({}); // Cache for Rankings (Filter Date)
-    const [rankingDateRange, setRankingDateRange] = useState({ startDate: null, endDate: null });
-
-    // Platform Filter
-    const [activePlatform, setActivePlatform] = useState('all');
-
-    // Form State
-    const [formData, setFormData] = useState({
-        title: '',
-        start_date: '',
-        end_date: '',
-        user_handle: '',
-        country: 'BR'
-    });
-
-    const fetchRegistries = async () => {
-        try {
-            setLoading(true);
-            console.log('Fetching evidence registries...');
-            const data = await dataService.getEvidenceRegistries();
-            console.log('Raw registries from DB:', data.length, 'records found');
-            data.forEach(r => console.log(`- Registry: ${r.title}, Type: ${r.type}, Country: ${r.country}`));
-            
-            const influencers = data.filter(r => {
-                const type = (r.type || '').toLowerCase().trim();
-                const match = type === 'influencer';
-                return match;
-            });
-            
-            console.log('Filtered influencers:', influencers);
-            setRegistries(influencers);
-            setLoading(false);
-
-            // Fetch metrics for "My Influencers" (Contract Date)
-            influencers.forEach(async (reg) => {
-                try {
-                    const { metrics } = await dataService.calculateRegistryMetrics(reg, null, activePlatform);
-                    setMetricsCache(prev => ({ ...prev, [reg.id]: metrics }));
-                } catch (e) {
-                    console.error("Failed to load metrics for", reg.title);
-                }
-            });
-        } catch (error) {
-            console.error('Error in fetchRegistries:', error);
-            setLoading(false);
-        }
-    };
-
-    // Refetch rankings when date range changes or registries load or platform changes
-    useEffect(() => {
-        if (registries.length > 0) {
-            // Re-fetch "My Influencers" metrics if platform changes (even if registries didn't change, we need to update cache)
-            registries.forEach(async (reg) => {
-                try {
-                    const { metrics } = await dataService.calculateRegistryMetrics(reg, null, activePlatform);
-                    setMetricsCache(prev => ({ ...prev, [reg.id]: metrics }));
-                } catch (e) { console.error(e); }
-            });
-
-            if (rankingDateRange.startDate && rankingDateRange.endDate) {
-                fetchRankingMetrics();
-            }
-        }
-    }, [registries, rankingDateRange, activePlatform]);
-
-    const fetchRankingMetrics = () => {
-        registries.forEach(async (reg) => {
-            try {
-                // Pass override dates AND platform
-                const { metrics } = await dataService.calculateRegistryMetrics(reg, rankingDateRange, activePlatform);
-                setRankingMetricsCache(prev => ({ ...prev, [reg.id]: metrics }));
-            } catch (e) {
-                console.error("Failed to load ranking metrics for", reg.title);
-            }
-        });
-    };
+    const [loading, setLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
+    const [formData, setFormData] = useState({ name: '', handle: '' });
 
     useEffect(() => {
-        fetchRegistries();
-        loadInfluencerChoices();
+        loadInfluencers();
     }, []);
 
-    const loadInfluencerChoices = async () => {
-        const data = await dataService.getInfluencers();
-        setInfluencerList(data);
-    };
-
-    const handleInfluencerChoice = (infId) => {
-        const inf = influencerList.find(i => i.id === infId);
-        if (inf) {
-            setFormData(prev => ({
-                ...prev,
-                title: inf.name,
-                user_handle: `@${inf.handle.replace('@', '')}`,
-                type: 'influencer'
-            }));
-        }
-    };
-
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleSaveTalent = async (e) => {
-        e.preventDefault();
-        if (!talentFormData.name || !talentFormData.handle) return;
-        
-        setIsSavingTalent(true);
+    const loadInfluencers = async () => {
+        setLoading(true);
         try {
-            await dataService.createInfluencer(talentFormData);
-            setTalentFormData({ name: '', handle: '' });
-            loadInfluencerChoices();
+            const data = await dataService.getInfluencers();
+            setInfluencerList(data);
         } catch (error) {
-            console.error('Error saving talent:', error);
-            alert('Erro ao salvar no banco de talentos.');
+            console.error('Error loading influencers:', error);
         } finally {
-            setIsSavingTalent(false);
+            setLoading(false);
         }
     };
 
-    const handleDeleteTalent = async (id) => {
-        if (!window.confirm('Tem certeza que deseja remover este influenciador do banco de talentos?')) return;
+    const handleSave = async (e) => {
+        e.preventDefault();
+        if (!formData.name || !formData.handle) return;
+        
+        setIsSaving(true);
+        try {
+            await dataService.createInfluencer({
+                name: formData.name,
+                handle: formData.handle.replace('@', '').trim()
+            });
+            setFormData({ name: '', handle: '' });
+            await loadInfluencers();
+            alert('Influenciador cadastrado no banco de talentos!');
+        } catch (error) {
+            console.error('Error saving influencer:', error);
+            alert('Erro ao salvar influenciador.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Deseja remover este influenciador do banco de talentos? Isso não apagará os relatórios já criados.')) return;
         try {
             await dataService.deleteInfluencer(id);
-            loadInfluencerChoices();
+            await loadInfluencers();
         } catch (error) {
-            console.error('Error deleting talent:', error);
+            console.error('Error deleting influencer:', error);
         }
     };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const handle = formData.user_handle.trim();
-            const keywords = [handle];
-            if (handle.startsWith('@')) {
-                keywords.push(handle.substring(1));
-            } else {
-                keywords.unshift(`@${handle}`);
-            }
-
-            console.log('Saving influencer evidence with payload:', {
-                title: formData.title,
-                start_date: formData.start_date,
-                end_date: formData.end_date,
-                keywords: keywords,
-                type: 'influencer',
-                country: formData.country
-            });
-
-            await dataService.saveEvidenceRegistry({
-                title: formData.title,
-                start_date: formData.start_date,
-                end_date: formData.end_date,
-                keywords: keywords,
-                type: 'influencer',
-                country: formData.country
-            });
-
-            setShowModal(false);
-            setFormData({ title: '', start_date: '', end_date: '', user_handle: '', country: 'BR' });
-            await fetchRegistries();
-            alert('Relatório de influenciador criado com sucesso! Ele aparecerá aqui na aba de Influenciadores.');
-        } catch (error) {
-            console.error('Error saving influencer registry:', error);
-            alert('Erro ao salvar influencer: ' + error.message);
-        }
-    };
-
-    const handleDelete = async (e, id) => {
-        e.stopPropagation();
-        if (window.confirm('Tem certeza que deseja excluir este influencer?')) {
-            await dataService.deleteEvidenceRegistry(id);
-            fetchRegistries();
-        }
-    };
-
-    const handleImageUpload = async (e, registry) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        try {
-            await dataService.updateRegistryImage(registry.id, file);
-            fetchRegistries();
-        } catch (error) {
-            alert('Erro ao enviar imagem: ' + error.message);
-        }
-    };
-
-    // Ranking Helpers
-    const getTop5 = (metricKey) => {
-        return [...registries]
-            .map(reg => ({
-                ...reg,
-                metricValue: rankingMetricsCache[reg.id] ? rankingMetricsCache[reg.id][metricKey] : 0,
-                metrics: rankingMetricsCache[reg.id]
-            }))
-            .sort((a, b) => b.metricValue - a.metricValue)
-            .slice(0, 5);
-    };
-
-    const topViews = getTop5('total_views');
-    const topLikes = getTop5('total_likes');
-    const topComments = getTop5('total_comments');
 
     return (
         <div className="space-y-8 animate-fade-in pb-10">
             {/* Header */}
             <div className="flex justify-between items-center bg-white dark:bg-card-dark p-6 rounded-3xl shadow-soft">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">Gestão de Influenciadores [v2.1]</h1>
-                    <p className="text-slate-500 font-medium">Monitore menções e conteúdos de influenciadores parceiros</p>
+                    <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">Banco de Talentos</h1>
+                    <p className="text-slate-500 font-medium">Gerencie o cadastro de influenciadores para relatórios rápidos</p>
                 </div>
-                <div className="flex gap-3">
-                    <button
-                        onClick={() => setShowTalentModal(true)}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-6 py-3 rounded-2xl font-bold text-sm transition-all flex items-center gap-2"
-                    >
-                        <span className="material-icons-round">contacts</span>
-                        Banco de Talentos
-                    </button>
-                    <button
-                        onClick={() => setShowModal(true)}
-                        className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-lg hover:shadow-purple-500/30 flex items-center gap-2"
-                    >
-                        <span className="material-icons-round">add_chart</span>
-                        Novo Relatório
-                    </button>
+                <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 rounded-2xl font-bold text-sm">
+                    <span className="material-icons-round">groups</span>
+                    {influencerList.length} Cadastrados
                 </div>
             </div>
 
-            {/* Platform Filter Tabs */}
-            <div className="flex gap-4 border-b border-gray-200 dark:border-gray-700 pb-1 overflow-x-auto">
-                {['all', 'instagram', 'tiktok', 'facebook'].map(platform => (
-                    <button
-                        key={platform}
-                        onClick={() => setActivePlatform(platform)}
-                        className={`pb-3 px-2 text-sm font-bold capitalize transition-all border-b-2 ${activePlatform === platform
-                            ? 'border-purple-600 text-purple-600'
-                            : 'border-transparent text-gray-400 hover:text-gray-600'
-                            }`}
-                    >
-                        {platform === 'all' ? 'Todos' : platform}
-                    </button>
-                ))}
-            </div>
-
-            {/* Section 1: Meus Influenciadores (Horizontal Scroll) */}
-            <div>
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-                    <span className="material-icons-round text-purple-600">groups</span>
-                    Meus Influenciadores
+            {/* Cadastro Rápido */}
+            <div className="bg-white dark:bg-card-dark p-8 rounded-3xl shadow-soft border border-purple-100/50">
+                <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
+                    <span className="material-icons-round text-purple-500">person_add</span>
+                    Cadastrar Novo Influenciador
                 </h2>
-
-                <div className="flex gap-4 overflow-x-auto pb-6 pt-2 snap-x custom-scrollbar">
-                    {loading ? (
-                        <div className="w-full text-center py-10 text-slate-400">Carregando...</div>
-                    ) : registries.length === 0 ? (
-                        <div className="w-full text-center py-10 text-slate-400 bg-white dark:bg-card-dark rounded-3xl border border-dashed border-slate-200">
-                            Nenhum influenciador cadastrado.
-                        </div>
-                    ) : (
-                        registries.map(reg => {
-                            const metrics = metricsCache[reg.id];
-                            const imageUrl = dataService.getRegistryImageUrl(reg);
-
-                            return (
-                                <div
-                                    key={reg.id}
-                                    className="min-w-[280px] w-[280px] bg-white dark:bg-card-dark rounded-3xl shadow-soft hover:shadow-xl transition-all group relative border border-transparent hover:border-purple-500/20 overflow-hidden snap-start flex flex-col"
-                                >
-                                    {/* Top: Image & Actions */}
-                                    <div className="h-40 bg-gray-50 relative group/img cursor-pointer"
-                                        onClick={() => document.getElementById(`file-${reg.id}`).click()}>
-
-                                        <input
-                                            type="file"
-                                            id={`file-${reg.id}`}
-                                            className="hidden"
-                                            accept="image/*"
-                                            onChange={(e) => handleImageUpload(e, reg)}
-                                        />
-
-                                        {imageUrl ? (
-                                            <>
-                                                <img src={imageUrl} alt={reg.title} className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-700" />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                                                    <span className="material-icons-round text-white">edit</span>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2">
-                                                <span className="material-icons-round text-3xl">add_a_photo</span>
-                                                <span className="text-[10px] uppercase font-bold">Adicionar Foto</span>
-                                            </div>
-                                        )}
-
-                                        {/* Delete Button */}
-                                        <button
-                                            onClick={(e) => handleDelete(e, reg.id)}
-                                            className="absolute top-2 right-2 p-1.5 text-red-500 bg-white/90 hover:bg-white rounded-full transition-all opacity-0 group-hover:opacity-100 shadow-sm z-10"
-                                        >
-                                            <span className="material-icons-round text-sm">delete</span>
-                                        </button>
-
-                                        {/* Country Badge */}
-                                        <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-md bg-white/90 backdrop-blur-sm text-[10px] font-bold text-slate-700 uppercase shadow-sm">
-                                            {reg.country === 'BR' ? '🇧🇷' : '🇵🇾'}
-                                        </div>
-                                    </div>
-
-                                    {/* Bottom: Info */}
-                                    <div
-                                        className="p-5 flex flex-col gap-3 flex-1 cursor-pointer"
-                                        onClick={() => navigate(`/evidence/${reg.id}`)}
-                                    >
-                                        <div>
-                                            <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight mb-1 truncate" title={reg.title}>{reg.title}</h3>
-                                            <p className="text-xs text-purple-600 font-semibold truncate">{reg.keywords ? reg.keywords[0] : ''}</p>
-                                        </div>
-
-                                        <div className="mt-auto pt-3 border-t border-slate-50 dark:border-white/5 flex justify-between items-center">
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Período</span>
-                                                <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                                                    {new Date(reg.start_date).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                            <div className="flex flex-col items-end">
-                                                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Views</span>
-                                                <div className="flex items-center gap-1 text-slate-800 dark:text-white font-black text-sm">
-                                                    <span className="material-icons-round text-purple-500 text-xs">visibility</span>
-                                                    {metrics ? formatNumber(metrics.total_views) : '-'}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })
-                    )}
-                </div>
+                <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase ml-1">Nome do Influenciador</label>
+                        <input 
+                            type="text"
+                            placeholder="Ex: Neymar Jr"
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all font-bold"
+                            value={formData.name}
+                            onChange={e => setFormData({ ...formData, name: e.target.value })}
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-400 uppercase ml-1">Handle / @Usuário</label>
+                        <input 
+                            type="text"
+                            placeholder="Ex: neymarjr"
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 transition-all font-bold"
+                            value={formData.handle}
+                            onChange={e => setFormData({ ...formData, handle: e.target.value })}
+                            required
+                        />
+                    </div>
+                    <div className="flex items-end pb-1">
+                        <button 
+                            type="submit" 
+                            disabled={isSaving}
+                            className="w-full h-[52px] bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-purple-500/30 disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {isSaving ? 'Salvando...' : (
+                                <>
+                                    <span className="material-icons-round">save</span>
+                                    Salvar no Banco
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
             </div>
 
-            {/* Section 2: Rankings (Top 5) */}
-            <div>
-                <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-6 gap-4">
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
-                        <span className="material-icons-round text-amber-500">emoji_events</span>
-                        Top Influenciadores
-                    </h2>
-                    <DateRangeFilter onFilterChange={setRankingDateRange} className="w-full md:w-auto shadow-none border-none bg-transparent p-0" />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* Top Views */}
-                    <div className="bg-white dark:bg-card-dark rounded-3xl shadow-soft p-6">
-                        <h3 className="text-md font-bold text-slate-700 dark:text-white mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
-                            <span className="material-icons-round text-blue-500">visibility</span>
-                            Top Visualizações
-                        </h3>
-                        <div className="space-y-4">
-                            {topViews.map((reg, index) => (
-                                <div key={reg.id} className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-slate-200 text-slate-600' : index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-slate-50 text-slate-400'}`}>
-                                        {index + 1}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{reg.title}</p>
-                                        <p className="text-[10px] text-slate-400">{reg.country === 'BR' ? '🇧🇷' : '🇵🇾'}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-black text-blue-600">{reg.metrics ? formatNumber(reg.metrics.total_views) : '-'}</p>
-                                        <p className="text-[10px] text-slate-400 font-medium">Views</p>
-                                    </div>
-                                </div>
-                            ))}
-                            {topViews.length === 0 && <div className="text-center text-slate-400 text-sm py-4">Sem dados no período</div>}
-                        </div>
+            {/* Lista de Influenciadores */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {loading ? (
+                    <div className="col-span-full py-20 text-center text-slate-400">Carregando banco de talentos...</div>
+                ) : influencerList.length === 0 ? (
+                    <div className="col-span-full py-20 bg-white dark:bg-card-dark rounded-3xl border border-dashed border-slate-200 text-center text-slate-400 flex flex-col items-center gap-4">
+                        <span className="material-icons-round text-6xl opacity-10">contacts</span>
+                        <p className="font-medium">Nenhum influenciador cadastrado ainda.</p>
                     </div>
-
-                    {/* Top Likes */}
-                    <div className="bg-white dark:bg-card-dark rounded-3xl shadow-soft p-6">
-                        <h3 className="text-md font-bold text-slate-700 dark:text-white mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
-                            <span className="material-icons-round text-red-500">favorite</span>
-                            Top Curtidas
-                        </h3>
-                        <div className="space-y-4">
-                            {topLikes.map((reg, index) => (
-                                <div key={reg.id} className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-slate-200 text-slate-600' : index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-slate-50 text-slate-400'}`}>
-                                        {index + 1}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{reg.title}</p>
-                                        <p className="text-[10px] text-slate-400">{reg.country === 'BR' ? '🇧🇷' : '🇵🇾'}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-black text-red-600">{reg.metrics ? formatNumber(reg.metrics.total_likes) : '-'}</p>
-                                        <p className="text-[10px] text-slate-400 font-medium">Curtidas</p>
-                                    </div>
+                ) : (
+                    influencerList.map(inf => (
+                        <div key={inf.id} className="bg-white dark:bg-card-dark p-6 rounded-3xl shadow-soft border border-transparent hover:border-purple-500/20 hover:shadow-xl transition-all group relative">
+                            <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white flex items-center justify-center font-black text-xl shadow-lg shadow-purple-500/20">
+                                    {inf.name.charAt(0).toUpperCase()}
                                 </div>
-                            ))}
-                            {topLikes.length === 0 && <div className="text-center text-slate-400 text-sm py-4">Sem dados no período</div>}
-                        </div>
-                    </div>
-
-                    {/* Top Comments */}
-                    <div className="bg-white dark:bg-card-dark rounded-3xl shadow-soft p-6">
-                        <h3 className="text-md font-bold text-slate-700 dark:text-white mb-4 flex items-center gap-2 border-b border-slate-100 dark:border-white/5 pb-3">
-                            <span className="material-icons-round text-sky-500">chat_bubble</span>
-                            Top Comentários
-                        </h3>
-                        <div className="space-y-4">
-                            {topComments.map((reg, index) => (
-                                <div key={reg.id} className="flex items-center gap-3">
-                                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${index === 0 ? 'bg-amber-100 text-amber-600' : index === 1 ? 'bg-slate-200 text-slate-600' : index === 2 ? 'bg-orange-100 text-orange-600' : 'bg-slate-50 text-slate-400'}`}>
-                                        {index + 1}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{reg.title}</p>
-                                        <p className="text-[10px] text-slate-400">{reg.country === 'BR' ? '🇧🇷' : '🇵🇾'}</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-sm font-black text-sky-600">{reg.metrics ? formatNumber(reg.metrics.total_comments) : '-'}</p>
-                                        <p className="text-[10px] text-slate-400 font-medium">Comentários</p>
-                                    </div>
+                                <div className="flex-1 min-w-0">
+                                    <h3 className="text-lg font-bold text-slate-800 dark:text-white truncate">{inf.name}</h3>
+                                    <p className="text-purple-600 font-black text-sm">@{inf.handle}</p>
                                 </div>
-                            ))}
-                            {topComments.length === 0 && <div className="text-center text-slate-400 text-sm py-4">Sem dados no período</div>}
+                            </div>
+                            
+                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button 
+                                    onClick={() => handleDelete(inf.id)}
+                                    className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                                    title="Remover"
+                                >
+                                    <span className="material-icons-round text-lg">delete</span>
+                                </button>
+                            </div>
+
+                            <div className="mt-6 pt-4 border-t border-slate-50 dark:border-white/5 flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                <span>ID: {inf.id.substring(0, 8)}</span>
+                                <span className="flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                                    Ativo
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    ))
+                )}
             </div>
-
-            {/* Modal de Relatório */}
-            {showModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white dark:bg-card-dark w-full max-w-lg rounded-3xl shadow-2xl p-8 animate-scale-in">
-                        <div className="flex justify-between items-center mb-6">
-                            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Gerar Relatório de Influenciador</h2>
-                            <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
-                                <span className="material-icons-round">close</span>
-                            </button>
-                        </div>
-
-                        <form onSubmit={handleSubmit} className="space-y-5">
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">1. Selecionar Influenciador do Banco</label>
-                                <select 
-                                    className="w-full px-4 py-3 rounded-xl bg-purple-50 border border-purple-100 focus:border-purple-500 outline-none transition-all font-bold text-purple-600 appearance-none mb-1"
-                                    onChange={(e) => handleInfluencerChoice(e.target.value)}
-                                >
-                                    <option value="">-- Escolha um influenciador --</option>
-                                    {influencerList.map(inf => (
-                                        <option key={inf.id} value={inf.id}>{inf.name} (@{inf.handle})</option>
-                                    ))}
-                                </select>
-                                <p className="text-[10px] text-slate-400 ml-1 mb-4">Caso não encontre, adicione primeiro no "Banco de Talentos".</p>
-
-                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Título do Relatório / Campanha</label>
-                                <input
-                                    type="text"
-                                    name="title"
-                                    required
-                                    placeholder="Ex: Monitoramento Mensal - Yan Casa"
-                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all font-medium"
-                                    value={formData.title}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Usuário Alvo (@)</label>
-                                <input
-                                    type="text"
-                                    name="user_handle"
-                                    required
-                                    placeholder="Ex: @yancasa"
-                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all font-medium"
-                                    value={formData.user_handle}
-                                    onChange={handleInputChange}
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">País / Idioma</label>
-                                <select
-                                    name="country"
-                                    required
-                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-purple-500 outline-none transition-all font-medium text-slate-600 appearance-none"
-                                    value={formData.country}
-                                    onChange={handleInputChange}
-                                >
-                                    <option value="BR">🇧🇷 Brasil (Português)</option>
-                                    <option value="PY">🇵🇾 Paraguai (Espanhol)</option>
-                                </select>
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Data Início</label>
-                                    <input
-                                        type="date"
-                                        name="start_date"
-                                        required
-                                        className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-purple-500 outline-none transition-all font-medium text-slate-600"
-                                        value={formData.start_date}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Data Fim</label>
-                                    <input
-                                        type="date"
-                                        name="end_date"
-                                        required
-                                        className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-purple-500 outline-none transition-all font-medium text-slate-600"
-                                        value={formData.end_date}
-                                        onChange={handleInputChange}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3 pt-4">
-                                <button
-                                    type="button"
-                                    onClick={() => setShowModal(false)}
-                                    className="flex-1 px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-lg hover:shadow-purple-500/30 transition-all"
-                                >
-                                    Criar Relatório
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            )}
-
-            {/* Modal de Banco de Talentos */}
-            {showTalentModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-                    <div className="bg-white dark:bg-card-dark w-full max-w-2xl rounded-3xl shadow-2xl p-8 animate-scale-in max-h-[90vh] flex flex-col">
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Banco de Talentos</h2>
-                                <p className="text-sm text-slate-500">Cadastre os @handles base para gerar relatórios rapidamente.</p>
-                            </div>
-                            <button onClick={() => setShowTalentModal(false)} className="text-slate-400 hover:text-slate-600">
-                                <span className="material-icons-round">close</span>
-                            </button>
-                        </div>
-
-                        {/* Formulário de Adição Rápida */}
-                        <form onSubmit={handleSaveTalent} className="flex gap-3 mb-8 bg-slate-50 dark:bg-white/5 p-4 rounded-2xl">
-                            <div className="flex-1">
-                                <input 
-                                    type="text"
-                                    placeholder="Nome (Ex: Neymar)"
-                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-purple-500 text-sm font-bold"
-                                    value={talentFormData.name}
-                                    onChange={e => setTalentFormData({ ...talentFormData, name: e.target.value })}
-                                    required
-                                />
-                            </div>
-                            <div className="flex-1">
-                                <input 
-                                    type="text"
-                                    placeholder="Handle (Ex: neymarjr)"
-                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-purple-500 text-sm font-bold"
-                                    value={talentFormData.handle}
-                                    onChange={e => setTalentFormData({ ...talentFormData, handle: e.target.value })}
-                                    required
-                                />
-                            </div>
-                            <button 
-                                type="submit" 
-                                disabled={isSavingTalent}
-                                className="bg-purple-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-purple-700 disabled:opacity-50"
-                            >
-                                {isSavingTalent ? '...' : 'Adicionar'}
-                            </button>
-                        </form>
-
-                        {/* Lista de Talentos */}
-                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {influencerList.map(inf => (
-                                    <div key={inf.id} className="flex items-center justify-between p-4 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-black text-xs">
-                                                {inf.name.charAt(0).toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-bold text-slate-800 dark:text-white">{inf.name}</p>
-                                                <p className="text-xs text-purple-500 font-bold">@{inf.handle}</p>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleDeleteTalent(inf.id)}
-                                            className="p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                        >
-                                            <span className="material-icons-round text-sm">delete</span>
-                                        </button>
-                                    </div>
-                                ))}
-                                {influencerList.length === 0 && (
-                                    <div className="col-span-full py-10 text-center text-slate-400">
-                                        Nenhum talento cadastrado.
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

@@ -22,8 +22,8 @@ export default function Evidence() {
     const fetchRegistries = async () => {
         setLoading(true);
         const data = await dataService.getEvidenceRegistries();
-        // Filtrar apenas o que NÃO é influenciador (que fica na outra aba)
-        setRegistries(data.filter(r => (r.type || '').toLowerCase() !== 'influencer'));
+        // Mostrar todas as evidências (Influenciadores e Palavras-chave)
+        setRegistries(data);
         setLoading(false);
     };
 
@@ -81,12 +81,7 @@ export default function Evidence() {
             setShowModal(false);
             setFormData({ title: '', start_date: '', end_date: '', keywords: '', country: 'BR', platforms: ['instagram', 'tiktok', 'facebook', 'youtube'] });
             await fetchRegistries();
-            
-            if (formData.type === 'influencer') {
-                alert('Registro de Influenciador criado! Por favor, verifique a aba "Influenciadores" para ver este relatório.');
-            } else {
-                alert('Registro de evidência criado com sucesso!');
-            }
+            alert('Registro criado com sucesso!');
         } catch (error) {
             alert('Erro ao salvar registro: ' + error.message);
         }
@@ -144,14 +139,25 @@ export default function Evidence() {
 
                             <div className="mb-4">
                                 <div className="flex justify-between items-start">
-                                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mb-4 text-2xl font-bold shadow-sm">
-                                        <span className="material-icons-round">folder_special</span>
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-2xl font-bold shadow-sm ${
+                                        (reg.type || '').toLowerCase() === 'influencer' ? 'bg-purple-50 text-purple-600' : 'bg-blue-50 text-blue-600'
+                                    }`}>
+                                        <span className="material-icons-round">
+                                            {(reg.type || '').toLowerCase() === 'influencer' ? 'person' : 'folder_special'}
+                                        </span>
                                     </div>
-                                    <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
-                                        <span className="text-xs font-bold text-slate-500 uppercase">{reg.country === 'BR' ? 'Brasil' : reg.country === 'PY' ? 'Paraguai' : reg.country}</span>
+                                    <div className="flex flex-col items-end gap-1">
+                                        <div className="flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                                            <span className="text-xs font-bold text-slate-500 uppercase">{reg.country === 'BR' ? 'Brasil' : reg.country === 'PY' ? 'Paraguai' : reg.country}</span>
+                                        </div>
+                                        <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-md ${
+                                            (reg.type || '').toLowerCase() === 'influencer' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                                        }`}>
+                                            {(reg.type || '').toLowerCase() === 'influencer' ? 'Influenciador' : 'Palavra-chave'}
+                                        </span>
                                     </div>
                                 </div>
-                                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-1">{reg.title}</h3>
+                                <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-1 truncate" title={reg.title}>{reg.title}</h3>
                                 <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
                                     {new Date(reg.start_date).toLocaleDateString()} - {new Date(reg.end_date).toLocaleDateString()}
                                 </p>
