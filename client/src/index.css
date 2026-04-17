@@ -94,8 +94,9 @@
 }
 
 :where(#pdf-report-content, #pdf-report-content *, #pdf-report-content *::before, #pdf-report-content *::after) {
-    border-color: inherit;
-    outline-color: transparent;
-    text-decoration-color: transparent;
-    -webkit-tap-highlight-color: transparent;
+    border-color: #e5e7eb !important;
+    outline-color: transparent !important;
+    text-decoration-color: transparent !important;
+    -webkit-tap-highlight-color: transparent !important;
+    box-shadow: none !important;
 }

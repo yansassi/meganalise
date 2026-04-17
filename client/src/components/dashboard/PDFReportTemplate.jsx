@@ -11,8 +11,9 @@ const PDFReportTemplate = ({ registry, items, chartData, totalReach, totalEng, t
             {/* Cover Page */}
             <div className="min-h-[1100px] flex flex-col justify-between p-16 bg-[#0F172A] text-[#ffffff] relative overflow-hidden break-after-page">
                 {/* Background Decor */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-[#2563EB] rounded-full blur-[150px] opacity-20 transform translate-x-1/3 -translate-y-1/3" />
-                <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#9333EA] rounded-full blur-[150px] opacity-20 transform -translate-x-1/3 translate-y-1/3" />
+                <div className="absolute top-0 right-0 w-96 h-96 bg-[#2563EB] rounded-full opacity-10 transform translate-x-1/3 -translate-y-1/3" />
+                <div className="absolute bottom-0 left-0 w-96 h-96 bg-[#9333EA] rounded-full opacity-10 transform -translate-x-1/3 translate-y-1/3" />
+
 
                 <div className="relative z-10">
                     <div className="inline-block px-4 py-2 rounded-full border border-[rgba(255,255,255,0.2)] bg-[rgba(255,255,255,0.1)] text-[#93C5FD] text-sm font-bold tracking-widest uppercase mb-8">
@@ -56,15 +57,15 @@ const PDFReportTemplate = ({ registry, items, chartData, totalReach, totalEng, t
                 <div className="grid grid-cols-3 gap-8 mb-16">
                     <div className="p-6 bg-[#EFF6FF] rounded-2xl border border-[#DBEAFE]">
                         <p className="text-sm font-bold text-[#2563EB] uppercase tracking-wide mb-2">Alcance Total</p>
-                        <p className="text-4xl font-black text-[#111827]">{totalReach.toLocaleString()}</p>
+                        <p className="text-4xl font-black text-[#111827]">{totalReach?.toLocaleString() || '-'}</p>
                     </div>
                     <div className="p-6 bg-[#FAF5FF] rounded-2xl border border-[#F3E8FF]">
                         <p className="text-sm font-bold text-[#9333EA] uppercase tracking-wide mb-2">Engajamento Total</p>
-                        <p className="text-4xl font-black text-[#111827]">{totalEng.toLocaleString()}</p>
+                        <p className="text-4xl font-black text-[#111827]">{totalEng?.toLocaleString() || '-'}</p>
                     </div>
                     <div className="p-6 bg-[#F0FDF4] rounded-2xl border border-[#DCFCE7]">
                         <p className="text-sm font-bold text-[#16A34A] uppercase tracking-wide mb-2">Visualizações</p>
-                        <p className="text-4xl font-black text-[#111827]">{totalViews.toLocaleString()}</p>
+                        <p className="text-4xl font-black text-[#111827]">{totalViews?.toLocaleString() || '-'}</p>
                     </div>
                 </div>
 

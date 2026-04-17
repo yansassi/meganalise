@@ -290,7 +290,7 @@ export default function EvidenceDashboard() {
             pdf.save(`Relatorio-${data?.registry?.title?.replace(/[^a-z0-9]/gi, '_') || 'Evidence'}.pdf`);
         } catch (err) {
             console.error("PDF Generation Error", err);
-            alert("Erro ao gerar PDF. Tente novamente.");
+            alert(`Erro ao gerar PDF: ${err.message}. Tente novamente.`);
         } finally {
             setGeneratingPdf(false);
         }
@@ -400,7 +400,7 @@ export default function EvidenceDashboard() {
             </div>
 
             {/* Hidden PDF Template */}
-            <div style={{ position: 'absolute', top: '-10000px', left: '-10000px' }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, zIndex: -50, opacity: 0.01, pointerEvents: 'none' }}>
                 {data && (
                     <PDFReportTemplate
                         registry={data.registry}
@@ -413,9 +413,9 @@ export default function EvidenceDashboard() {
                             }, {});
                             return Object.entries(platformMap).map(([name, value]) => ({ name, value }));
                         })()}
-                        totalReach={data.content.reduce((acc, item) => acc + (item.reach || 0), 0)}
-                        totalEng={data.metrics.total_interactions}
-                        totalViews={data.metrics.total_views}
+                        totalReach={(data.content || []).reduce((acc, item) => acc + (item.reach || 0), 0)}
+                        totalEng={data.metrics?.total_interactions || 0}
+                        totalViews={data.metrics?.total_views || 0}
                     />
                 )}
             </div>
