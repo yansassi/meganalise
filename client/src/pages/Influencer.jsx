@@ -36,11 +36,13 @@ export default function Influencer() {
             setLoading(true);
             console.log('Fetching evidence registries...');
             const data = await dataService.getEvidenceRegistries();
-            console.log('Raw registries from DB:', data);
+            console.log('Raw registries from DB:', data.length, 'records found');
+            data.forEach(r => console.log(`- Registry: ${r.title}, Type: ${r.type}, Country: ${r.country}`));
             
             const influencers = data.filter(r => {
-                const type = (r.type || '').toLowerCase();
-                return type === 'influencer';
+                const type = (r.type || '').toLowerCase().trim();
+                const match = type === 'influencer';
+                return match;
             });
             
             console.log('Filtered influencers:', influencers);
@@ -225,7 +227,7 @@ export default function Influencer() {
             {/* Header */}
             <div className="flex justify-between items-center bg-white dark:bg-card-dark p-6 rounded-3xl shadow-soft">
                 <div>
-                    <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">Gestão de Influenciadores</h1>
+                    <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">Gestão de Influenciadores [v2.1]</h1>
                     <p className="text-slate-500 font-medium">Monitore menções e conteúdos de influenciadores parceiros</p>
                 </div>
                 <div className="flex gap-3">

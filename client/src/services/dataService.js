@@ -322,6 +322,7 @@ export const dataService = {
         try {
             const records = await pb.collection('evidence_registries').getFullList({
                 sort: '-created',
+                requestKey: null,
             });
             return records.map(r => ({
                 ...r,
@@ -350,7 +351,7 @@ export const dataService = {
      */
     async getEvidenceRegistry(id) {
         try {
-            const record = await pb.collection('evidence_registries').getOne(id);
+            const record = await pb.collection('evidence_registries').getOne(id, { requestKey: null });
             return {
                 ...record,
                 keywords: typeof record.keywords === 'string' ? JSON.parse(record.keywords) : record.keywords,
@@ -593,7 +594,7 @@ export const dataService = {
             const formData = new FormData();
             formData.append('image_file', imageFile);
 
-            return await pb.collection('evidence_registries').update(id, formData);
+            return await pb.collection('evidence_registries').update(id, formData, { requestKey: null });
         } catch (error) {
             console.error('Error uploading registry image:', error);
             throw error;
