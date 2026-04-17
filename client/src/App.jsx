@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate, useOutletContext } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import Dashboard from './pages/Dashboard';
-import Influencers from './pages/Influencers';
 
 import React, { useState } from 'react';
 import PlatformView from './components/dashboard/PlatformView';
