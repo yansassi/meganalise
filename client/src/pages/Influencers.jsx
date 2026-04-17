@@ -73,11 +73,11 @@ const Influencers = () => {
                         <div key={inf.id} className="glass-card p-6 rounded-[2rem] border border-gray-100 flex items-center justify-between group hover:shadow-xl transition-all">
                             <div className="flex items-center gap-4">
                                 <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white text-xl font-black shadow-lg shadow-blue-100">
-                                    {inf.name.charAt(0).toUpperCase()}
+                                    {(inf.name || inf.handle || '?').charAt(0).toUpperCase()}
                                 </div>
                                 <div>
-                                    <h3 className="font-black text-[#1F2937] text-lg">{inf.name}</h3>
-                                    <p className="text-blue-600 font-bold text-sm">@{inf.handle}</p>
+                                    <h3 className="font-black text-[#1F2937] text-lg">{inf.name || 'Influenciador Excluído/Corrompido'}</h3>
+                                    <p className="text-blue-600 font-bold text-sm">@{inf.handle || 'sem_handle'}</p>
                                 </div>
                             </div>
                             <button 
