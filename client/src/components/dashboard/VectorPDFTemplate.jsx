@@ -1,5 +1,6 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { dataService } from '../../services/dataService';
 
 const styles = StyleSheet.create({
   page: {
@@ -156,6 +157,21 @@ const styles = StyleSheet.create({
     color: '#6B7280'
   },
 
+  platformGroup: {
+    marginBottom: 30
+  },
+  platformHeader: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginBottom: 12
+  },
+  platformHeaderText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textTransform: 'uppercase'
+  },
   contentList: {
     display: 'flex',
     flexDirection: 'column'
@@ -163,22 +179,36 @@ const styles = StyleSheet.create({
   contentItem: {
     display: 'flex',
     flexDirection: 'row',
-    padding: 12,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#F3F4F6',
-    borderRadius: 8,
+    borderRadius: 12,
     marginBottom: 12,
     backgroundColor: '#ffffff'
   },
+  contentImage: {
+    width: 60,
+    height: 90,
+    borderRadius: 6,
+    marginRight: 16,
+    backgroundColor: '#E5E7EB',
+    objectFit: 'cover'
+  },
   contentIndex: {
-    width: 30,
+    width: 25,
     fontSize: 14,
     fontWeight: 'bold',
     color: '#D1D5DB',
   },
+  contentInfoWrapper: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'row'
+  },
   contentInfo: {
     flex: 1,
-    paddingRight: 10
+    paddingRight: 16,
+    justifyContent: 'center'
   },
   contentHeaderRow: {
     display: 'flex',
@@ -243,8 +273,17 @@ const VectorPDFTemplate = ({ registry, items = [], chartData = [], totalReach = 
         if (p === 'instagram') return '#DB2777';
         if (p === 'tiktok') return '#000000';
         if (p === 'facebook') return '#2563EB';
+        if (p === 'youtube') return '#FF0000';
         return '#6B7280';
     };
+
+    // Agrupar itens por plataforma
+    const groupedItems = items.reduce((acc, item) => {
+        const platform = item.platform || 'Outros';
+        if (!acc[platform]) acc[platform] = [];
+        acc[platform].push(item);
+        return acc;
+    }, {});
 
     return (
         <Document>
@@ -325,38 +364,61 @@ const VectorPDFTemplate = ({ registry, items = [], chartData = [], totalReach = 
                 </View>
 
                 <View style={styles.contentList}>
-                    {items.map((item, index) => (
-                        <View key={item.id} style={styles.contentItem} wrap={false}>
-                            <Text style={styles.contentIndex}>#{index + 1}</Text>
-                            
-                            <View style={styles.contentInfo}>
-                                <View style={styles.contentHeaderRow}>
-                                    <Text style={[styles.contentPlatformTag, { backgroundColor: getPlatformColor(item.platform) }]}>
-                                        {item.platform}
-                                    </Text>
-                                    <Text style={styles.contentDate}>
-                                        {item.date ? new Date(item.date).toLocaleDateString() : ''}
-                                    </Text>
-                                </View>
-                                <Text style={styles.contentTitle}>
-                                    {(item.title || item.caption || "Sem legenda").substring(0, 100)}
-                                </Text>
+                    {Object.keys(groupedItems).sort().map((platform) => (
+                        <View key={platform} style={styles.platformGroup}>
+                            {/* Cabeçalho de Plataforma */}
+                            <View style={[styles.platformHeader, { backgroundColor: getPlatformColor(platform) }]}>
+                                <Text style={styles.platformHeaderText}>{platform}</Text>
                             </View>
 
-                            <View style={styles.contentMetrics}>
-                                <View style={[styles.metricBox, { backgroundColor: 'rgba(239,246,255,0.5)' }]}>
-                                    <Text style={[styles.metricLabel, { color: '#3B82F6' }]}>Views</Text>
-                                    <Text style={styles.metricValue}>{(item.views || 0).toLocaleString()}</Text>
-                                </View>
-                                <View style={[styles.metricBox, { backgroundColor: 'rgba(250,245,255,0.5)' }]}>
-                                    <Text style={[styles.metricLabel, { color: '#A855F7' }]}>Engaj.</Text>
-                                    <Text style={styles.metricValue}>{((item.likes || 0) + (item.comments || 0) + (item.shares || 0)).toLocaleString()}</Text>
-                                </View>
-                                <View style={[styles.metricBox, { backgroundColor: '#F9FAFB' }]}>
-                                    <Text style={[styles.metricLabel, { color: '#6B7280' }]}>Alcance</Text>
-                                    <Text style={styles.metricValue}>{(item.reach || 0).toLocaleString()}</Text>
-                                </View>
-                            </View>
+                            {/* Itens dessa plataforma */}
+                            {groupedItems[platform].map((item, index) => {
+                                const imageUrl = dataService.getContentImageUrl(item);
+                                
+                                return (
+                                    <View key={item.id || index} style={styles.contentItem} wrap={false}>
+                                        <Text style={styles.contentIndex}>#{index + 1}</Text>
+                                        
+                                        <View style={styles.contentInfoWrapper}>
+                                            {/* Thumbnail da Capa */}
+                                            {imageUrl ? (
+                                                <Image src={imageUrl} style={styles.contentImage} />
+                                            ) : (
+                                                <View style={styles.contentImage} />
+                                            )}
+                                            
+                                            <View style={styles.contentInfo}>
+                                                <View style={styles.contentHeaderRow}>
+                                                    <Text style={[styles.contentPlatformTag, { backgroundColor: getPlatformColor(item.platform) }]}>
+                                                        {item.platform || 'Social'}
+                                                    </Text>
+                                                    <Text style={styles.contentDate}>
+                                                        {item.date ? new Date(item.date).toLocaleDateString() : ''}
+                                                    </Text>
+                                                </View>
+                                                <Text style={styles.contentTitle}>
+                                                    {(item.title || item.caption || "Sem legenda").substring(0, 120)}
+                                                </Text>
+                                            </View>
+
+                                            <View style={styles.contentMetrics}>
+                                                <View style={[styles.metricBox, { backgroundColor: 'rgba(239,246,255,0.5)' }]}>
+                                                    <Text style={[styles.metricLabel, { color: '#3B82F6' }]}>Views</Text>
+                                                    <Text style={styles.metricValue}>{(item.views || 0).toLocaleString()}</Text>
+                                                </View>
+                                                <View style={[styles.metricBox, { backgroundColor: 'rgba(250,245,255,0.5)' }]}>
+                                                    <Text style={[styles.metricLabel, { color: '#A855F7' }]}>Engaj.</Text>
+                                                    <Text style={styles.metricValue}>{((item.likes || 0) + (item.comments || 0) + (item.shares || 0)).toLocaleString()}</Text>
+                                                </View>
+                                                <View style={[styles.metricBox, { backgroundColor: '#F9FAFB' }]}>
+                                                    <Text style={[styles.metricLabel, { color: '#6B7280' }]}>Alcance</Text>
+                                                    <Text style={styles.metricValue}>{(item.reach || 0).toLocaleString()}</Text>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    </View>
+                                );
+                            })}
                         </View>
                     ))}
                 </View>
