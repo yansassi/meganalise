@@ -614,7 +614,7 @@ export const dataService = {
      */
     async getInfluencers() {
         try {
-            return await pb.collection('influencers').getFullList({ sort: '-created' });
+            return await pb.collection('influencers').getFullList();
         } catch (err) {
             console.error("Error fetching influencers", err);
             return [];
