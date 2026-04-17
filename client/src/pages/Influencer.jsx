@@ -9,7 +9,10 @@ export default function Influencer() {
     const [registries, setRegistries] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [showTalentModal, setShowTalentModal] = useState(false);
     const [influencerList, setInfluencerList] = useState([]);
+    const [isSavingTalent, setIsSavingTalent] = useState(false);
+    const [talentFormData, setTalentFormData] = useState({ name: '', handle: '' });
 
     // Metrics Caches
     const [metricsCache, setMetricsCache] = useState({}); // Cache for "My Influencers" (Contract Date)
@@ -103,6 +106,33 @@ export default function Influencer() {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleSaveTalent = async (e) => {
+        e.preventDefault();
+        if (!talentFormData.name || !talentFormData.handle) return;
+        
+        setIsSavingTalent(true);
+        try {
+            await dataService.createInfluencer(talentFormData);
+            setTalentFormData({ name: '', handle: '' });
+            loadInfluencerChoices();
+        } catch (error) {
+            console.error('Error saving talent:', error);
+            alert('Erro ao salvar no banco de talentos.');
+        } finally {
+            setIsSavingTalent(false);
+        }
+    };
+
+    const handleDeleteTalent = async (id) => {
+        if (!window.confirm('Tem certeza que deseja remover este influenciador do banco de talentos?')) return;
+        try {
+            await dataService.deleteInfluencer(id);
+            loadInfluencerChoices();
+        } catch (error) {
+            console.error('Error deleting talent:', error);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
@@ -175,13 +205,22 @@ export default function Influencer() {
                     <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">Gestão de Influenciadores</h1>
                     <p className="text-slate-500 font-medium">Monitore menções e conteúdos de influenciadores parceiros</p>
                 </div>
-                <button
-                    onClick={() => setShowModal(true)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-lg hover:shadow-purple-500/30 flex items-center gap-2"
-                >
-                    <span className="material-icons-round">person_add</span>
-                    Novo Influencer
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => setShowTalentModal(true)}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-6 py-3 rounded-2xl font-bold text-sm transition-all flex items-center gap-2"
+                    >
+                        <span className="material-icons-round">contacts</span>
+                        Banco de Talentos
+                    </button>
+                    <button
+                        onClick={() => setShowModal(true)}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-2xl font-bold text-sm transition-all shadow-lg hover:shadow-purple-500/30 flex items-center gap-2"
+                    >
+                        <span className="material-icons-round">add_chart</span>
+                        Novo Relatório
+                    </button>
+                </div>
             </div>
 
             {/* Platform Filter Tabs */}
@@ -388,17 +427,22 @@ export default function Influencer() {
                 </div>
             </div>
 
-            {/* Modal */}
+            {/* Modal de Relatório */}
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
                     <div className="bg-white dark:bg-card-dark w-full max-w-lg rounded-3xl shadow-2xl p-8 animate-scale-in">
-                        <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">Novo Influenciador</h2>
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Gerar Relatório de Influenciador</h2>
+                            <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <span className="material-icons-round">close</span>
+                            </button>
+                        </div>
 
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Selecionar Influenciador Cadastrado</label>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">1. Selecionar Influenciador do Banco</label>
                                 <select 
-                                    className="w-full px-4 py-3 rounded-xl bg-purple-50 border border-purple-100 focus:border-purple-500 outline-none transition-all font-bold text-purple-600 appearance-none mb-4"
+                                    className="w-full px-4 py-3 rounded-xl bg-purple-50 border border-purple-100 focus:border-purple-500 outline-none transition-all font-bold text-purple-600 appearance-none mb-1"
                                     onChange={(e) => handleInfluencerChoice(e.target.value)}
                                 >
                                     <option value="">-- Escolha um influenciador --</option>
@@ -406,13 +450,14 @@ export default function Influencer() {
                                         <option key={inf.id} value={inf.id}>{inf.name} (@{inf.handle})</option>
                                     ))}
                                 </select>
+                                <p className="text-[10px] text-slate-400 ml-1 mb-4">Caso não encontre, adicione primeiro no "Banco de Talentos".</p>
 
-                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Nome da Análise / Campanha</label>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Título do Relatório / Campanha</label>
                                 <input
                                     type="text"
                                     name="title"
                                     required
-                                    placeholder="Ex: Monitoramento Yan Casa"
+                                    placeholder="Ex: Monitoramento Mensal - Yan Casa"
                                     className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all font-medium"
                                     value={formData.title}
                                     onChange={handleInputChange}
@@ -420,7 +465,7 @@ export default function Influencer() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Usuário (@)</label>
+                                <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Usuário Alvo (@)</label>
                                 <input
                                     type="text"
                                     name="user_handle"
@@ -430,7 +475,6 @@ export default function Influencer() {
                                     value={formData.user_handle}
                                     onChange={handleInputChange}
                                 />
-                                <p className="text-xs text-slate-400 mt-2 ml-1">O sistema buscará menções a este usuário nas legendas.</p>
                             </div>
 
                             <div>
@@ -442,7 +486,6 @@ export default function Influencer() {
                                     value={formData.country}
                                     onChange={handleInputChange}
                                 >
-                                    <option value="BR">🇧🇷 Brasil (Português)</option>
                                     <option value="BR">🇧🇷 Brasil (Português)</option>
                                     <option value="PY">🇵🇾 Paraguai (Espanhol)</option>
                                 </select>
@@ -485,10 +528,88 @@ export default function Influencer() {
                                     type="submit"
                                     className="flex-1 px-6 py-3 rounded-xl font-bold text-white bg-purple-600 hover:bg-purple-700 shadow-lg hover:shadow-purple-500/30 transition-all"
                                 >
-                                    Cadastrar
+                                    Criar Relatório
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Modal de Banco de Talentos */}
+            {showTalentModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+                    <div className="bg-white dark:bg-card-dark w-full max-w-2xl rounded-3xl shadow-2xl p-8 animate-scale-in max-h-[90vh] flex flex-col">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Banco de Talentos</h2>
+                                <p className="text-sm text-slate-500">Cadastre os @handles base para gerar relatórios rapidamente.</p>
+                            </div>
+                            <button onClick={() => setShowTalentModal(false)} className="text-slate-400 hover:text-slate-600">
+                                <span className="material-icons-round">close</span>
+                            </button>
+                        </div>
+
+                        {/* Formulário de Adição Rápida */}
+                        <form onSubmit={handleSaveTalent} className="flex gap-3 mb-8 bg-slate-50 dark:bg-white/5 p-4 rounded-2xl">
+                            <div className="flex-1">
+                                <input 
+                                    type="text"
+                                    placeholder="Nome (Ex: Neymar)"
+                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-purple-500 text-sm font-bold"
+                                    value={talentFormData.name}
+                                    onChange={e => setTalentFormData({ ...talentFormData, name: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="flex-1">
+                                <input 
+                                    type="text"
+                                    placeholder="Handle (Ex: neymarjr)"
+                                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-purple-500 text-sm font-bold"
+                                    value={talentFormData.handle}
+                                    onChange={e => setTalentFormData({ ...talentFormData, handle: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <button 
+                                type="submit" 
+                                disabled={isSavingTalent}
+                                className="bg-purple-600 text-white px-4 py-2 rounded-xl font-bold text-sm hover:bg-purple-700 disabled:opacity-50"
+                            >
+                                {isSavingTalent ? '...' : 'Adicionar'}
+                            </button>
+                        </form>
+
+                        {/* Lista de Talentos */}
+                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {influencerList.map(inf => (
+                                    <div key={inf.id} className="flex items-center justify-between p-4 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl group">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center font-black text-xs">
+                                                {inf.name.charAt(0).toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-slate-800 dark:text-white">{inf.name}</p>
+                                                <p className="text-xs text-purple-500 font-bold">@{inf.handle}</p>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleDeleteTalent(inf.id)}
+                                            className="p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                        >
+                                            <span className="material-icons-round text-sm">delete</span>
+                                        </button>
+                                    </div>
+                                ))}
+                                {influencerList.length === 0 && (
+                                    <div className="col-span-full py-10 text-center text-slate-400">
+                                        Nenhum talento cadastrado.
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

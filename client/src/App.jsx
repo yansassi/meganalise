@@ -65,9 +65,9 @@ function App() {
               <Route path="platform/facebook/content" element={<FacebookContentDashboard />} />
               <Route path="platform/facebook/stories" element={<FacebookStoriesDashboard />} />
               <Route path="platform/facebook/audience" element={<FacebookAudienceTab />} />
-              <Route path="influencers" element={<Influencers />} />
-            <Route path="evidence" element={<Evidence />} />
-              <Route path="influencer" element={<Influencer />} />
+              <Route path="influencers" element={<Influencer />} />
+              <Route path="evidence" element={<Evidence />} />
+              <Route path="influencer" element={<Navigate to="/influencers" replace />} />
               <Route path="evidence/:id" element={<EvidenceDashboard />} />
               <Route path="settings" element={<Settings />} />
               <Route path="profile" element={<Profile />} />
