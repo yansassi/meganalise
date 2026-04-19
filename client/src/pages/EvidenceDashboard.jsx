@@ -136,16 +136,23 @@ const EditRegistryModal = ({ registry, onClose, onSave }) => {
         country: registry.country || 'BR',
         type: registry.type || 'keyword'
     });
+    const [imageFile, setImageFile] = useState(null);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleFileChange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+            setImageFile(e.target.files[0]);
+        }
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         const keywordsList = formData.keywords.split(',').map(k => k.trim()).filter(k => k);
-        onSave({ ...formData, keywords: keywordsList });
+        onSave({ ...formData, keywords: keywordsList, imageFile });
     };
 
     return (
@@ -192,6 +199,12 @@ const EditRegistryModal = ({ registry, onClose, onSave }) => {
                             className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium"
                             value={formData.keywords} onChange={handleChange} />
                     </div>
+                    <div>
+                        <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Imagem de Capa (PDF)</label>
+                        <input type="file" accept="image/*" onChange={handleFileChange}
+                            className="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-blue-500 outline-none transition-all font-medium text-slate-600" />
+                        <p className="text-[10px] text-slate-400 mt-1">Essa imagem aparecerá em destaque na capa do PDF gerado.</p>
+                    </div>
                     <div className="flex gap-3 pt-4">
                         <button type="button" onClick={onClose}
                             className="flex-1 px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-100 transition-colors">
@@ -237,7 +250,16 @@ export default function EvidenceDashboard() {
     const handleUpdate = async (updatedData) => {
         try {
             setLoading(true);
-            await dataService.saveEvidenceRegistry({ ...updatedData, id });
+            const { imageFile, ...registryData } = updatedData;
+
+            // Salva dados básicos
+            await dataService.saveEvidenceRegistry({ ...registryData, id });
+
+            // Salva imagem se houver
+            if (imageFile) {
+                await dataService.updateRegistryImage(id, imageFile);
+            }
+
             const dashboardData = await dataService.getEvidenceDashboardData(id);
             setData(dashboardData);
             setShowEditModal(false);
@@ -344,11 +366,13 @@ export default function EvidenceDashboard() {
                         {isInfluencer ? 'Voltar para Influenciadores' : 'Voltar para Registros'}
                     </button>
 
-                    <div className="flex items-center gap-3 mb-2">
-                        {isInfluencer && (
-                            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shadow-sm">
-                                <span className="material-icons-round">person</span>
-                            </div>
+                    <div className="flex items-center gap-4 mb-2">
+                        {dataService.getRegistryImageUrl(registry) && (
+                            <img 
+                                src={dataService.getRegistryImageUrl(registry)} 
+                                alt="Capa" 
+                                className="w-16 h-16 rounded-2xl object-cover shadow-md border-2 border-white"
+                            />
                         )}
                         <h1 className="text-3xl font-black text-slate-800 dark:text-white tracking-tight">{registry.title}</h1>
                     </div>

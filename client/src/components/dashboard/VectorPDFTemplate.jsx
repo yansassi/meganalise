@@ -1,265 +1,319 @@
 import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
+import { Document, Page, Text, View, StyleSheet, Image, Font } from '@react-pdf/renderer';
 import { dataService } from '../../services/dataService';
 
-const styles = StyleSheet.create({
-  page: {
-    backgroundColor: '#ffffff',
-    fontFamily: 'Helvetica',
-  },
-  coverPage: {
-    backgroundColor: '#0F172A',
-    color: '#ffffff',
-    padding: 60,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    height: '100%'
-  },
-  coverTitleContainer: {
-    marginTop: 100,
-  },
-  tag: {
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.2)',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    color: '#93C5FD',
-    fontSize: 10,
-    textTransform: 'uppercase',
-    alignSelf: 'flex-start',
-    marginBottom: 20
-  },
-  brandName: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    marginBottom: 10
-  },
-  productName: {
-    fontSize: 24,
-    color: '#D1D5DB'
-  },
-  productNameHighlight: {
-    color: '#ffffff',
-    fontWeight: 'bold'
-  },
-  coverFooter: {
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
-    paddingTop: 30,
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between'
-  },
-  coverFooterCol: {
-    flex: 1
-  },
-  coverFooterLabel: {
-    fontSize: 10,
-    color: '#9CA3AF',
-    textTransform: 'uppercase',
-    marginBottom: 4
-  },
-  coverFooterValue: {
-    fontSize: 16,
-    color: '#ffffff'
-  },
-  footerText: {
-    fontSize: 10,
-    color: '#6B7280',
-    marginTop: 20
-  },
-  contentPage: {
-    padding: 40,
-    backgroundColor: '#ffffff'
-  },
-  sectionHeader: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-    paddingBottom: 20,
-    marginBottom: 30
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 8
-  },
-  sectionSubtitle: {
-    fontSize: 12,
-    color: '#6B7280'
-  },
-  statsRow: {
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 40
-  },
-  statBoxBlue: { flex: 1, padding: 20, backgroundColor: '#EFF6FF', borderRadius: 12, borderWidth: 1, borderColor: '#DBEAFE', marginRight: 10 },
-  statBoxPurple: { flex: 1, padding: 20, backgroundColor: '#FAF5FF', borderRadius: 12, borderWidth: 1, borderColor: '#F3E8FF', marginHorizontal: 5 },
-  statBoxGreen: { flex: 1, padding: 20, backgroundColor: '#F0FDF4', borderRadius: 12, borderWidth: 1, borderColor: '#DCFCE7', marginLeft: 10 },
-  statLabelBlue: { fontSize: 10, fontWeight: 'bold', color: '#2563EB', textTransform: 'uppercase', marginBottom: 8 },
-  statLabelPurple: { fontSize: 10, fontWeight: 'bold', color: '#9333EA', textTransform: 'uppercase', marginBottom: 8 },
-  statLabelGreen: { fontSize: 10, fontWeight: 'bold', color: '#16A34A', textTransform: 'uppercase', marginBottom: 8 },
-  statValue: { fontSize: 28, fontWeight: 'bold', color: '#111827' },
-  
-  platformDistBox: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: 16,
-    padding: 30,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    marginBottom: 30
-  },
-  platformDistTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 20
-  },
-  platformRow: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12
-  },
-  platformName: {
-    width: 60,
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#4B5563'
-  },
-  platformBarBg: {
-    flex: 1,
-    height: 12,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 6,
-    marginHorizontal: 10,
-    overflow: 'hidden'
-  },
-  platformBarFill: {
-    height: 12,
-    borderRadius: 6
-  },
-  platformPercent: {
-    width: 40,
-    textAlign: 'right',
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#111827'
-  },
-  platformCount: {
-    width: 60,
-    textAlign: 'right',
-    fontSize: 12,
-    color: '#6B7280'
-  },
+// Registrar fontes se necessário, mas Helvetica é padrão e segura.
 
-  platformGroup: {
-    marginBottom: 30
-  },
-  platformHeader: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    marginBottom: 12
-  },
-  platformHeaderText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    textTransform: 'uppercase'
-  },
-  contentList: {
-    display: 'flex',
-    flexDirection: 'column'
-  },
-  contentItem: {
-    display: 'flex',
-    flexDirection: 'row',
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#F3F4F6',
-    borderRadius: 12,
-    marginBottom: 12,
-    backgroundColor: '#ffffff'
-  },
-  contentImage: {
-    width: 60,
-    height: 90,
-    borderRadius: 6,
-    marginRight: 16,
-    backgroundColor: '#E5E7EB',
-    objectFit: 'cover'
-  },
-  contentIndex: {
-    width: 25,
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#D1D5DB',
-  },
-  contentInfoWrapper: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'row'
-  },
-  contentInfo: {
-    flex: 1,
-    paddingRight: 16,
-    justifyContent: 'center'
-  },
-  contentHeaderRow: {
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4
-  },
-  contentPlatformTag: {
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    borderRadius: 4,
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    textTransform: 'uppercase',
-    marginRight: 6
-  },
-  contentDate: {
-    fontSize: 10,
-    color: '#6B7280'
-  },
-  contentTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#111827',
-    marginBottom: 4
-  },
-  contentMetrics: {
-    width: 180,
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between'
-  },
-  metricBox: {
-    flex: 1,
-    padding: 6,
-    borderRadius: 6,
-    alignItems: 'center',
-    marginHorizontal: 2
-  },
-  metricLabel: {
-    fontSize: 8,
-    textTransform: 'uppercase',
-    fontWeight: 'bold',
-    marginBottom: 2
-  },
-  metricValue: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#111827'
-  }
+const styles = StyleSheet.create({
+    page: {
+        backgroundColor: '#ffffff',
+        fontFamily: 'Helvetica',
+    },
+    // --- DESIGN DA CAPA ---
+    coverPage: {
+        backgroundColor: '#0F172A',
+        height: '100%',
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+    },
+    coverContent: {
+        flex: 1,
+        padding: 60,
+        justifyContent: 'center',
+        zIndex: 10,
+    },
+    coverImageBg: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        opacity: 0.3,
+    },
+    coverOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    },
+    coverTag: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 4,
+        backgroundColor: '#3B82F6',
+        color: '#ffffff',
+        fontSize: 12,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        letterSpacing: 2,
+        alignSelf: 'flex-start',
+        marginBottom: 30
+    },
+    coverTitle: {
+        fontSize: 48,
+        fontWeight: 'bold',
+        color: '#ffffff',
+        marginBottom: 10,
+        lineHeight: 1.1
+    },
+    coverSubtitle: {
+        fontSize: 24,
+        color: '#94A3B8',
+        fontWeight: 'light',
+        marginBottom: 60
+    },
+    coverHighlight: {
+        color: '#ffffff',
+        fontWeight: 'bold'
+    },
+    coverFooter: {
+        padding: 60,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255,255,255,0.1)',
+        display: 'flex',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-end',
+        backgroundColor: 'rgba(15, 23, 42, 0.8)',
+    },
+    coverFooterItem: {
+        flex: 1
+    },
+    coverFooterLabel: {
+        fontSize: 10,
+        color: '#64748B',
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginBottom: 6
+    },
+    coverFooterValue: {
+        fontSize: 16,
+        color: '#ffffff',
+        fontWeight: 'bold'
+    },
+    coverBrandLogo: {
+        width: 100,
+        opacity: 0.8
+    },
+
+    // --- DESIGN DAS PÁGINAS INTERNAS ---
+    contentPage: {
+        padding: 50,
+        backgroundColor: '#ffffff',
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 40,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
+        paddingBottom: 15
+    },
+    headerTitle: {
+        fontSize: 10,
+        color: '#64748B',
+        textTransform: 'uppercase',
+        letterSpacing: 1
+    },
+    pageNumber: {
+        fontSize: 10,
+        color: '#94A3B8'
+    },
+    sectionHeader: {
+        marginBottom: 30
+    },
+    sectionTitle: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#0F172A',
+        marginBottom: 8
+    },
+    sectionSubtitle: {
+        fontSize: 12,
+        color: '#64748B'
+    },
+
+    // --- CARTÕES DE ESTATÍSTICAS ---
+    statsGrid: {
+        flexDirection: 'row',
+        gap: 15,
+        marginBottom: 40
+    },
+    statCard: {
+        flex: 1,
+        padding: 20,
+        borderRadius: 16,
+        borderWidth: 1,
+    },
+    statLabel: {
+        fontSize: 10,
+        fontWeight: 'bold',
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+        marginBottom: 10
+    },
+    statValue: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#0F172A'
+    },
+
+    // --- DISTRIBUIÇÃO POR PLATAFORMA ---
+    distCard: {
+        backgroundColor: '#F8FAFC',
+        borderRadius: 20,
+        padding: 30,
+        marginBottom: 30
+    },
+    distTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#0F172A',
+        marginBottom: 25,
+        textAlign: 'center'
+    },
+    distRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 15
+    },
+    distName: {
+        width: 80,
+        fontSize: 11,
+        fontWeight: 'bold',
+        color: '#475569'
+    },
+    distTrack: {
+        flex: 1,
+        height: 8,
+        backgroundColor: '#E2E8F0',
+        borderRadius: 4,
+        marginHorizontal: 15,
+        overflow: 'hidden'
+    },
+    distFill: {
+        height: '100%',
+        borderRadius: 4
+    },
+    distPercent: {
+        width: 45,
+        fontSize: 11,
+        fontWeight: 'bold',
+        color: '#0F172A',
+        textAlign: 'right'
+    },
+    distValue: {
+        width: 70,
+        fontSize: 11,
+        color: '#64748B',
+        textAlign: 'right'
+    },
+
+    // --- LISTA DE CONTEÚDO ---
+    platformHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 8,
+        marginBottom: 20,
+        marginTop: 10
+    },
+    platformHeaderText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#ffffff',
+        textTransform: 'uppercase',
+        letterSpacing: 1
+    },
+    contentGrid: {
+        flexDirection: 'column',
+        gap: 15
+    },
+    contentCard: {
+        flexDirection: 'row',
+        padding: 15,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#F1F5F9',
+        backgroundColor: '#ffffff'
+    },
+    contentImage: {
+        width: 80,
+        height: 110,
+        borderRadius: 10,
+        objectFit: 'cover',
+        backgroundColor: '#F8FAFC'
+    },
+    contentBody: {
+        flex: 1,
+        marginLeft: 20,
+        justifyContent: 'space-between'
+    },
+    contentTop: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 8
+    },
+    contentMeta: {
+        flexDirection: 'column',
+        gap: 4
+    },
+    contentDate: {
+        fontSize: 10,
+        color: '#94A3B8'
+    },
+    contentAuthor: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#0F172A'
+    },
+    contentTitle: {
+        fontSize: 12,
+        color: '#334155',
+        lineHeight: 1.4,
+        maxHeight: 40,
+        overflow: 'hidden'
+    },
+    contentMetrics: {
+        flexDirection: 'row',
+        gap: 10,
+        marginTop: 10
+    },
+    miniMetric: {
+        flex: 1,
+        backgroundColor: '#F8FAFC',
+        padding: 8,
+        borderRadius: 8,
+        alignItems: 'center'
+    },
+    miniMetricLabel: {
+        fontSize: 7,
+        textTransform: 'uppercase',
+        color: '#94A3B8',
+        fontWeight: 'bold',
+        marginBottom: 2
+    },
+    miniMetricValue: {
+        fontSize: 11,
+        fontWeight: 'bold',
+        color: '#0F172A'
+    },
+    platformBadge: {
+        paddingVertical: 3,
+        paddingHorizontal: 8,
+        borderRadius: 4,
+        fontSize: 8,
+        fontWeight: 'bold',
+        color: '#ffffff',
+        textTransform: 'uppercase'
+    }
 });
 
 const COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
@@ -268,161 +322,178 @@ const VectorPDFTemplate = ({ registry, items = [], chartData = [], totalReach = 
     if (!registry) return null;
 
     const getPlatformColor = (platform) => {
-        if (!platform) return '#6B7280';
+        if (!platform) return '#64748B';
         const p = platform.toLowerCase();
-        if (p === 'instagram') return '#DB2777';
+        if (p === 'instagram') return '#E1306C';
         if (p === 'tiktok') return '#000000';
-        if (p === 'facebook') return '#2563EB';
+        if (p === 'facebook') return '#1877F2';
         if (p === 'youtube') return '#FF0000';
-        return '#6B7280';
+        return '#64748B';
     };
 
-    // Agrupar itens por plataforma
     const groupedItems = items.reduce((acc, item) => {
-        const platform = item.platform || 'Outros';
-        if (!acc[platform]) acc[platform] = [];
-        acc[platform].push(item);
+        const platform = item.platform_type || item.platform || 'Social';
+        const network = (item.social_network || platform).charAt(0).toUpperCase() + (item.social_network || platform).slice(1);
+        if (!acc[network]) acc[network] = [];
+        acc[network].push(item);
         return acc;
     }, {});
 
+    const registryImageUrl = dataService.getRegistryImageUrl(registry);
+
     return (
         <Document>
-            {/* Capa */}
+            {/* --- CAPA --- */}
             <Page size="A4" style={styles.coverPage}>
-                <View style={styles.coverTitleContainer}>
-                    <Text style={styles.tag}>Relatório de Performance</Text>
-                    <Text style={styles.brandName}>{registry.brand_name || 'Brand'}</Text>
-                    <Text style={styles.productName}>
-                        Campanha <Text style={styles.productNameHighlight}>{registry.product_name || 'Campanha'}</Text>
+                {registryImageUrl && (
+                    <>
+                        <Image src={registryImageUrl} style={styles.coverImageBg} />
+                        <View style={styles.coverOverlay} />
+                    </>
+                )}
+                
+                <View style={styles.coverContent}>
+                    <Text style={styles.coverTag}>Relatório de Evidências</Text>
+                    <Text style={styles.coverTitle}>{registry.title || 'Relatório de Performance'}</Text>
+                    <Text style={styles.coverSubtitle}>
+                        Análise estratégica para <Text style={styles.coverHighlight}>{registry.country === 'BR' ? 'Brasil' : 'Paraguai'}</Text>
                     </Text>
                 </View>
                 
-                <View>
-                    <View style={styles.coverFooter}>
-                        <View style={styles.coverFooterCol}>
-                            <Text style={styles.coverFooterLabel}>Período</Text>
-                            <Text style={styles.coverFooterValue}>
-                                {registry.start_date ? new Date(registry.start_date).toLocaleDateString() : ''} - {registry.end_date ? new Date(registry.end_date).toLocaleDateString() : ''}
-                            </Text>
-                        </View>
-                        <View style={styles.coverFooterCol}>
-                            <Text style={styles.coverFooterLabel}>Total de Conteúdos</Text>
-                            <Text style={styles.coverFooterValue}>{items.length} publicações</Text>
-                        </View>
+                <View style={styles.coverFooter}>
+                    <View style={styles.coverFooterItem}>
+                        <Text style={styles.coverFooterLabel}>Período de Análise</Text>
+                        <Text style={styles.coverFooterValue}>
+                            {registry.start_date ? new Date(registry.start_date).toLocaleDateString() : ''} - {registry.end_date ? new Date(registry.end_date).toLocaleDateString() : ''}
+                        </Text>
                     </View>
-                    <Text style={styles.footerText}>Gerado por Meganálise • {new Date().toLocaleDateString()}</Text>
+                    <View style={styles.coverFooterItem}>
+                        <Text style={styles.coverFooterLabel}>Volume de Dados</Text>
+                        <Text style={styles.coverFooterValue}>{items.length} publicações capturadas</Text>
+                    </View>
+                    <View style={{ width: 80, alignItems: 'flex-end' }}>
+                         <Text style={{ fontSize: 10, color: '#94A3B8' }}>MEGANÁLISE</Text>
+                    </View>
                 </View>
             </Page>
 
-            {/* Página 2: Resumo Executivo */}
+            {/* --- RESUMO EXECUTIVO --- */}
             <Page size="A4" style={styles.contentPage}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Resumo Executivo</Text>
-                    <Text style={styles.sectionSubtitle}>Visão geral dos resultados alcançados.</Text>
+                <View style={styles.header}>
+                    <Text style={styles.headerTitle}>{registry.title} • Resumo Executivo</Text>
+                    <Text style={styles.pageNumber}>Página 2</Text>
                 </View>
 
-                {/* Big numbers */}
-                <View style={styles.statsRow}>
-                    <View style={styles.statBoxBlue}>
-                        <Text style={styles.statLabelBlue}>Alcance Total</Text>
+                <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>Indicadores de Performance</Text>
+                    <Text style={styles.sectionSubtitle}>Métricas consolidadas de todas as plataformas monitoradas.</Text>
+                </View>
+
+                <View style={styles.statsGrid}>
+                    <View style={[styles.statCard, { borderColor: '#DBEAFE', backgroundColor: '#EFF6FF' }]}>
+                        <Text style={[styles.statLabel, { color: '#2563EB' }]}>Alcance Estimado</Text>
                         <Text style={styles.statValue}>{totalReach.toLocaleString()}</Text>
                     </View>
-                    <View style={styles.statBoxPurple}>
-                        <Text style={styles.statLabelPurple}>Engajamento Total</Text>
+                    <View style={[styles.statCard, { borderColor: '#F3E8FF', backgroundColor: '#FAF5FF' }]}>
+                        <Text style={[styles.statLabel, { color: '#9333EA' }]}>Engajamento</Text>
                         <Text style={styles.statValue}>{totalEng.toLocaleString()}</Text>
                     </View>
-                    <View style={styles.statBoxGreen}>
-                        <Text style={styles.statLabelGreen}>Visualizações</Text>
+                    <View style={[styles.statCard, { borderColor: '#DCFCE7', backgroundColor: '#F0FDF4' }]}>
+                        <Text style={[styles.statLabel, { color: '#16A34A' }]}>Visualizações</Text>
                         <Text style={styles.statValue}>{totalViews.toLocaleString()}</Text>
                     </View>
                 </View>
 
-                {/* Grafico Barra Linha */}
-                <View style={styles.platformDistBox}>
-                    <Text style={styles.platformDistTitle}>Distribuição por Plataforma</Text>
+                <View style={styles.distCard}>
+                    <Text style={styles.distTitle}>Distribuição Geográfica e de Audiência por Plataforma</Text>
                     {chartData.map((item, index) => {
                         const percent = totalViews > 0 ? (item.value / totalViews) * 100 : 0;
+                        const color = COLORS[index % COLORS.length];
                         return (
-                            <View key={item.name || index} style={styles.platformRow}>
-                                <Text style={styles.platformName}>{item.name}</Text>
-                                <View style={styles.platformBarBg}>
-                                    <View style={[styles.platformBarFill, { width: `${percent}%`, backgroundColor: COLORS[index % COLORS.length] }]} />
+                            <View key={item.name || index} style={styles.distRow}>
+                                <Text style={styles.distName}>{item.name}</Text>
+                                <View style={styles.distTrack}>
+                                    <View style={[styles.distFill, { width: `${percent}%`, backgroundColor: color }]} />
                                 </View>
-                                <Text style={styles.platformPercent}>{percent.toFixed(1)}%</Text>
-                                <Text style={styles.platformCount}>{item.value.toLocaleString()}</Text>
+                                <Text style={styles.distPercent}>{percent.toFixed(1)}%</Text>
+                                <Text style={styles.distValue}>{item.value.toLocaleString()}</Text>
                             </View>
-                        )
+                        );
                     })}
+                </View>
+                
+                <View style={{ marginTop: 'auto', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 20 }}>
+                    <Text style={{ fontSize: 9, color: '#94A3B8', textAlign: 'center' }}>
+                        Relatório gerado em {new Date().toLocaleDateString()} às {new Date().toLocaleTimeString()} • © Meganálise Inteligência de Dados
+                    </Text>
                 </View>
             </Page>
 
-            {/* Detalhamento (Páginas múltiplas se necessário) */}
-            <Page size="A4" style={styles.contentPage}>
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Detalhamento de Conteúdo</Text>
-                    <Text style={styles.sectionSubtitle}>Performance individual de todas as publicações.</Text>
-                </View>
+            {/* --- DETALHAMENTO --- */}
+            {Object.keys(groupedItems).sort().map((network, pageIdx) => (
+                <Page key={network} size="A4" style={styles.contentPage}>
+                    <View style={styles.header}>
+                        <Text style={styles.headerTitle}>{registry.title} • Detalhamento {network}</Text>
+                        <Text style={styles.pageNumber}>Página {pageIdx + 3}</Text>
+                    </View>
 
-                <View style={styles.contentList}>
-                    {Object.keys(groupedItems).sort().map((platform) => (
-                        <View key={platform} style={styles.platformGroup}>
-                            {/* Cabeçalho de Plataforma */}
-                            <View style={[styles.platformHeader, { backgroundColor: getPlatformColor(platform) }]}>
-                                <Text style={styles.platformHeaderText}>{platform}</Text>
-                            </View>
+                    <View style={[styles.platformHeader, { backgroundColor: getPlatformColor(network) }]}>
+                        <Text style={styles.platformHeaderText}>{network}</Text>
+                    </View>
 
-                            {/* Itens dessa plataforma */}
-                            {groupedItems[platform].map((item, index) => {
-                                const imageUrl = dataService.getContentImageUrl(item);
-                                
-                                return (
-                                    <View key={item.id || index} style={styles.contentItem} wrap={false}>
-                                        <Text style={styles.contentIndex}>#{index + 1}</Text>
-                                        
-                                        <View style={styles.contentInfoWrapper}>
-                                            {/* Thumbnail da Capa */}
-                                            {imageUrl ? (
-                                                <Image src={imageUrl} style={styles.contentImage} />
-                                            ) : (
-                                                <View style={styles.contentImage} />
-                                            )}
-                                            
-                                            <View style={styles.contentInfo}>
-                                                <View style={styles.contentHeaderRow}>
-                                                    <Text style={[styles.contentPlatformTag, { backgroundColor: getPlatformColor(item.platform) }]}>
-                                                        {item.platform || 'Social'}
-                                                    </Text>
-                                                    <Text style={styles.contentDate}>
-                                                        {item.date ? new Date(item.date).toLocaleDateString() : ''}
-                                                    </Text>
+                    <View style={styles.contentGrid}>
+                        {groupedItems[network].map((item, index) => {
+                            const imageUrl = dataService.getContentImageUrl(item);
+                            const eng = (item.likes || 0) + (item.comments || 0) + (item.shares || 0);
+                            
+                            return (
+                                <View key={item.id || index} style={styles.contentCard} wrap={false}>
+                                    {imageUrl ? (
+                                        <Image src={imageUrl} style={styles.contentImage} />
+                                    ) : (
+                                        <View style={[styles.contentImage, { backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center' }]}>
+                                            <Text style={{ fontSize: 8, color: '#94A3B8' }}>SEM IMAGEM</Text>
+                                        </View>
+                                    )}
+                                    
+                                    <View style={styles.contentBody}>
+                                        <View>
+                                            <View style={styles.contentTop}>
+                                                <View style={styles.contentMeta}>
+                                                    <Text style={styles.contentAuthor}>{item.influencer_name || item.author || 'Perfil Monitorado'}</Text>
+                                                    <Text style={styles.contentDate}>{item.date ? new Date(item.date).toLocaleDateString() : ''}</Text>
                                                 </View>
-                                                <Text style={styles.contentTitle}>
-                                                    {(item.title || item.caption || "Sem legenda").substring(0, 120)}
+                                                <Text style={[styles.platformBadge, { backgroundColor: getPlatformColor(network) }]}>
+                                                    {item.platform_type || item.platform || 'Post'}
                                                 </Text>
                                             </View>
+                                            <Text style={styles.contentTitle}>
+                                                {(item.title || item.caption || "Conteúdo capturado via monitoramento.").substring(0, 140)}
+                                                {(item.title || item.caption || "").length > 140 ? '...' : ''}
+                                            </Text>
+                                        </View>
 
-                                            <View style={styles.contentMetrics}>
-                                                <View style={[styles.metricBox, { backgroundColor: 'rgba(239,246,255,0.5)' }]}>
-                                                    <Text style={[styles.metricLabel, { color: '#3B82F6' }]}>Views</Text>
-                                                    <Text style={styles.metricValue}>{(item.views || 0).toLocaleString()}</Text>
-                                                </View>
-                                                <View style={[styles.metricBox, { backgroundColor: 'rgba(250,245,255,0.5)' }]}>
-                                                    <Text style={[styles.metricLabel, { color: '#A855F7' }]}>Engaj.</Text>
-                                                    <Text style={styles.metricValue}>{((item.likes || 0) + (item.comments || 0) + (item.shares || 0)).toLocaleString()}</Text>
-                                                </View>
-                                                <View style={[styles.metricBox, { backgroundColor: '#F9FAFB' }]}>
-                                                    <Text style={[styles.metricLabel, { color: '#6B7280' }]}>Alcance</Text>
-                                                    <Text style={styles.metricValue}>{(item.reach || 0).toLocaleString()}</Text>
-                                                </View>
+                                        <View style={styles.contentMetrics}>
+                                            <View style={styles.miniMetric}>
+                                                <Text style={styles.miniMetricLabel}>Visualizações</Text>
+                                                <Text style={styles.miniMetricValue}>{(item.views || 0).toLocaleString()}</Text>
+                                            </View>
+                                            <View style={styles.miniMetric}>
+                                                <Text style={styles.miniMetricLabel}>Engajamento</Text>
+                                                <Text style={styles.miniMetricValue}>{eng.toLocaleString()}</Text>
+                                            </View>
+                                            <View style={styles.miniMetric}>
+                                                <Text style={styles.miniMetricLabel}>Alcance</Text>
+                                                <Text style={styles.miniMetricValue}>{(item.reach || 0).toLocaleString()}</Text>
                                             </View>
                                         </View>
                                     </View>
-                                );
-                            })}
-                        </View>
-                    ))}
-                </View>
-            </Page>
+                                </View>
+                            );
+                        })}
+                    </View>
+                </Page>
+            ))}
         </Document>
     );
 };
