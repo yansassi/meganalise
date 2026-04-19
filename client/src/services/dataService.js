@@ -468,8 +468,8 @@ export const dataService = {
                 // Append Keyword Filter - Conditioned on Collection
                 if (keywords.length > 0) {
                     const keywordConditions = keywords.map(k => {
-                        // Facebook e YouTube não têm campo 'author' no schema atual
-                        if (collectionName === 'facebook_content' || collectionName === 'youtube_content') {
+                        // YouTube não tem campo 'author' no schema atual, mas Facebook tem
+                        if (collectionName === 'youtube_content') {
                             return `title ~ "${k}"`;
                         }
                         return `title ~ "${k}" || author ~ "${k}"`;
@@ -500,10 +500,8 @@ export const dataService = {
                                 : collectionName === 'facebook_content' ? 'facebook'
                                 : collectionName === 'youtube_content' ? 'youtube'
                                 : 'instagram',
-                            platform: collectionName === 'tiktok_content' ? 'video'
-                                : collectionName === 'facebook_content' ? 'social'
-                                : collectionName === 'youtube_content' ? 'video'
-                                : (item.platform_type || 'social')
+                            platform: (collectionName === 'tiktok_content' || collectionName === 'youtube_content') ? 'video'
+                                : (item.platform_type || item.platform || 'social')
                         }))
                     };
                 }).catch(err => {
