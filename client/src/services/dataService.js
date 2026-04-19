@@ -593,7 +593,7 @@ export const dataService = {
                 total_posts: matchedContent.length,
                 total_likes: matchedContent.reduce((sum, item) => sum + (item.likes || 0), 0),
                 total_comments: matchedContent.reduce((sum, item) => sum + (item.comments || 0), 0),
-                total_views: matchedContent.reduce((sum, item) => sum + (item.views || 0), 0),
+                total_views: matchedContent.reduce((sum, item) => sum + (item.views || item.reach || 0), 0),
                 total_shares: matchedContent.reduce((sum, item) => sum + (item.shares || 0), 0),
                 total_saves: matchedContent.reduce((sum, item) => sum + (item.saved || 0), 0),
             };

@@ -78,7 +78,7 @@ const PlatformSection = ({ platform, items }) => {
     const [collapsed, setCollapsed] = useState(false);
     const cfg = PLATFORM_CONFIG[platform] || PLATFORM_CONFIG.instagram;
 
-    const totalViews = items.reduce((s, i) => s + (i.views || 0), 0);
+    const totalViews = items.reduce((s, i) => s + (i.views || i.reach || 0), 0);
     const totalLikes = items.reduce((s, i) => s + (i.likes || 0), 0);
     const totalComments = items.reduce((s, i) => s + (i.comments || 0), 0);
     const totalShares = items.reduce((s, i) => s + (i.shares || 0), 0);
@@ -254,7 +254,7 @@ export default function EvidenceDashboard() {
             const chartData = Object.entries(
                 (data.content || []).reduce((acc, item) => {
                     const p = item.social_network || item.platform_type || item.platform || 'Outros';
-                    acc[p] = (acc[p] || 0) + (item.views || 0);
+                    acc[p] = (acc[p] || 0) + (item.views || item.reach || 0);
                     return acc;
                 }, {})
             ).map(([name, value]) => ({ name, value }));
@@ -418,7 +418,7 @@ export default function EvidenceDashboard() {
                         {activePlatforms.map(p => {
                             const cfg = PLATFORM_CONFIG[p];
                             const count = contentByPlatform[p].length;
-                            const views = contentByPlatform[p].reduce((s, i) => s + (i.views || 0), 0);
+                            const views = contentByPlatform[p].reduce((s, i) => s + (i.views || i.reach || 0), 0);
                             return (
                                 <div key={p} className={`flex items-center gap-3 px-4 py-3 rounded-2xl border ${cfg.border} ${cfg.bg} flex-1 min-w-[160px]`}>
                                     <div className={`w-9 h-9 rounded-xl ${cfg.badge} flex items-center justify-center shadow`}>
