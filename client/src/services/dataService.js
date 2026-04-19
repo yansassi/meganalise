@@ -142,25 +142,27 @@ export const dataService = {
      * @param {string} country 
      */
     async getAudienceDemographics(country, platform = 'instagram') {
+        let collectionName = '';
         try {
             const platformLower = platform.toLowerCase();
 
             if (platformLower === 'tiktok') {
+                collectionName = 'tiktok_audience_demographics';
                 // Fetch latest gender and territory records
                 // We might need to fetch multiple records and merge
-                const genderRecords = await pb.collection('tiktok_audience_demographics').getList(1, 1, {
+                const genderRecords = await pb.collection(collectionName).getList(1, 1, {
                     filter: `type = "gender" && country = "${country}"`,
                     sort: '-created',
                     requestKey: null
                 });
 
-                const territoryRecords = await pb.collection('tiktok_audience_demographics').getList(1, 1, {
+                const territoryRecords = await pb.collection(collectionName).getList(1, 1, {
                     filter: `type = "territory" && country = "${country}"`,
                     sort: '-created',
                     requestKey: null
                 });
 
-                const activityRecords = await pb.collection('tiktok_audience_demographics').getList(1, 1, {
+                const activityRecords = await pb.collection(collectionName).getList(1, 1, {
                     filter: `type = "activity" && country = "${country}"`,
                     sort: '-created',
                     requestKey: null
@@ -191,7 +193,7 @@ export const dataService = {
             }
 
             // Determine collection name based on platform
-            const collectionName = platformLower === 'facebook' 
+            collectionName = platformLower === 'facebook' 
                 ? 'facebook_audience_demographics' 
                 : 'instagram_audience_demographics';
 
