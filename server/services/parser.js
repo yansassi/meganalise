@@ -282,8 +282,23 @@ const normalizeContentData = (data, isUSFormat = false) => {
             platform = 'video';
         }
 
-        const titleRaw = getValue(['Descrição', 'Descricao', 'TÃ\xadtulo da legenda', 'Legenda', 'Título/Legenda', 'Titulo/Legenda', 'Caption', 'Título', 'Titulo', 'TÃ\xadtulo', 'Texto do post', 'Texto']);
-        let title = titleRaw;
+        // Robust Title/Caption extraction - prioritized list of candidates
+        // We check each and take the first non-empty one.
+        const titleCandidates = [
+            'Descrição', 'Descricao', 'TÃtulo da legenda', 'Legenda', 'Título/Legenda', 'Titulo/Legenda', 
+            'Caption', 'Título', 'Titulo', 'TÃtulo', 'Texto do post', 'Texto',
+            'Texto da sobreposição', 'Texto da sobreposiçâo', 'Texto sobreposto', 'Overlay text', 
+            'Story text', 'Story caption', 'Legenda do story', 'Link de texto'
+        ];
+        
+        let title = '';
+        for (const cand of titleCandidates) {
+            const val = getValue([cand]);
+            if (val && val.toString().trim() !== '' && val !== 'N/A' && val !== '-') {
+                title = val.toString().trim();
+                break;
+            }
+        }
 
         // Fallback para Facebook Stories: se não tem link e veio de relatório de vídeo, ou título indica
         if (permalink === '' || permalink === 'N/A') {

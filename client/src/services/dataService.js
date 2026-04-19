@@ -458,34 +458,59 @@ export const dataService = {
             }
 
             // Execute queries in parallel
-            const queryPromises = collections.map(collectionName => {
-                // Construct basic filter (Date & Country)
-                let currentFilter = `date >= "${startDateStr} 00:00:00" && date <= "${endDateStr} 23:59:59"`;
-                if (registry.country) {
-                    currentFilter += ` && country = "${registry.country}"`;
+            const queryPromises = collections.map(async (collectionName) => {
+                // Determine which fields to search based on collection
+                // YouTube and Facebook (schema issues) might lack certain fields
+                let searchFields = ['title', 'permalink'];
+                if (collectionName !== 'youtube_content' && collectionName !== 'facebook_content') {
+                    searchFields.push('author');
                 }
 
-                // Append Keyword Filter - Conditioned on Collection
-                if (keywords.length > 0) {
-                    const keywordConditions = keywords.map(k => {
-                        // YouTube não tem campo 'author' no schema atual, mas Facebook tem
-                        if (collectionName === 'youtube_content') {
-                            return `title ~ "${k}"`;
+                const buildFilter = (fields) => {
+                    let filter = `date >= "${startDateStr} 00:00:00" && date <= "${endDateStr} 23:59:59"`;
+                    if (registry.country) {
+                        filter += ` && country = "${registry.country}"`;
+                    }
+                    if (keywords.length > 0) {
+                        const keywordConditions = keywords.map(k => {
+                            const clean = k.startsWith('@') ? k.slice(1) : k;
+                            const parts = fields.map(field => `${field} ~ "${k}"`);
+                            if (k !== clean) {
+                                fields.forEach(field => parts.push(`${field} ~ "${clean}"`));
+                            }
+                            return `(${parts.join(' || ')})`;
+                        }).join(' || ');
+                        filter += ` && (${keywordConditions})`;
+                    }
+                    return filter;
+                };
+
+                const executeQuery = async (fields) => {
+                    return pb.collection(collectionName).getList(1, 500, {
+                        filter: buildFilter(fields),
+                        sort: '-date',
+                        requestKey: null
+                    });
+                };
+
+                try {
+                    let res;
+                    try {
+                        res = await executeQuery(searchFields);
+                    } catch (err) {
+                        // If 400 error, it's likely a missing field (e.g. author in FB)
+                        // Try fallback to just title and permalink
+                        if (err.status === 400 && searchFields.includes('author')) {
+                            console.warn(`Retrying ${collectionName} without 'author' field...`);
+                            res = await executeQuery(['title', 'permalink']);
+                        } else {
+                            throw err;
                         }
-                        return `title ~ "${k}" || author ~ "${k}"`;
-                    }).join(' || ');
-                    currentFilter += ` && (${keywordConditions})`;
-                }
+                    }
 
-                return pb.collection(collectionName).getList(1, 500, {
-                    filter: currentFilter,
-                    sort: '-date',
-                    requestKey: null // Disable auto-cancellation
-                }).then(res => {
                     let items = res.items;
 
                     // STRICT FILTER: Check for cross-contamination
-                    // If we are querying Instagram, exclude items that clearly belong to Facebook
                     if (collectionName === 'instagram_content') {
                         items = items.filter(item => {
                             const link = (item.permalink || '').toLowerCase();
@@ -504,10 +529,10 @@ export const dataService = {
                                 : (item.platform_type || item.platform || 'social')
                         }))
                     };
-                }).catch(err => {
-                    console.warn(`Error querying ${collectionName}`, err);
+                } catch (err) {
+                    console.error(`Error querying ${collectionName}:`, err);
                     return { items: [] };
-                })
+                }
             });
 
             const results = await Promise.all(queryPromises);
@@ -523,8 +548,6 @@ export const dataService = {
 
             if (keywords.length > 0) {
                 refinedContent = allItems.filter(item => {
-                    if (!item.title) return false;
-
                     // Check if ANY keyword matches as a whole word
                     return keywords.some(keyword => {
                         const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -554,8 +577,9 @@ export const dataService = {
                             return false;
                         } else {
                             // Default Evidence Logic (Broad match)
-                            if (regex.test(item.title)) return true;
+                            if (item.title && regex.test(item.title)) return true;
                             if (item.author && regex.test(item.author)) return true;
+                            if (item.permalink && regex.test(item.permalink)) return true;
                             return false;
                         }
                     });
