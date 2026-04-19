@@ -198,7 +198,7 @@ export const dataService = {
                 : 'instagram_audience_demographics';
 
             const filter = platformLower === 'facebook'
-                ? `platform = "facebook" && country = "${country}"`
+                ? `platform = "facebook"` // Facebook collection seems to be missing 'country' field
                 : `platform = "instagram" && country = "${country}"`;
 
             // Get latest record
