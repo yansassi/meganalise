@@ -158,7 +158,7 @@ const EditRegistryModal = ({ registry, onClose, onSave }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
             <div className="bg-white dark:bg-card-dark w-full max-w-lg rounded-3xl shadow-2xl p-8 animate-scale-in">
-                <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">Editar Registro</h2>
+                <h2 className="text-2xl font-bold mb-6 text-slate-800 dark:text-white">Editar Registro (Premium)</h2>
                 <form onSubmit={handleSubmit} className="space-y-5">
                     <div>
                         <label className="block text-sm font-bold text-slate-700 dark:text-gray-300 mb-2">Título</label>
@@ -271,6 +271,7 @@ export default function EvidenceDashboard() {
     };
 
     const generatePDF = async () => {
+        console.log("Iniciando geração de PDF com design Premium...");
         setGeneratingPdf(true);
         try {
             const chartData = Object.entries(
