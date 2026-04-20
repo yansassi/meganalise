@@ -202,8 +202,6 @@ export const dataService = {
                 : `platform = "instagram" && country = "${country}"`;
 
             // Get latest record
-            console.log(`dataService: Buscando audiência para ${platformLower} no país ${country}. Koleção: ${collectionName}, Filtro: ${filter}`);
-            
             const records = await pb.collection(collectionName).getList(1, 1, {
                 filter: filter,
                 sort: '-import_date',
@@ -211,7 +209,6 @@ export const dataService = {
             });
 
             if (records.items.length === 0) {
-                console.log(`dataService: Nenhuma audiência encontrada para ${platformLower}/${country}`);
                 return null;
             }
 
