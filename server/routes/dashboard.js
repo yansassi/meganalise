@@ -17,13 +17,13 @@ router.get('/aggregate/:country', async (req, res) => {
 
         console.log(`Getting aggregate data for ${country}, range: ${startDate} to ${endDate}`);
 
-        let filter = `country = "${country}"`;
+        let filter = pb.filter('country = {:country}', { country });
         if (startDate && endDate) {
             const start = new Date(startDate).toISOString();
             const endDateObj = new Date(endDate);
             endDateObj.setUTCHours(23, 59, 59, 999);
             const end = endDateObj.toISOString();
-            filter += ` && date >= "${start}" && date <= "${end}"`;
+            filter += pb.filter(' && date >= {:start} && date <= {:end}', { start, end });
         }
 
         // We paginate to avoid loading all records into memory at once
@@ -120,7 +120,7 @@ router.get('/:country/:platform', async (req, res) => {
             const endDateObj = new Date(endDate);
             endDateObj.setUTCHours(23, 59, 59, 999);
             const end = endDateObj.toISOString();
-            dateFilter = ` && date >= "${start}" && date <= "${end}"`;
+            dateFilter = pb.filter(' && date >= {:start} && date <= {:end}', { start, end });
         }
 
 
@@ -128,9 +128,9 @@ router.get('/:country/:platform', async (req, res) => {
         let content = [];
 
         if (socialNetwork === 'tiktok') {
-            const metricsFilter = `country = "${country}" && platform = "${socialNetwork}"${dateFilter}`;
+            const metricsFilter = pb.filter('country = {:country} && platform = {:socialNetwork}', { country, socialNetwork }) + dateFilter;
             // Use country filter if available, otherwise just date filter for TikTok temporarily
-            const contentFilter = `country = "${country}"${dateFilter}`;
+            const contentFilter = pb.filter('country = {:country}', { country }) + dateFilter;
 
             const [metricsResult, contentResult] = await Promise.all([
                 pb.collection('tiktok_daily_metrics').getFullList({
@@ -165,8 +165,8 @@ router.get('/:country/:platform', async (req, res) => {
             }));
 
         } else if (socialNetwork === 'facebook') {
-            const metricsFilter = `country = "${country}" && platform = "facebook"${dateFilter}`;
-            const contentFilter = `country = "${country}"${dateFilter}`;
+            const metricsFilter = pb.filter('country = {:country} && platform = "facebook"', { country }) + dateFilter;
+            const contentFilter = pb.filter('country = {:country}', { country }) + dateFilter;
 
             const [metricsResult, contentResult] = await Promise.all([
                 pb.collection('facebook_daily_metrics').getFullList({
@@ -197,8 +197,8 @@ router.get('/:country/:platform', async (req, res) => {
             }));
 
         } else if (socialNetwork === 'youtube') {
-            const metricsFilter = `country = "${country}" && platform = "youtube"${dateFilter}`;
-            const contentFilter = `country = "${country}"${dateFilter}`;
+            const metricsFilter = pb.filter('country = {:country} && platform = "youtube"', { country }) + dateFilter;
+            const contentFilter = pb.filter('country = {:country}', { country }) + dateFilter;
 
             const [metricsResult, contentResult] = await Promise.all([
                 pb.collection('youtube_daily_metrics').getFullList({
@@ -231,8 +231,8 @@ router.get('/:country/:platform', async (req, res) => {
 
         } else {
             // Instagram (Default)
-            const metricsFilter = `country = "${country}" && platform = "${socialNetwork}"${dateFilter}`;
-            const contentFilter = `country = "${country}" && social_network = "${socialNetwork}"${dateFilter}`;
+            const metricsFilter = pb.filter('country = {:country} && platform = {:socialNetwork}', { country, socialNetwork }) + dateFilter;
+            const contentFilter = pb.filter('country = {:country} && social_network = {:socialNetwork}', { country, socialNetwork }) + dateFilter;
 
             const [metricsResult, contentResult] = await Promise.all([
                 pb.collection('instagram_daily_metrics').getFullList({
