@@ -638,23 +638,36 @@ const parseTikTokCSV = async (buffer, fileName) => {
                 const headersLower = headers.map(h => h.toLowerCase());
 
                 // 1. Content
-                // 1. Content
-                const linkHeader = headers.find(h => h.toLowerCase() === 'video link' || h.toLowerCase() === 'link do vídeo' || h.toLowerCase() === 'link do video' || h.toLowerCase() === 'link para o vídeo' || h.toLowerCase() === 'link para o video');
-                const titleHeader = headers.find(h => h.toLowerCase() === 'video title' || h.toLowerCase() === 'título do vídeo' || h.toLowerCase() === 'titulo do video');
+                const linkHeaderIdx = headersLower.findIndex(h => h === 'video link' || h === 'link do vídeo' || h === 'link do video' || h === 'link para o vídeo' || h === 'link para o video');
+                const titleHeaderIdx = headersLower.findIndex(h => h === 'video title' || h === 'título do vídeo' || h === 'titulo do video');
 
-                if (linkHeader && titleHeader) {
+                if (linkHeaderIdx !== -1 && titleHeaderIdx !== -1) {
+                    const linkHeader = headers[linkHeaderIdx];
+                    const titleHeader = headers[titleHeaderIdx];
+
+                    // Find other headers dynamically outside the loop
+                    const postTimeHeaderIdx = headersLower.findIndex(h => h === 'post time' || h === 'tempo de publicação' || h === 'tempo de publicacao' || h === 'hora da publicação' || h === 'hora da publicacao');
+                    const postTimeHeader = postTimeHeaderIdx !== -1 ? headers[postTimeHeaderIdx] : null;
+
+                    const likesHeaderIdx = headersLower.findIndex(h => h === 'total likes' || h === 'curtidas' || h === 'total curtidas');
+                    const likesHeader = likesHeaderIdx !== -1 ? headers[likesHeaderIdx] : null;
+
+                    const commentsHeaderIdx = headersLower.findIndex(h => h === 'total comments' || h === 'comentários' || h === 'total comentários' || h === 'comentarios');
+                    const commentsHeader = commentsHeaderIdx !== -1 ? headers[commentsHeaderIdx] : null;
+
+                    const sharesHeaderIdx = headersLower.findIndex(h => h === 'total shares' || h === 'compartilhamentos' || h === 'total compartilhamentos');
+                    const sharesHeader = sharesHeaderIdx !== -1 ? headers[sharesHeaderIdx] : null;
+
+                    const viewsHeaderIdx = headersLower.findIndex(h => h === 'total views' || h === 'visualizações' || h === 'total visualizações' || h === 'visualizacoes' || h === 'visualizações do vídeo' || h === 'visualizacoes do video');
+                    const viewsHeader = viewsHeaderIdx !== -1 ? headers[viewsHeaderIdx] : null;
+
+                    const savedHeaderIdx = headersLower.findIndex(h => h === 'adicionar aos favoritos' || h === 'salvamentos' || h === 'favoritos');
+                    const savedHeader = savedHeaderIdx !== -1 ? headers[savedHeaderIdx] : null;
+
                     const contentData = data.map(row => {
                         const link = row[linkHeader] || '';
                         const idMatch = link.match(/\/video\/(\d+)/);
                         const original_id = idMatch ? idMatch[1] : link;
-
-                        // Find other headers dynamically
-                        const postTimeHeader = headers.find(h => h.toLowerCase() === 'post time' || h.toLowerCase() === 'tempo de publicação' || h.toLowerCase() === 'tempo de publicacao' || h.toLowerCase() === 'hora da publicação' || h.toLowerCase() === 'hora da publicacao');
-                        const likesHeader = headers.find(h => h.toLowerCase() === 'total likes' || h.toLowerCase() === 'curtidas' || h.toLowerCase() === 'total curtidas');
-                        const commentsHeader = headers.find(h => h.toLowerCase() === 'total comments' || h.toLowerCase() === 'comentários' || h.toLowerCase() === 'total comentários' || h.toLowerCase() === 'comentarios');
-                        const sharesHeader = headers.find(h => h.toLowerCase() === 'total shares' || h.toLowerCase() === 'compartilhamentos' || h.toLowerCase() === 'total compartilhamentos');
-                        const viewsHeader = headers.find(h => h.toLowerCase() === 'total views' || h.toLowerCase() === 'visualizações' || h.toLowerCase() === 'total visualizações' || h.toLowerCase() === 'visualizacoes' || h.toLowerCase() === 'visualizações do vídeo' || h.toLowerCase() === 'visualizacoes do video');
-                        const savedHeader = headers.find(h => h.toLowerCase() === 'adicionar aos favoritos' || h.toLowerCase() === 'salvamentos' || h.toLowerCase() === 'favoritos');
 
                         return {
                             original_id,
@@ -783,7 +796,6 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
         // 1. Audience (Público) -> Text Parsing
         // Checks for "publico" (normalized), "audience", or partial match "blico" due to encoding issues
         if (fileNameLower.includes('publico') || fileNameLower.includes('audience') || fileNameLower.includes('blico')) {
-            console.log('Parsing Facebook Audience/Publico file');
             const lines = decodedContent.split(/\r?\n/);
             const audienceData = normalizeAudienceData(lines);
             resolve({ type: 'audience', data: audienceData });
@@ -792,7 +804,6 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
 
         // 1b. Principais Formatos
         if (fileNameLower.includes('principais formats') || fileNameLower.includes('principais formatos')) {
-            console.log('Skipping "Principais formatos" file (likely summary)');
             resolve({ type: 'ignored', message: 'Arquivo de resumo ignorado (Principais formatos)' });
             return;
         }
@@ -804,8 +815,6 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
             fileNameLower.includes('interacoes') || fileNameLower.includes('interações') || fileNameLower.includes('intera') ||
             fileNameLower.includes('cliques') ||
             fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações') || fileNameLower.includes('visualiza')) {
-
-            console.log('Parsing Facebook Metric file:', fileNameLower);
 
             Papa.parse(decodedContent, {
                 header: true,
@@ -829,8 +838,6 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                     else if (fileNameLower.includes('cliques')) metricName = 'website_clicks';
                     else if (fileNameLower.includes('visualizadores')) metricName = 'reach';
                     else if (fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações') || fileNameLower.includes('visualiza')) metricName = 'impressions';
-
-                    console.log(`Detected metric: ${metricName} for file ${fileName}`);
 
                     const metrics = normalizeDailyMetric(data, metricName);
                     resolve({ type: 'metric', data: metrics });
@@ -858,7 +865,6 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                 });
 
                 if (index !== -1) {
-                    console.log('Found Content headers at line:', index);
                     return lines.slice(index).join('\n');
                 }
                 return chunk;
@@ -925,8 +931,6 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
                 const headers = results.meta.fields || [];
                 const headersNorm = headers.map(h => stripAccents(h.trim()));
 
-                console.log('[YouTube] Headers detected:', headers.slice(0, 6));
-
                 const findKey = (matchFn) => headers.find((h, i) => matchFn(headersNorm[i]));
 
                 const hasDate = headersNorm.some(h => h === 'data' || h === 'date');
@@ -946,7 +950,6 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
 
                 // 1. DETECT: Dados do gráfico (Daily Video Level)
                 if (hasDate && hasTituloVideo && hasConteudo && dateKey && viewsKey) {
-                    console.log('[YouTube] Detected: Dados do gráfico (daily views per video)');
                     const aggregatedByDate = {};
                     const metricKeys = {
                         views: viewsKey,
@@ -987,7 +990,6 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
 
                 // 2. DETECT: Dados da tabela (Video List)
                 if (hasTituloVideo && !hasDate && tituloKey) {
-                    console.log('[YouTube] Detected: Dados da tabela (video list/content)');
                     const contentData = data.map(row => {
                         if (conteudoKey && (row[conteudoKey] === 'Total' || row[conteudoKey] === 'total')) return null;
                         const id = conteudoKey ? row[conteudoKey] : null;
@@ -1013,7 +1015,6 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
 
                 // 3. DETECT: Dimension Reports (Daily Chart with specific categories)
                 if (hasDate && dateKey) {
-                    console.log('[YouTube] Detected: Dimension daily report');
                     const dimensionHeader = headers.find((h, i) => {
                         const hn = headersNorm[i];
                         return h !== dateKey && 
@@ -1094,8 +1095,6 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
                     const dimKey = genderKey || ageKey || countryKey || cityKey || trafficKey || deviceKey || osKey;
 
                     if (dimKey) {
-                        console.log('[YouTube] Detected: Summary Table (Totals) ->', fileName);
-                        
                         let type = 'other';
                         const dimNorm = stripAccents(dimKey.toLowerCase());
                         if (dimNorm.includes('genero') || dimNorm.includes('gender')) type = 'gender';

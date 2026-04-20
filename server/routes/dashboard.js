@@ -17,20 +17,18 @@ router.get('/aggregate/:country', async (req, res) => {
 
         console.log(`Getting aggregate data for ${country}, range: ${startDate} to ${endDate}`);
 
-        let filter = `country = "${country}"`;
+        let filter = pb.filter('country = {:country}', { country });
         if (startDate && endDate) {
             const start = new Date(startDate).toISOString();
             const endDateObj = new Date(endDate);
             endDateObj.setUTCHours(23, 59, 59, 999);
             const end = endDateObj.toISOString();
-            filter += ` && date >= "${start}" && date <= "${end}"`;
+            filter += pb.filter(' && date >= {:start} && date <= {:end}', { start, end });
         }
 
         // We paginate to avoid loading all records into memory at once
         // and perform aggregation in-memory.
         const batchSize = 500;
-        let page = 1;
-        let hasMore = true;
 
         let totalReach = 0;
         let totalInteractions = 0;
@@ -58,30 +56,46 @@ router.get('/aggregate/:country', async (req, res) => {
         // [{ metric: 'reach', value: sumReach }, { metric: 'interactions', value: sumInteractions }, ...]
         // The dashboard will calculate the correct totals!
 
-        while (hasMore) {
-            const result = await pb.collection('instagram_daily_metrics').getList(page, batchSize, {
-                filter: filter,
-                requestKey: null,
-                fields: 'metric,value' // Select only needed fields to save memory/bandwidth
-            });
+        const firstPage = await pb.collection('instagram_daily_metrics').getList(1, batchSize, {
+            filter: filter,
+            requestKey: null,
+            fields: 'metric,value' // Select only needed fields to save memory/bandwidth
+        });
 
-            const items = result.items;
-            if (items.length === 0) {
-                hasMore = false;
-                break;
-            }
-
+        const processItems = (items) => {
+            let reach = 0, interactions = 0, followers = 0;
             for (const m of items) {
                 const val = Number(m.value) || 0;
-                if (m.metric === 'reach') totalReach += val;
-                else if (m.metric === 'interactions') totalInteractions += val;
-                else if (m.metric === 'followers') totalFollowers += val;
+                if (m.metric === 'reach') reach += val;
+                else if (m.metric === 'interactions') interactions += val;
+                else if (m.metric === 'followers') followers += val;
             }
+            return { reach, interactions, followers };
+        };
 
-            if (page >= result.totalPages) {
-                hasMore = false;
+        const firstPageSums = processItems(firstPage.items);
+        totalReach += firstPageSums.reach;
+        totalInteractions += firstPageSums.interactions;
+        totalFollowers += firstPageSums.followers;
+
+        if (firstPage.totalPages > 1) {
+            const promises = [];
+            for (let p = 2; p <= firstPage.totalPages; p++) {
+                promises.push(
+                    pb.collection('instagram_daily_metrics').getList(p, batchSize, {
+                        filter: filter,
+                        requestKey: null,
+                        fields: 'metric,value'
+                    })
+                );
             }
-            page++;
+            const results = await Promise.all(promises);
+            for (const res of results) {
+                const sums = processItems(res.items);
+                totalReach += sums.reach;
+                totalInteractions += sums.interactions;
+                totalFollowers += sums.followers;
+            }
         }
 
         // Construct the condensed metrics list
@@ -120,7 +134,7 @@ router.get('/:country/:platform', async (req, res) => {
             const endDateObj = new Date(endDate);
             endDateObj.setUTCHours(23, 59, 59, 999);
             const end = endDateObj.toISOString();
-            dateFilter = ` && date >= "${start}" && date <= "${end}"`;
+            dateFilter = pb.filter(' && date >= {:start} && date <= {:end}', { start, end });
         }
 
 
@@ -128,9 +142,9 @@ router.get('/:country/:platform', async (req, res) => {
         let content = [];
 
         if (socialNetwork === 'tiktok') {
-            const metricsFilter = `country = "${country}" && platform = "${socialNetwork}"${dateFilter}`;
+            const metricsFilter = pb.filter('country = {:country} && platform = {:socialNetwork}', { country, socialNetwork }) + dateFilter;
             // Use country filter if available, otherwise just date filter for TikTok temporarily
-            const contentFilter = `country = "${country}"${dateFilter}`;
+            const contentFilter = pb.filter('country = {:country}', { country }) + dateFilter;
 
             const [metricsResult, contentResult] = await Promise.all([
                 pb.collection('tiktok_daily_metrics').getFullList({
@@ -165,8 +179,8 @@ router.get('/:country/:platform', async (req, res) => {
             }));
 
         } else if (socialNetwork === 'facebook') {
-            const metricsFilter = `country = "${country}" && platform = "facebook"${dateFilter}`;
-            const contentFilter = `country = "${country}"${dateFilter}`;
+            const metricsFilter = pb.filter('country = {:country} && platform = "facebook"', { country }) + dateFilter;
+            const contentFilter = pb.filter('country = {:country}', { country }) + dateFilter;
 
             const [metricsResult, contentResult] = await Promise.all([
                 pb.collection('facebook_daily_metrics').getFullList({
@@ -197,8 +211,8 @@ router.get('/:country/:platform', async (req, res) => {
             }));
 
         } else if (socialNetwork === 'youtube') {
-            const metricsFilter = `country = "${country}" && platform = "youtube"${dateFilter}`;
-            const contentFilter = `country = "${country}"${dateFilter}`;
+            const metricsFilter = pb.filter('country = {:country} && platform = "youtube"', { country }) + dateFilter;
+            const contentFilter = pb.filter('country = {:country}', { country }) + dateFilter;
 
             const [metricsResult, contentResult] = await Promise.all([
                 pb.collection('youtube_daily_metrics').getFullList({
@@ -231,8 +245,8 @@ router.get('/:country/:platform', async (req, res) => {
 
         } else {
             // Instagram (Default)
-            const metricsFilter = `country = "${country}" && platform = "${socialNetwork}"${dateFilter}`;
-            const contentFilter = `country = "${country}" && social_network = "${socialNetwork}"${dateFilter}`;
+            const metricsFilter = pb.filter('country = {:country} && platform = {:socialNetwork}', { country, socialNetwork }) + dateFilter;
+            const contentFilter = pb.filter('country = {:country} && social_network = {:socialNetwork}', { country, socialNetwork }) + dateFilter;
 
             const [metricsResult, contentResult] = await Promise.all([
                 pb.collection('instagram_daily_metrics').getFullList({
