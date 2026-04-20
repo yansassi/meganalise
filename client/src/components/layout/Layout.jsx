@@ -8,7 +8,7 @@ export default function Layout({ country, setCountry }) {
     const end = new Date();
     const start = new Date();
     start.setDate(end.getDate() - 90);
-    return { startDate: start, endDate: end };
+    return { startDate: start, endDate: end, preset: 'last90' };
   });
 
   return (
