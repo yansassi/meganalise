@@ -234,28 +234,26 @@ const styles = StyleSheet.create({
     contentGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 10,
-        justifyContent: 'flex-start',
+        gap: 20,
+        justifyContent: 'space-between',
         paddingHorizontal: 0
     },
     contentCard: {
-        width: '31%', // Garantindo 3 por linha com folga
+        width: '48.5%', 
         flexDirection: 'column',
-        borderRadius: 12,
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#F1F5F9',
+        borderColor: '#E2E8F0',
         backgroundColor: '#ffffff',
-        minHeight: 310, 
-        marginBottom: 10,
+        minHeight: 480, 
+        marginBottom: 20,
         overflow: 'hidden'
     },
     contentImage: {
         width: '100%',
-        height: 190, 
-        objectFit: 'cover', // VOLTANDO AO COVER PARA TIRAR AS BORDAS
-        backgroundColor: '#F8FAFC',
-        borderTopLeftRadius: 12,
-        borderTopRightRadius: 12
+        height: 320, 
+        objectFit: 'cover',
+        backgroundColor: '#F8FAFC'
     },
     contentBody: {
         padding: 12,
@@ -279,17 +277,17 @@ const styles = StyleSheet.create({
         color: '#94A3B8'
     },
     contentAuthor: {
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#0F172A'
     },
     contentTitle: {
-        fontSize: 10,
-        color: '#334155',
-        lineHeight: 1.2,
-        height: 38, 
+        fontSize: 12,
+        color: '#475569',
+        lineHeight: 1.4,
+        height: 50, 
         overflow: 'hidden',
-        marginTop: 4
+        marginTop: 8
     },
     contentMetrics: {
         flexDirection: 'row',
@@ -304,14 +302,14 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     miniMetricLabel: {
-        fontSize: 6,
+        fontSize: 8,
         textTransform: 'uppercase',
-        color: '#94A3B8',
+        color: '#64748B',
         fontWeight: 'bold',
-        marginBottom: 1
+        marginBottom: 3
     },
     miniMetricValue: {
-        fontSize: 10,
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#0F172A'
     },
@@ -478,8 +476,8 @@ const VectorPDFTemplate = ({ registry, items = [], chartData = [], totalReach = 
                                                 </Text>
                                             </View>
                                             <Text style={styles.contentTitle}>
-                                                {(item.title || item.caption || "Conteúdo capturado via monitoramento.").substring(0, 110)}
-                                                {(item.title || item.caption || "").length > 110 ? '...' : ''}
+                                                {(item.title || item.caption || "Conteúdo capturado via monitoramento.").substring(0, 140)}
+                                                {(item.title || item.caption || "").length > 140 ? '...' : ''}
                                             </Text>
                                         </View>
 
