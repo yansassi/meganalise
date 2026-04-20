@@ -232,35 +232,29 @@ const styles = StyleSheet.create({
         letterSpacing: 1
     },
     contentGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 20,
-        justifyContent: 'space-between',
-        paddingHorizontal: 0
+        flexDirection: 'column',
+        gap: 15
     },
     contentCard: {
-        width: '48.5%', 
-        flexDirection: 'column',
+        width: '100%', 
+        flexDirection: 'row', // Imagem ao lado do conteúdo
         borderRadius: 16,
         borderWidth: 1,
         borderColor: '#E2E8F0',
         backgroundColor: '#ffffff',
-        minHeight: 310, 
-        marginBottom: 15,
+        height: 180, // Altura fixa para consistência
         overflow: 'hidden'
     },
     contentImage: {
-        width: '100%',
-        height: 180, 
+        width: 130, // Formato vertical para vídeo
+        height: '100%', 
         objectFit: 'cover',
         backgroundColor: '#F8FAFC'
     },
     contentBody: {
-        padding: 12,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        flex: 1
+        padding: 15,
+        flex: 1,
+        justifyContent: 'space-between'
     },
     contentTop: {
         flexDirection: 'row',
@@ -282,12 +276,12 @@ const styles = StyleSheet.create({
         color: '#0F172A'
     },
     contentTitle: {
-        fontSize: 11,
+        fontSize: 12,
         color: '#475569',
-        lineHeight: 1.3,
-        height: 40, 
+        lineHeight: 1.4,
+        maxHeight: 60, // Mais espaço para o texto
         overflow: 'hidden',
-        marginTop: 6
+        marginTop: 5
     },
     contentMetrics: {
         flexDirection: 'row',
@@ -302,14 +296,14 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     miniMetricLabel: {
-        fontSize: 8,
+        fontSize: 7,
         textTransform: 'uppercase',
         color: '#64748B',
         fontWeight: 'bold',
-        marginBottom: 3
+        marginBottom: 2
     },
     miniMetricValue: {
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#0F172A'
     },
@@ -476,8 +470,8 @@ const VectorPDFTemplate = ({ registry, items = [], chartData = [], totalReach = 
                                                 </Text>
                                             </View>
                                             <Text style={styles.contentTitle}>
-                                                {(item.title || item.caption || "Conteúdo capturado via monitoramento.").substring(0, 140)}
-                                                {(item.title || item.caption || "").length > 140 ? '...' : ''}
+                                                {(item.title || item.caption || "Conteúdo capturado via monitoramento.").substring(0, 200)}
+                                                {(item.title || item.caption || "").length > 200 ? '...' : ''}
                                             </Text>
                                         </View>
 
