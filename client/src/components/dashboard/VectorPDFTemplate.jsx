@@ -234,25 +234,26 @@ const styles = StyleSheet.create({
     contentGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 15,
-        justifyContent: 'flex-start'
+        gap: 10,
+        justifyContent: 'flex-start',
+        paddingHorizontal: 0
     },
     contentCard: {
-        width: '31.5%', 
+        width: '31%', // Garantindo 3 por linha com folga
         flexDirection: 'column',
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#F1F5F9',
         backgroundColor: '#ffffff',
-        minHeight: 280, // Altura suficiente para 3 colunas
+        minHeight: 310, 
         marginBottom: 10,
         overflow: 'hidden'
     },
     contentImage: {
         width: '100%',
-        height: 160, 
-        objectFit: 'contain', // IMAGEM INTEIRA SEM CORTES
-        backgroundColor: '#000000', // Fundo preto para as bordas da imagem se necessário
+        height: 190, 
+        objectFit: 'cover', // VOLTANDO AO COVER PARA TIRAR AS BORDAS
+        backgroundColor: '#F8FAFC',
         borderTopLeftRadius: 12,
         borderTopRightRadius: 12
     },
@@ -278,15 +279,15 @@ const styles = StyleSheet.create({
         color: '#94A3B8'
     },
     contentAuthor: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 'bold',
         color: '#0F172A'
     },
     contentTitle: {
-        fontSize: 9,
+        fontSize: 10,
         color: '#334155',
         lineHeight: 1.2,
-        height: 32, 
+        height: 38, 
         overflow: 'hidden',
         marginTop: 4
     },
@@ -303,14 +304,14 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     miniMetricLabel: {
-        fontSize: 5,
+        fontSize: 6,
         textTransform: 'uppercase',
         color: '#94A3B8',
         fontWeight: 'bold',
         marginBottom: 1
     },
     miniMetricValue: {
-        fontSize: 9,
+        fontSize: 10,
         fontWeight: 'bold',
         color: '#0F172A'
     },
