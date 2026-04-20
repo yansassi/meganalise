@@ -238,18 +238,18 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start'
     },
     contentCard: {
-        width: '30.5%', 
+        width: '48%', 
         flexDirection: 'column',
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#F1F5F9',
         backgroundColor: '#ffffff',
-        minHeight: 250, // Garante espaço para o conteúdo
-        marginBottom: 10
+        minHeight: 340, 
+        marginBottom: 15
     },
     contentImage: {
         width: '100%',
-        height: 140, // Reduzido levemente para caber os textos
+        height: 220, 
         objectFit: 'cover',
         borderTopLeftRadius: 12,
         borderTopRightRadius: 12,
@@ -277,17 +277,17 @@ const styles = StyleSheet.create({
         color: '#94A3B8'
     },
     contentAuthor: {
-        fontSize: 12,
+        fontSize: 13,
         fontWeight: 'bold',
         color: '#0F172A'
     },
     contentTitle: {
-        fontSize: 10, // Reduzido para caber melhor
+        fontSize: 11,
         color: '#334155',
-        lineHeight: 1.2,
-        height: 24, // Altura fixa para manter alinhamento
+        lineHeight: 1.3,
+        height: 42, 
         overflow: 'hidden',
-        marginTop: 4
+        marginTop: 6
     },
     contentMetrics: {
         flexDirection: 'row',
@@ -297,19 +297,19 @@ const styles = StyleSheet.create({
     miniMetric: {
         flex: 1,
         backgroundColor: '#F8FAFC',
-        padding: 4, // Padding menor
-        borderRadius: 6,
+        padding: 6,
+        borderRadius: 8,
         alignItems: 'center'
     },
     miniMetricLabel: {
-        fontSize: 5, // Fonte menor para métricas
+        fontSize: 6,
         textTransform: 'uppercase',
         color: '#94A3B8',
         fontWeight: 'bold',
-        marginBottom: 1
+        marginBottom: 2
     },
     miniMetricValue: {
-        fontSize: 9, // Fonte menor para métricas
+        fontSize: 12,
         fontWeight: 'bold',
         color: '#0F172A'
     },
@@ -476,8 +476,8 @@ const VectorPDFTemplate = ({ registry, items = [], chartData = [], totalReach = 
                                                 </Text>
                                             </View>
                                             <Text style={styles.contentTitle}>
-                                                {(item.title || item.caption || "Conteúdo capturado via monitoramento.").substring(0, 80)}
-                                                {(item.title || item.caption || "").length > 80 ? '...' : ''}
+                                                {(item.title || item.caption || "Conteúdo capturado via monitoramento.").substring(0, 110)}
+                                                {(item.title || item.caption || "").length > 110 ? '...' : ''}
                                             </Text>
                                         </View>
 
