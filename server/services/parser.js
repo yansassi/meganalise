@@ -211,30 +211,61 @@ const findValue = (row, keyMap, candidates) => {
     return undefined;
 };
 
-const normalizeContentData = (data, isUSFormat = 'auto') => {
+const normalizeContentData = (data, isUSFormat = 'auto', fileName = '') => {
     const headers = data.length > 0 ? Object.keys(data[0]) : [];
     const headersLower = headers.map(h => h.toLowerCase());
 
     // If auto, try to detect format from first valid row
     let detectedUSFormat = isUSFormat === true;
+    
     if (isUSFormat === 'auto') {
-        // Sample first few rows to detect format
-        for (let i = 0; i < Math.min(data.length, 10); i++) {
+        // 1. Check filename hint (e.g. "Apr-01-2026" or "04-13-2026" at start)
+        const fileNameLower = fileName.toLowerCase();
+        if (/^[a-z]{3}-\d{2}-\d{4}/i.test(fileNameLower) || /^\d{2}-\d{2}-\d{4}/.test(fileNameLower)) {
+            // Filenames like "Apr-01-2026" or "04-01-2026" in Facebook exports usually follow US convention
+            detectedUSFormat = true;
+        }
+
+        // 2. Sample rows to detect format
+        let p1Values = new Set();
+        let p2Values = new Set();
+        let foundDefinitive = false;
+        const dateCandidates = ['Horário de publicação', 'Data', 'Date', 'Horario'];
+        const dateKey = headers.find(h => dateCandidates.some(c => h.toLowerCase().includes(c.toLowerCase())));
+
+        for (let i = 0; i < Math.min(data.length, 100); i++) {
             const row = data[i];
-            const dateStr = headers.find(h => h.toLowerCase().includes('data') || h.toLowerCase().includes('date')) ? 
-                            row[headers.find(h => h.toLowerCase().includes('data') || h.toLowerCase().includes('date'))] : null;
+            const dateStr = dateKey ? row[dateKey] : null;
             
-            if (dateStr) {
+            if (dateStr && dateStr !== 'Total') {
                 const match = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-]\d{4}/);
                 if (match) {
                     const p1 = parseInt(match[1]);
                     const p2 = parseInt(match[2]);
-                    if (p1 > 12) { detectedUSFormat = false; break; }
-                    if (p2 > 12) { detectedUSFormat = true; break; }
+                    p1Values.add(p1);
+                    p2Values.add(p2);
+
+                    if (p1 > 12) { detectedUSFormat = false; foundDefinitive = true; break; }
+                    if (p2 > 12) { detectedUSFormat = true; foundDefinitive = true; break; }
                 }
             }
         }
+
+
+        // 3. Heuristic: If still ambiguous after sampling, check which part is more "stable"
+        // In daily reports, the month (p1 in US) stays same, day (p2 in US) changes.
+        if (!foundDefinitive && p1Values.size > 0) {
+            if (p2Values.size > p1Values.size) {
+                detectedUSFormat = true; // p2 is likely the Day
+            } else if (p1Values.size > p2Values.size) {
+                detectedUSFormat = false; // p1 is likely the Day
+            } else {
+                // Still ambiguous (e.g. only 1 row or 01/01/2024)
+                // Default to false (International/Brazilian) unless filename suggested otherwise
+            }
+        }
     }
+
 
     return data.map((row, index) => {
         const keyMap = createKeyMap(row);
@@ -301,11 +332,15 @@ const normalizeContentData = (data, isUSFormat = 'auto') => {
         let platform = 'social';
         const isVideoReport = getValue(['Número de identificação do ativo de vídeo', 'Identificação do vídeo universal']) !== undefined;
 
-        if (typeLower.includes('story') || typeLower.includes('historia') || typeLower.includes('história') || headersLower.some(h => h.includes('story'))) {
+        if (typeLower.includes('story') || typeLower.includes('historia') || typeLower.includes('história')) {
             platform = 'story';
         } else if (typeLower.includes('reel') || typeLower.includes('video') || typeLower.includes('vídeo') || isVideoReport) {
             platform = 'video';
+        } else if (headersLower.some(h => h.includes('story'))) {
+            // Fallback to story only if type is ambiguous
+            platform = 'story';
         }
+
 
 
         // Robust Title/Caption extraction - prioritized list of candidates
@@ -912,7 +947,8 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                 );
 
                 if (isContentFile) {
-                    const rawContent = normalizeContentData(data, 'auto'); // Auto-detect format
+                    const rawContent = normalizeContentData(data, 'auto', fileName); // Auto-detect format
+
 
 
                     // Aggregate by ID to handle daily breakdown rows
