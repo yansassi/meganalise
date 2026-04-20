@@ -2,6 +2,9 @@
 echo Iniciando Deploy para Meganalise VPS...
 echo.
 
+:: Configurar Git para ignorar avisos de CRLF
+git config core.autocrlf true
+
 :: Adicionar todas as mudanças
 git add .
 
@@ -15,6 +18,10 @@ if %errorlevel% neq 0 (
     echo Configurando remote 'production'...
     git remote add production http://git.72.60.255.60.sslip.io/yansassi/meganalise.git
 )
+
+:: Sincronizar com o remote antes do push para evitar erros
+echo Sincronizando com o servidor (production)...
+git pull production main --rebase
 
 :: Push para o remote production
 echo Enviando para http://git.72.60.255.60.sslip.io/yansassi/meganalise.git...
