@@ -421,6 +421,7 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                         existingMap.set(key, rec);
                     }
 
+                    const fallbackItems = [];
                     await Promise.all(batch.map(async (item) => {
                         try {
                             const key = `${item.date}_${item.metric}`;
@@ -443,9 +444,8 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                                     savedCount++;
                                 } catch (createErr) {
                                     if (createErr.status === 400) {
-                                        const found = await pb.collection('tiktok_daily_metrics').getFirstListItem(`date = "${recordData.date}" && metric = "${recordData.metric}" && country = "${country}"`, { requestKey: null });
-                                        await pb.collection('tiktok_daily_metrics').update(found.id, recordData, { requestKey: null });
-                                        savedCount++;
+                                        // Collect failed records for batched fallback to avoid N+1 query pattern
+                                        fallbackItems.push(recordData);
                                     } else {
                                         throw createErr;
                                     }
@@ -456,6 +456,40 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                             errors.push(e.message);
                         }
                     }));
+
+                    if (fallbackItems.length > 0) {
+                        try {
+                            const filterParts = fallbackItems.map((_, i) => `(date ~ {:date${i}} && metric = {:metric${i}})`).join(' || ');
+                            const filterParams = { country: country };
+                            fallbackItems.forEach((item, i) => {
+                                filterParams[`date${i}`] = item.date.substring(0, 10);
+                                filterParams[`metric${i}`] = item.metric;
+                            });
+
+                            const foundItems = await pb.collection('tiktok_daily_metrics').getFullList({
+                                filter: pb.filter(`country = {:country} && (${filterParts})`, filterParams),
+                                requestKey: null
+                            });
+
+                            const foundMap = new Map();
+                            for (const found of foundItems) {
+                                const dateKey = found.date.substring(0, 10);
+                                foundMap.set(`${dateKey}_${found.metric}`, found);
+                            }
+
+                            await Promise.all(fallbackItems.map(async (recordData) => {
+                                const dateKey = recordData.date.substring(0, 10);
+                                const found = foundMap.get(`${dateKey}_${recordData.metric}`);
+                                if (found) {
+                                    await pb.collection('tiktok_daily_metrics').update(found.id, recordData, { requestKey: null });
+                                    savedCount++;
+                                }
+                            }));
+                        } catch (fallbackErr) {
+                            console.error('Batch fallback processing error:', fallbackErr.message);
+                            errors.push(`Fallback batch error: ${fallbackErr.message}`);
+                        }
+                    }
                 } catch (batchError) {
                     console.error('Batch processing error:', batchError.message);
                     errors.push(`Batch error: ${batchError.message}`);
