@@ -32,8 +32,14 @@ const FacebookStoriesDashboard = () => {
         // Filter valid stories for Facebook
         const stories = dbData.content.filter(c =>
             c.platform_type === 'story' ||
-            (c.title && c.title.toLowerCase().startsWith('story'))
+            c.platform === 'story' ||
+            (c.title && (
+                c.title.toLowerCase().startsWith('story') || 
+                c.title.toLowerCase().includes('historia') ||
+                c.title.toLowerCase().includes('história')
+            ))
         );
+
 
         totalStories = stories.length;
 

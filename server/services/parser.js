@@ -211,7 +211,29 @@ const findValue = (row, keyMap, candidates) => {
     return undefined;
 };
 
-const normalizeContentData = (data, isUSFormat = false) => {
+const normalizeContentData = (data, isUSFormat = 'auto') => {
+    // If auto, try to detect format from first valid row
+    let detectedUSFormat = isUSFormat === true;
+    if (isUSFormat === 'auto') {
+        // Sample first few rows to detect format
+        for (let i = 0; i < Math.min(data.length, 10); i++) {
+            const row = data[i];
+            const headers = Object.keys(row);
+            const dateStr = headers.find(h => h.toLowerCase().includes('data') || h.toLowerCase().includes('date')) ? 
+                            row[headers.find(h => h.toLowerCase().includes('data') || h.toLowerCase().includes('date'))] : null;
+            
+            if (dateStr) {
+                const match = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-]\d{4}/);
+                if (match) {
+                    const p1 = parseInt(match[1]);
+                    const p2 = parseInt(match[2]);
+                    if (p1 > 12) { detectedUSFormat = false; break; }
+                    if (p2 > 12) { detectedUSFormat = true; break; }
+                }
+            }
+        }
+    }
+
     return data.map((row, index) => {
         const keyMap = createKeyMap(row);
         const getValue = (candidates) => findValue(row, keyMap, candidates);
@@ -257,7 +279,7 @@ const normalizeContentData = (data, isUSFormat = false) => {
                 // Date Parsing
                 // 1. Special handling for US Slashed dates (MM/DD/YYYY) if specified
                 const slashMatch = sanitizedDate.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-                if (isUSFormat && slashMatch) {
+                if (detectedUSFormat && slashMatch) {
                     const [_, p1, p2, year] = slashMatch;
                     // US: p1=Month, p2=Day
                     dateFormatted = `${year}-${p1.padStart(2, '0')}-${p2.padStart(2, '0')}`;
@@ -265,6 +287,7 @@ const normalizeContentData = (data, isUSFormat = false) => {
                     // 2. Use robust parseDate helper (handles DD/MM/YYYY, Text months "Jan 10", YYYY-MM-DD)
                     dateFormatted = parseDate(sanitizedDate);
                 }
+
             } catch (e) {
                 console.error('Date parsing error', rawDate);
             }
@@ -276,11 +299,12 @@ const normalizeContentData = (data, isUSFormat = false) => {
         let platform = 'social';
         const isVideoReport = getValue(['Número de identificação do ativo de vídeo', 'Identificação do vídeo universal']) !== undefined;
 
-        if (typeLower.includes('story') || typeLower.includes('historia') || typeLower.includes('história')) {
+        if (typeLower.includes('story') || typeLower.includes('historia') || typeLower.includes('história') || headersLower.some(h => h.includes('story'))) {
             platform = 'story';
         } else if (typeLower.includes('reel') || typeLower.includes('video') || typeLower.includes('vídeo') || isVideoReport) {
             platform = 'video';
         }
+
 
         // Robust Title/Caption extraction - prioritized list of candidates
         // We check each and take the first non-empty one.
@@ -874,8 +898,20 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                 const headers = results.meta.fields || [];
                 const headersLower = headers.map(h => h.toLowerCase());
 
-                if (headersLower.some(h => h.includes('dentificacao') || h.includes('id') || h.includes('link'))) {
-                    const rawContent = normalizeContentData(data, true); // Use US Format detection for FB slashed dates
+                const isContentFile = headersLower.some(h => 
+                    h.includes('dentificacao') || 
+                    h.includes('id') || 
+                    h.includes('link') || 
+                    h.includes('titulo') || 
+                    h.includes('title') || 
+                    h.includes('publicaca') || 
+                    h.includes('story') || 
+                    h.includes('nome')
+                );
+
+                if (isContentFile) {
+                    const rawContent = normalizeContentData(data, 'auto'); // Auto-detect format
+
 
                     // Aggregate by ID to handle daily breakdown rows
                     const aggregated = {};
