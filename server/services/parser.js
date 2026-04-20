@@ -796,7 +796,6 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
         // 1. Audience (Público) -> Text Parsing
         // Checks for "publico" (normalized), "audience", or partial match "blico" due to encoding issues
         if (fileNameLower.includes('publico') || fileNameLower.includes('audience') || fileNameLower.includes('blico')) {
-            console.log('Parsing Facebook Audience/Publico file');
             const lines = decodedContent.split(/\r?\n/);
             const audienceData = normalizeAudienceData(lines);
             resolve({ type: 'audience', data: audienceData });
@@ -805,7 +804,6 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
 
         // 1b. Principais Formatos
         if (fileNameLower.includes('principais formats') || fileNameLower.includes('principais formatos')) {
-            console.log('Skipping "Principais formatos" file (likely summary)');
             resolve({ type: 'ignored', message: 'Arquivo de resumo ignorado (Principais formatos)' });
             return;
         }
@@ -817,8 +815,6 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
             fileNameLower.includes('interacoes') || fileNameLower.includes('interações') || fileNameLower.includes('intera') ||
             fileNameLower.includes('cliques') ||
             fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações') || fileNameLower.includes('visualiza')) {
-
-            console.log('Parsing Facebook Metric file:', fileNameLower);
 
             Papa.parse(decodedContent, {
                 header: true,
@@ -842,8 +838,6 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                     else if (fileNameLower.includes('cliques')) metricName = 'website_clicks';
                     else if (fileNameLower.includes('visualizadores')) metricName = 'reach';
                     else if (fileNameLower.includes('visualizacoes') || fileNameLower.includes('visualizações') || fileNameLower.includes('visualiza')) metricName = 'impressions';
-
-                    console.log(`Detected metric: ${metricName} for file ${fileName}`);
 
                     const metrics = normalizeDailyMetric(data, metricName);
                     resolve({ type: 'metric', data: metrics });
@@ -871,7 +865,6 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                 });
 
                 if (index !== -1) {
-                    console.log('Found Content headers at line:', index);
                     return lines.slice(index).join('\n');
                 }
                 return chunk;
@@ -938,8 +931,6 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
                 const headers = results.meta.fields || [];
                 const headersNorm = headers.map(h => stripAccents(h.trim()));
 
-                console.log('[YouTube] Headers detected:', headers.slice(0, 6));
-
                 const findKey = (matchFn) => headers.find((h, i) => matchFn(headersNorm[i]));
 
                 const hasDate = headersNorm.some(h => h === 'data' || h === 'date');
@@ -959,7 +950,6 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
 
                 // 1. DETECT: Dados do gráfico (Daily Video Level)
                 if (hasDate && hasTituloVideo && hasConteudo && dateKey && viewsKey) {
-                    console.log('[YouTube] Detected: Dados do gráfico (daily views per video)');
                     const aggregatedByDate = {};
                     const metricKeys = {
                         views: viewsKey,
@@ -1000,7 +990,6 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
 
                 // 2. DETECT: Dados da tabela (Video List)
                 if (hasTituloVideo && !hasDate && tituloKey) {
-                    console.log('[YouTube] Detected: Dados da tabela (video list/content)');
                     const contentData = data.map(row => {
                         if (conteudoKey && (row[conteudoKey] === 'Total' || row[conteudoKey] === 'total')) return null;
                         const id = conteudoKey ? row[conteudoKey] : null;
@@ -1026,7 +1015,6 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
 
                 // 3. DETECT: Dimension Reports (Daily Chart with specific categories)
                 if (hasDate && dateKey) {
-                    console.log('[YouTube] Detected: Dimension daily report');
                     const dimensionHeader = headers.find((h, i) => {
                         const hn = headersNorm[i];
                         return h !== dateKey && 
@@ -1107,8 +1095,6 @@ const parseYouTubeCSV = (fileBuffer, fileName) => {
                     const dimKey = genderKey || ageKey || countryKey || cityKey || trafficKey || deviceKey || osKey;
 
                     if (dimKey) {
-                        console.log('[YouTube] Detected: Summary Table (Totals) ->', fileName);
-                        
                         let type = 'other';
                         const dimNorm = stripAccents(dimKey.toLowerCase());
                         if (dimNorm.includes('genero') || dimNorm.includes('gender')) type = 'gender';
