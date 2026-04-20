@@ -232,28 +232,33 @@ const styles = StyleSheet.create({
         letterSpacing: 1
     },
     contentGrid: {
-        flexDirection: 'column',
-        gap: 15
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 15,
+        justifyContent: 'flex-start'
     },
     contentCard: {
-        flexDirection: 'row',
-        padding: 15,
-        borderRadius: 16,
+        width: '30.5%', // Ajustado para caber 3 por linha com o gap
+        flexDirection: 'column',
+        borderRadius: 12,
         borderWidth: 1,
         borderColor: '#F1F5F9',
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        overflow: 'hidden',
+        marginBottom: 5
     },
     contentImage: {
-        width: 80,
-        height: 110,
-        borderRadius: 10,
+        width: '100%',
+        height: 180,
         objectFit: 'cover',
         backgroundColor: '#F8FAFC'
     },
     contentBody: {
-        flex: 1,
-        marginLeft: 20,
-        justifyContent: 'space-between'
+        padding: 12,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        flex: 1
     },
     contentTop: {
         flexDirection: 'row',
@@ -283,7 +288,7 @@ const styles = StyleSheet.create({
     },
     contentMetrics: {
         flexDirection: 'row',
-        gap: 10,
+        gap: 6,
         marginTop: 10
     },
     miniMetric: {
@@ -294,7 +299,7 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     miniMetricLabel: {
-        fontSize: 7,
+        fontSize: 6,
         textTransform: 'uppercase',
         color: '#94A3B8',
         fontWeight: 'bold',
@@ -468,8 +473,8 @@ const VectorPDFTemplate = ({ registry, items = [], chartData = [], totalReach = 
                                                 </Text>
                                             </View>
                                             <Text style={styles.contentTitle}>
-                                                {(item.title || item.caption || "Conteúdo capturado via monitoramento.").substring(0, 140)}
-                                                {(item.title || item.caption || "").length > 140 ? '...' : ''}
+                                                {(item.title || item.caption || "Conteúdo capturado via monitoramento.").substring(0, 80)}
+                                                {(item.title || item.caption || "").length > 80 ? '...' : ''}
                                             </Text>
                                         </View>
 
