@@ -212,13 +212,15 @@ const findValue = (row, keyMap, candidates) => {
 };
 
 const normalizeContentData = (data, isUSFormat = 'auto') => {
+    const headers = data.length > 0 ? Object.keys(data[0]) : [];
+    const headersLower = headers.map(h => h.toLowerCase());
+
     // If auto, try to detect format from first valid row
     let detectedUSFormat = isUSFormat === true;
     if (isUSFormat === 'auto') {
         // Sample first few rows to detect format
         for (let i = 0; i < Math.min(data.length, 10); i++) {
             const row = data[i];
-            const headers = Object.keys(row);
             const dateStr = headers.find(h => h.toLowerCase().includes('data') || h.toLowerCase().includes('date')) ? 
                             row[headers.find(h => h.toLowerCase().includes('data') || h.toLowerCase().includes('date'))] : null;
             
