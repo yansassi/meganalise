@@ -11,7 +11,19 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 // CORS Configuration
-app.use(cors());
+const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',')
+    : ['http://localhost:5173', 'http://localhost:4173', 'https://meganalise.pro', 'https://www.meganalise.pro'];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    }
+}));
 app.use(express.json());
 
 // Content-Type check for debugging
