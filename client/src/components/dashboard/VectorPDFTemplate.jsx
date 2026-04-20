@@ -238,22 +238,23 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start'
     },
     contentCard: {
-        width: '48%', 
+        width: '31.5%', 
         flexDirection: 'column',
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#F1F5F9',
         backgroundColor: '#ffffff',
-        minHeight: 340, 
-        marginBottom: 15
+        minHeight: 280, // Altura suficiente para 3 colunas
+        marginBottom: 10,
+        overflow: 'hidden'
     },
     contentImage: {
         width: '100%',
-        height: 220, 
-        objectFit: 'cover',
+        height: 160, 
+        objectFit: 'contain', // IMAGEM INTEIRA SEM CORTES
+        backgroundColor: '#000000', // Fundo preto para as bordas da imagem se necessário
         borderTopLeftRadius: 12,
-        borderTopRightRadius: 12,
-        backgroundColor: '#F8FAFC'
+        borderTopRightRadius: 12
     },
     contentBody: {
         padding: 12,
@@ -277,17 +278,17 @@ const styles = StyleSheet.create({
         color: '#94A3B8'
     },
     contentAuthor: {
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: 'bold',
         color: '#0F172A'
     },
     contentTitle: {
-        fontSize: 11,
+        fontSize: 9,
         color: '#334155',
-        lineHeight: 1.3,
-        height: 42, 
+        lineHeight: 1.2,
+        height: 32, 
         overflow: 'hidden',
-        marginTop: 6
+        marginTop: 4
     },
     contentMetrics: {
         flexDirection: 'row',
@@ -297,19 +298,19 @@ const styles = StyleSheet.create({
     miniMetric: {
         flex: 1,
         backgroundColor: '#F8FAFC',
-        padding: 6,
-        borderRadius: 8,
+        padding: 4,
+        borderRadius: 6,
         alignItems: 'center'
     },
     miniMetricLabel: {
-        fontSize: 6,
+        fontSize: 5,
         textTransform: 'uppercase',
         color: '#94A3B8',
         fontWeight: 'bold',
-        marginBottom: 2
+        marginBottom: 1
     },
     miniMetricValue: {
-        fontSize: 12,
+        fontSize: 9,
         fontWeight: 'bold',
         color: '#0F172A'
     },
