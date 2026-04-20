@@ -410,7 +410,7 @@ export default function EvidenceDashboard() {
                         {generatingPdf
                             ? <span className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin"></span>
                             : <span className="material-icons-round">picture_as_pdf</span>}
-                        {generatingPdf ? 'Gerando...' : 'Baixar PDF'}
+                        {generatingPdf ? 'Gerando...' : 'BAIXAR PDF PREMIUM'}
                     </button>
                 </div>
             </div>
