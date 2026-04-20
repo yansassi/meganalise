@@ -245,13 +245,13 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#E2E8F0',
         backgroundColor: '#ffffff',
-        minHeight: 480, 
-        marginBottom: 20,
+        minHeight: 310, 
+        marginBottom: 15,
         overflow: 'hidden'
     },
     contentImage: {
         width: '100%',
-        height: 320, 
+        height: 180, 
         objectFit: 'cover',
         backgroundColor: '#F8FAFC'
     },
@@ -282,12 +282,12 @@ const styles = StyleSheet.create({
         color: '#0F172A'
     },
     contentTitle: {
-        fontSize: 12,
+        fontSize: 11,
         color: '#475569',
-        lineHeight: 1.4,
-        height: 50, 
+        lineHeight: 1.3,
+        height: 40, 
         overflow: 'hidden',
-        marginTop: 8
+        marginTop: 6
     },
     contentMetrics: {
         flexDirection: 'row',
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
         marginBottom: 3
     },
     miniMetricValue: {
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: 'bold',
         color: '#0F172A'
     },
