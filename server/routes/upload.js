@@ -205,14 +205,13 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                     }
                 }
 
+                const failedCreates = [];
+
                 await Promise.all(chunk.map(async (item) => {
                     try {
                         // Search key: Lowercase metric
                         const key = `${item.date}_${item.metric.toLowerCase()}`;
                         let existingRecord = existingMap.get(key);
-
-                        // Debugging removed to reduce noise once fixed, or keep minimal
-                        // if (!existingRecord && i === 0) console.log(...)
 
                         // Fallback: Individual check if batch failed
                         if (batchFetchFailed) {
@@ -236,26 +235,15 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
 
                         if (existingRecord) {
                             await pb.collection('instagram_daily_metrics').update(existingRecord.id, recordData, { requestKey: null });
-                            // console.log(`[DEBUG] Updated: ${key}`);
                             savedCount++;
                         } else {
                             try {
                                 await pb.collection('instagram_daily_metrics').create(recordData, { requestKey: null });
-                                console.log(`[DEBUG] Created New: ${key}`);
                                 savedCount++;
                             } catch (createErr) {
                                 // Handle Unique Constraint Violation (Race condition or previous batch miss)
                                 if (createErr.status === 400) {
-                                    // console.log(`[DEBUG] Unique constraint hit for ${key}, trying update...`);
-                                    try {
-                                        // Fetch actual ID
-                                        const found = await pb.collection('instagram_daily_metrics').getFirstListItem(`date = "${recordData.date}" && metric = "${recordData.metric}" && country = "${country}"`, { requestKey: null });
-                                        await pb.collection('instagram_daily_metrics').update(found.id, recordData, { requestKey: null });
-                                        savedCount++;
-                                    } catch (fetchErr) {
-                                        console.error(`Failed to recover from unique violation for ${key}:`, fetchErr.message);
-                                        errors.push({ date: item.date, metric: item.metric, error: createErr.message });
-                                    }
+                                    failedCreates.push(recordData);
                                 } else {
                                     throw createErr;
                                 }
@@ -266,6 +254,43 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                         errors.push({ date: item.date, metric: item.metric, error: err.message });
                     }
                 }));
+
+                // Fallback for Unique Constraint Violations in batch
+                if (failedCreates.length > 0) {
+                    try {
+                        const filterParts = failedCreates.map((_, idx) => `(date = {:date${idx}} && metric = {:metric${idx}})`).join(' || ');
+                        const filterParams = { country };
+                        failedCreates.forEach((r, idx) => {
+                            filterParams[`date${idx}`] = r.date;
+                            filterParams[`metric${idx}`] = r.metric;
+                        });
+                        const filterExpr = pb.filter(`country = {:country} && (${filterParts})`, filterParams);
+
+                        const foundRecords = await pb.collection('instagram_daily_metrics').getFullList({
+                            filter: filterExpr,
+                            requestKey: null
+                        });
+
+                        await Promise.all(failedCreates.map(async (failed) => {
+                            try {
+                                const found = foundRecords.find(r => r.date.substring(0, 10) === failed.date.substring(0, 10) && r.metric === failed.metric);
+                                if (found) {
+                                    await pb.collection('instagram_daily_metrics').update(found.id, failed, { requestKey: null });
+                                    savedCount++;
+                                } else {
+                                    console.error(`Failed to recover from unique violation: Record not found for ${failed.metric} on ${failed.date}`);
+                                    errors.push({ date: failed.date, metric: failed.metric, error: 'Unique constraint failed and record not found on fallback' });
+                                }
+                            } catch (updateErr) {
+                                console.error(`Failed to update recovered record ${failed.metric} on ${failed.date}:`, updateErr.message);
+                                errors.push({ date: failed.date, metric: failed.metric, error: updateErr.message });
+                            }
+                        }));
+                    } catch (fallbackErr) {
+                        console.error('Error during batch unique constraint fallback recovery:', fallbackErr.message);
+                        errors.push({ error: `Batch fallback recovery failed: ${fallbackErr.message}` });
+                    }
+                }
             }
         } else if (result.type === 'demographics') {
             try {
@@ -412,6 +437,8 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                         existingMap.set(key, rec);
                     }
 
+                    const failedCreates = [];
+
                     await Promise.all(batch.map(async (item) => {
                         try {
                             const key = `${item.date}_${item.metric}`;
@@ -434,9 +461,7 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                                     savedCount++;
                                 } catch (createErr) {
                                     if (createErr.status === 400) {
-                                        const found = await pb.collection('tiktok_daily_metrics').getFirstListItem(`date = "${recordData.date}" && metric = "${recordData.metric}" && country = "${country}"`, { requestKey: null });
-                                        await pb.collection('tiktok_daily_metrics').update(found.id, recordData, { requestKey: null });
-                                        savedCount++;
+                                        failedCreates.push(recordData);
                                     } else {
                                         throw createErr;
                                     }
@@ -447,6 +472,43 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                             errors.push(e.message);
                         }
                     }));
+
+                    // Fallback for Unique Constraint Violations in batch
+                    if (failedCreates.length > 0) {
+                        try {
+                            const filterParts = failedCreates.map((_, idx) => `(date = {:date${idx}} && metric = {:metric${idx}})`).join(' || ');
+                            const filterParams = { country };
+                            failedCreates.forEach((r, idx) => {
+                                filterParams[`date${idx}`] = r.date;
+                                filterParams[`metric${idx}`] = r.metric;
+                            });
+                            const filterExpr = pb.filter(`country = {:country} && (${filterParts})`, filterParams);
+
+                            const foundRecords = await pb.collection('tiktok_daily_metrics').getFullList({
+                                filter: filterExpr,
+                                requestKey: null
+                            });
+
+                            await Promise.all(failedCreates.map(async (failed) => {
+                                try {
+                                    const found = foundRecords.find(r => r.date.substring(0, 10) === failed.date.substring(0, 10) && r.metric === failed.metric);
+                                    if (found) {
+                                        await pb.collection('tiktok_daily_metrics').update(found.id, failed, { requestKey: null });
+                                        savedCount++;
+                                    } else {
+                                        console.error(`Failed to recover from unique violation: Record not found for ${failed.metric} on ${failed.date}`);
+                                        errors.push(`Unique constraint failed and record not found on fallback: ${failed.metric}`);
+                                    }
+                                } catch (updateErr) {
+                                    console.error(`Failed to update recovered record ${failed.metric} on ${failed.date}:`, updateErr.message);
+                                    errors.push(`Update error on fallback: ${updateErr.message}`);
+                                }
+                            }));
+                        } catch (fallbackErr) {
+                            console.error('Error during batch unique constraint fallback recovery:', fallbackErr.message);
+                            errors.push(`Batch fallback recovery failed: ${fallbackErr.message}`);
+                        }
+                    }
                 } catch (batchError) {
                     console.error('Batch processing error:', batchError.message);
                     errors.push(`Batch error: ${batchError.message}`);
@@ -625,6 +687,8 @@ router.post('/youtube', upload.single('file'), async (req, res) => {
                     existingMap.set(key, record);
                 }
 
+                const failedCreates = [];
+
                 await Promise.all(chunk.map(async (item) => {
                     try {
                         const key = `${item.date}_${item.metric.toLowerCase()}`;
@@ -640,24 +704,60 @@ router.post('/youtube', upload.single('file'), async (req, res) => {
 
                         if (existingRecord) {
                             await pb.collection('youtube_daily_metrics').update(existingRecord.id, recordData, { requestKey: null });
+                            savedCount++;
                         } else {
                             try {
                                 await pb.collection('youtube_daily_metrics').create(recordData, { requestKey: null });
+                                savedCount++;
                             } catch (createErr) {
                                 if (createErr.status === 400) {
-                                    const found = await pb.collection('youtube_daily_metrics').getFirstListItem(`date = "${recordData.date}" && metric = "${recordData.metric}" && country = "${country}"`, { requestKey: null });
-                                    await pb.collection('youtube_daily_metrics').update(found.id, recordData, { requestKey: null });
+                                    failedCreates.push(recordData);
                                 } else {
                                     throw createErr;
                                 }
                             }
                         }
-                        savedCount++;
                     } catch (err) {
                         console.error(`Erro ao salvar métrica YouTube ${item.metric}:`, err.message);
                         errors.push({ date: item.date, metric: item.metric, error: err.message });
                     }
                 }));
+
+                if (failedCreates.length > 0) {
+                    try {
+                        const filterParts = failedCreates.map((_, idx) => `(date = {:date${idx}} && metric = {:metric${idx}})`).join(' || ');
+                        const filterParams = { country };
+                        failedCreates.forEach((r, idx) => {
+                            filterParams[`date${idx}`] = r.date;
+                            filterParams[`metric${idx}`] = r.metric;
+                        });
+                        const filterExpr = pb.filter(`country = {:country} && (${filterParts})`, filterParams);
+
+                        const foundRecords = await pb.collection('youtube_daily_metrics').getFullList({
+                            filter: filterExpr,
+                            requestKey: null
+                        });
+
+                        await Promise.all(failedCreates.map(async (failed) => {
+                            try {
+                                const found = foundRecords.find(r => r.date.substring(0, 10) === failed.date.substring(0, 10) && r.metric === failed.metric);
+                                if (found) {
+                                    await pb.collection('youtube_daily_metrics').update(found.id, failed, { requestKey: null });
+                                    savedCount++;
+                                } else {
+                                    console.error(`Failed to recover from unique violation: Record not found for ${failed.metric} on ${failed.date}`);
+                                    errors.push({ date: failed.date, metric: failed.metric, error: 'Unique constraint failed and record not found on fallback' });
+                                }
+                            } catch (updateErr) {
+                                console.error(`Failed to update recovered record ${failed.metric} on ${failed.date}:`, updateErr.message);
+                                errors.push({ date: failed.date, metric: failed.metric, error: updateErr.message });
+                            }
+                        }));
+                    } catch (fallbackErr) {
+                        console.error('Error during batch unique constraint fallback recovery:', fallbackErr.message);
+                        errors.push({ error: `Batch fallback recovery failed: ${fallbackErr.message}` });
+                    }
+                }
             }
         } else if (result.type === 'demographics') {
             const today = new Date().toISOString().split('T')[0];
@@ -759,32 +859,35 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                 for (let i = 0; i < result.data.length; i += BATCH_SIZE) {
                     const chunk = result.data.slice(i, i + BATCH_SIZE);
 
-                    const chunkPromises = chunk.map(async (item) => {
+                    const failedCreates = [];
+                    const results = [];
+
+                    await Promise.all(chunk.map(async (item) => {
                         try {
                             const key = `${item.date}_${item.metric.toLowerCase()}`;
                             const existing = existingMap.get(key);
+
+                            const recordData = {
+                                platform: 'facebook',
+                                date: new Date(item.date + 'T12:00:00.000Z').toISOString(),
+                                metric: item.metric,
+                                value: item.value,
+                                country: country
+                            };
 
                             if (existing) {
                                 await pb.collection('facebook_daily_metrics').update(existing.id, {
                                     value: item.value,
                                     country: country
                                 }, { requestKey: null });
-                                return { success: true };
+                                results.push({ success: true });
                             } else {
                                 try {
-                                    await pb.collection('facebook_daily_metrics').create({
-                                        platform: 'facebook',
-                                        date: new Date(item.date + 'T12:00:00.000Z').toISOString(),
-                                        metric: item.metric,
-                                        value: item.value,
-                                        country: country
-                                    }, { requestKey: null });
-                                    return { success: true };
+                                    await pb.collection('facebook_daily_metrics').create(recordData, { requestKey: null });
+                                    results.push({ success: true });
                                 } catch (createErr) {
                                     if (createErr.status === 400) {
-                                        const found = await pb.collection('facebook_daily_metrics').getFirstListItem(`date ~ "${item.date}" && metric = "${item.metric}" && country = "${country}"`, { requestKey: null });
-                                        await pb.collection('facebook_daily_metrics').update(found.id, { value: item.value, country }, { requestKey: null });
-                                        return { success: true };
+                                        failedCreates.push(recordData);
                                     } else {
                                         throw createErr;
                                     }
@@ -793,11 +896,47 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                         } catch (e) {
                             const errorDetail = e.response ? JSON.stringify(e.response.data) : e.message;
                             console.error('Error saving facebook metric:', errorDetail);
-                            return { success: false, error: `Metric Error (${item.date}): ${errorDetail}` };
+                            results.push({ success: false, error: `Metric Error (${item.date}): ${errorDetail}` });
                         }
-                    });
+                    }));
 
-                    const results = await Promise.all(chunkPromises);
+                    if (failedCreates.length > 0) {
+                        try {
+                            const filterParts = failedCreates.map((_, idx) => `(date ~ {:date${idx}} && metric = {:metric${idx}})`).join(' || ');
+                            const filterParams = { country };
+                            failedCreates.forEach((r, idx) => {
+                                filterParams[`date${idx}`] = r.date.substring(0, 10);
+                                filterParams[`metric${idx}`] = r.metric;
+                            });
+                            const filterExpr = pb.filter(`country = {:country} && (${filterParts})`, filterParams);
+
+                            const foundRecords = await pb.collection('facebook_daily_metrics').getFullList({
+                                filter: filterExpr,
+                                requestKey: null
+                            });
+
+                            await Promise.all(failedCreates.map(async (failed) => {
+                                try {
+                                    const dateKey = failed.date.substring(0, 10);
+                                    const found = foundRecords.find(r => r.date.includes(dateKey) && r.metric === failed.metric);
+                                    if (found) {
+                                        await pb.collection('facebook_daily_metrics').update(found.id, { value: failed.value, country }, { requestKey: null });
+                                        results.push({ success: true });
+                                    } else {
+                                        console.error(`Failed to recover from unique violation: Record not found for ${failed.metric} on ${failed.date}`);
+                                        results.push({ success: false, error: 'Unique constraint failed and record not found on fallback' });
+                                    }
+                                } catch (updateErr) {
+                                    console.error(`Failed to update recovered record ${failed.metric} on ${failed.date}:`, updateErr.message);
+                                    results.push({ success: false, error: updateErr.message });
+                                }
+                            }));
+                        } catch (fallbackErr) {
+                            console.error('Error during batch unique constraint fallback recovery:', fallbackErr.message);
+                            results.push({ success: false, error: `Batch fallback recovery failed: ${fallbackErr.message}` });
+                        }
+                    }
+
                     results.forEach(res => {
                         if (res.success) savedCount++;
                         else errors.push(res.error);
