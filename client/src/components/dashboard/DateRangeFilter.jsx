@@ -25,7 +25,19 @@ const DateRangeFilter = ({ onFilterChange, className, initialRange }) => {
     });
 
     // Determine initial preset if straightforward, else 'custom'
-    const [activePreset, setActivePreset] = useState('custom');
+    const [activePreset, setActivePreset] = useState(() => {
+        if (initialRange?.preset) return initialRange.preset;
+        return 'custom';
+    });
+
+    // Sync with initialRange if it changes externally
+    useEffect(() => {
+        if (initialRange) {
+            if (initialRange.startDate) setStartDate(formatDate(initialRange.startDate));
+            if (initialRange.endDate) setEndDate(formatDate(initialRange.endDate));
+            if (initialRange.preset) setActivePreset(initialRange.preset);
+        }
+    }, [initialRange]);
 
     // Notify parent whenever dates change — also sends the active preset
     useEffect(() => {
