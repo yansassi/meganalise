@@ -60,7 +60,6 @@ const ContentGrid = ({ items = [], title = "Conteúdo", limit = 45, showPaginati
                                 <div
                                     key={item.id}
                                     onClick={() => {
-                                        console.log('ContentGrid: Item clicado:', item);
                                         setSelectedItem(item);
                                     }}
                                     className="group cursor-pointer"
