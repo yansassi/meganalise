@@ -4,6 +4,7 @@ const cors = require('cors');
 const { pb } = require('./services/db');
 const uploadRoutes = require('./routes/upload');
 const dashboardRoutes = require('./routes/dashboard');
+const { requireAuth } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,8 +21,8 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use('/api/upload', uploadRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/upload', requireAuth, uploadRoutes);
+app.use('/api/dashboard', requireAuth, dashboardRoutes);
 
 // Health Check
 app.get('/', (req, res) => {
