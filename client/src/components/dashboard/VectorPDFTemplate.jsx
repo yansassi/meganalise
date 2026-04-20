@@ -238,19 +238,21 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start'
     },
     contentCard: {
-        width: '30.5%', // Ajustado para caber 3 por linha com o gap
+        width: '30.5%', 
         flexDirection: 'column',
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#F1F5F9',
         backgroundColor: '#ffffff',
-        overflow: 'hidden',
-        marginBottom: 5
+        minHeight: 250, // Garante espaço para o conteúdo
+        marginBottom: 10
     },
     contentImage: {
         width: '100%',
-        height: 180,
+        height: 140, // Reduzido levemente para caber os textos
         objectFit: 'cover',
+        borderTopLeftRadius: 12,
+        borderTopRightRadius: 12,
         backgroundColor: '#F8FAFC'
     },
     contentBody: {
@@ -280,11 +282,12 @@ const styles = StyleSheet.create({
         color: '#0F172A'
     },
     contentTitle: {
-        fontSize: 12,
+        fontSize: 10, // Reduzido para caber melhor
         color: '#334155',
-        lineHeight: 1.4,
-        maxHeight: 40,
-        overflow: 'hidden'
+        lineHeight: 1.2,
+        height: 24, // Altura fixa para manter alinhamento
+        overflow: 'hidden',
+        marginTop: 4
     },
     contentMetrics: {
         flexDirection: 'row',
@@ -294,19 +297,19 @@ const styles = StyleSheet.create({
     miniMetric: {
         flex: 1,
         backgroundColor: '#F8FAFC',
-        padding: 8,
-        borderRadius: 8,
+        padding: 4, // Padding menor
+        borderRadius: 6,
         alignItems: 'center'
     },
     miniMetricLabel: {
-        fontSize: 6,
+        fontSize: 5, // Fonte menor para métricas
         textTransform: 'uppercase',
         color: '#94A3B8',
         fontWeight: 'bold',
-        marginBottom: 2
+        marginBottom: 1
     },
     miniMetricValue: {
-        fontSize: 11,
+        fontSize: 9, // Fonte menor para métricas
         fontWeight: 'bold',
         color: '#0F172A'
     },
