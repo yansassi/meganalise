@@ -355,24 +355,32 @@ router.post('/tiktok', upload.single('file'), async (req, res) => {
                 }
             }
 
-            for (const item of itemsToCreate) {
-                try {
-                    await pb.collection('tiktok_content').create(item, { requestKey: null });
-                    savedCount++;
-                } catch (e) {
-                    console.error('Error creating tiktok content:', e.message);
-                    errors.push(e.message);
-                }
+            const BATCH_SIZE = 50;
+
+            for (let i = 0; i < itemsToCreate.length; i += BATCH_SIZE) {
+                const chunk = itemsToCreate.slice(i, i + BATCH_SIZE);
+                await Promise.all(chunk.map(async (item) => {
+                    try {
+                        await pb.collection('tiktok_content').create(item, { requestKey: null });
+                        savedCount++;
+                    } catch (e) {
+                        console.error('Error creating tiktok content:', e.message);
+                        errors.push(`Content Create Error (${item.original_id}): ${e.message}`);
+                    }
+                }));
             }
 
-            for (const item of itemsToUpdate) {
-                try {
-                    await pb.collection('tiktok_content').update(item.id, item.data, { requestKey: null });
-                    savedCount++;
-                } catch (e) {
-                    console.error('Error updating tiktok content:', e.message);
-                    errors.push(e.message);
-                }
+            for (let i = 0; i < itemsToUpdate.length; i += BATCH_SIZE) {
+                const chunk = itemsToUpdate.slice(i, i + BATCH_SIZE);
+                await Promise.all(chunk.map(async (item) => {
+                    try {
+                        await pb.collection('tiktok_content').update(item.id, item.data, { requestKey: null });
+                        savedCount++;
+                    } catch (e) {
+                        console.error('Error updating tiktok content:', e.message);
+                        errors.push(`Content Update Error (${item.id}): ${e.message}`);
+                    }
+                }));
             }
         } else if (result.type === 'metric') {
             // result.data is array of objects { date, metric, value }
