@@ -34,17 +34,20 @@ const updateAudienceDemographics = async (data, country) => {
 
     // Check for existing record for today and country
     // Note: PocketBase date filtering can be tricky. Using >= today 00:00:00
-    const existing = await pb.collection('instagram_audience_demographics').getList(1, 1, {
-        filter: `platform = 'instagram' && country = "${country}" && import_date >= "${today} 00:00:00"`,
-        requestKey: null
-    });
-
-    if (existing.items.length > 0) {
+    try {
+        const existing = await pb.collection('instagram_audience_demographics').getFirstListItem(
+            `platform = 'instagram' && country = "${country}" && import_date >= "${today} 00:00:00"`,
+            { requestKey: null, fields: 'id' }
+        );
         // Update existing record
-        await pb.collection('instagram_audience_demographics').update(existing.items[0].id, recordData, { requestKey: null });
-    } else {
-        // Create new record
-        await pb.collection('instagram_audience_demographics').create(recordData, { requestKey: null });
+        await pb.collection('instagram_audience_demographics').update(existing.id, recordData, { requestKey: null });
+    } catch (err) {
+        if (err.status === 404) {
+            // Create new record
+            await pb.collection('instagram_audience_demographics').create(recordData, { requestKey: null });
+        } else {
+            throw err;
+        }
     }
     return 1;
 };
