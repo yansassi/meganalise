@@ -246,8 +246,6 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                                 await pb.collection('instagram_daily_metrics').create(recordData, { requestKey: null });
                                 console.log(`[DEBUG] Created New: ${key}`);
                                 savedCount++;
-                                // Optimistically update map for next item in batch?
-                                // existingMap.set(key, { ...recordData, id: 'temp' }); 
                             } catch (createErr) {
                                 // Handle Unique Constraint Violation (Race condition or previous batch miss)
                                 if (createErr.status === 400) {
