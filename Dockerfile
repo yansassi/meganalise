@@ -5,11 +5,11 @@ WORKDIR /app
 # Copy package.json only to avoid lockfile platform issues
 COPY package.json ./
 
-# Install build dependencies for native modules if needed
-# RUN apk add --no-cache python3 make g++
+# Install build dependencies and tools
+RUN apk add --no-cache python3 make g++ git
 
-# Install dependencies (create fresh lockfile)
-RUN npm install --omit=dev
+# Install dependencies
+RUN npm cache clean --force && npm install --omit=dev
 
 # Copy server source code
 COPY server ./server

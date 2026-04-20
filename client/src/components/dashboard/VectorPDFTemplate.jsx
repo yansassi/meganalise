@@ -232,35 +232,29 @@ const styles = StyleSheet.create({
         letterSpacing: 1
     },
     contentGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 15,
-        justifyContent: 'flex-start'
+        flexDirection: 'column',
+        gap: 15
     },
     contentCard: {
-        width: '30.5%', 
-        flexDirection: 'column',
-        borderRadius: 12,
+        width: '100%', 
+        flexDirection: 'row', // Imagem ao lado do conteúdo
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: '#F1F5F9',
+        borderColor: '#E2E8F0',
         backgroundColor: '#ffffff',
-        minHeight: 250, // Garante espaço para o conteúdo
-        marginBottom: 10
+        height: 180, // Altura fixa para consistência
+        overflow: 'hidden'
     },
     contentImage: {
-        width: '100%',
-        height: 140, // Reduzido levemente para caber os textos
+        width: 130, // Formato vertical para vídeo
+        height: '100%', 
         objectFit: 'cover',
-        borderTopLeftRadius: 12,
-        borderTopRightRadius: 12,
         backgroundColor: '#F8FAFC'
     },
     contentBody: {
-        padding: 12,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        flex: 1
+        padding: 15,
+        flex: 1,
+        justifyContent: 'space-between'
     },
     contentTop: {
         flexDirection: 'row',
@@ -277,17 +271,17 @@ const styles = StyleSheet.create({
         color: '#94A3B8'
     },
     contentAuthor: {
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#0F172A'
     },
     contentTitle: {
-        fontSize: 10, // Reduzido para caber melhor
-        color: '#334155',
-        lineHeight: 1.2,
-        height: 24, // Altura fixa para manter alinhamento
+        fontSize: 12,
+        color: '#475569',
+        lineHeight: 1.4,
+        maxHeight: 60, // Mais espaço para o texto
         overflow: 'hidden',
-        marginTop: 4
+        marginTop: 5
     },
     contentMetrics: {
         flexDirection: 'row',
@@ -297,19 +291,19 @@ const styles = StyleSheet.create({
     miniMetric: {
         flex: 1,
         backgroundColor: '#F8FAFC',
-        padding: 4, // Padding menor
+        padding: 4,
         borderRadius: 6,
         alignItems: 'center'
     },
     miniMetricLabel: {
-        fontSize: 5, // Fonte menor para métricas
+        fontSize: 7,
         textTransform: 'uppercase',
-        color: '#94A3B8',
+        color: '#64748B',
         fontWeight: 'bold',
-        marginBottom: 1
+        marginBottom: 2
     },
     miniMetricValue: {
-        fontSize: 9, // Fonte menor para métricas
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#0F172A'
     },
@@ -476,8 +470,8 @@ const VectorPDFTemplate = ({ registry, items = [], chartData = [], totalReach = 
                                                 </Text>
                                             </View>
                                             <Text style={styles.contentTitle}>
-                                                {(item.title || item.caption || "Conteúdo capturado via monitoramento.").substring(0, 80)}
-                                                {(item.title || item.caption || "").length > 80 ? '...' : ''}
+                                                {(item.title || item.caption || "Conteúdo capturado via monitoramento.").substring(0, 200)}
+                                                {(item.title || item.caption || "").length > 200 ? '...' : ''}
                                             </Text>
                                         </View>
 
