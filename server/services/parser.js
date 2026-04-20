@@ -638,23 +638,36 @@ const parseTikTokCSV = async (buffer, fileName) => {
                 const headersLower = headers.map(h => h.toLowerCase());
 
                 // 1. Content
-                // 1. Content
-                const linkHeader = headers.find(h => h.toLowerCase() === 'video link' || h.toLowerCase() === 'link do vídeo' || h.toLowerCase() === 'link do video' || h.toLowerCase() === 'link para o vídeo' || h.toLowerCase() === 'link para o video');
-                const titleHeader = headers.find(h => h.toLowerCase() === 'video title' || h.toLowerCase() === 'título do vídeo' || h.toLowerCase() === 'titulo do video');
+                const linkHeaderIdx = headersLower.findIndex(h => h === 'video link' || h === 'link do vídeo' || h === 'link do video' || h === 'link para o vídeo' || h === 'link para o video');
+                const titleHeaderIdx = headersLower.findIndex(h => h === 'video title' || h === 'título do vídeo' || h === 'titulo do video');
 
-                if (linkHeader && titleHeader) {
+                if (linkHeaderIdx !== -1 && titleHeaderIdx !== -1) {
+                    const linkHeader = headers[linkHeaderIdx];
+                    const titleHeader = headers[titleHeaderIdx];
+
+                    // Find other headers dynamically outside the loop
+                    const postTimeHeaderIdx = headersLower.findIndex(h => h === 'post time' || h === 'tempo de publicação' || h === 'tempo de publicacao' || h === 'hora da publicação' || h === 'hora da publicacao');
+                    const postTimeHeader = postTimeHeaderIdx !== -1 ? headers[postTimeHeaderIdx] : null;
+
+                    const likesHeaderIdx = headersLower.findIndex(h => h === 'total likes' || h === 'curtidas' || h === 'total curtidas');
+                    const likesHeader = likesHeaderIdx !== -1 ? headers[likesHeaderIdx] : null;
+
+                    const commentsHeaderIdx = headersLower.findIndex(h => h === 'total comments' || h === 'comentários' || h === 'total comentários' || h === 'comentarios');
+                    const commentsHeader = commentsHeaderIdx !== -1 ? headers[commentsHeaderIdx] : null;
+
+                    const sharesHeaderIdx = headersLower.findIndex(h => h === 'total shares' || h === 'compartilhamentos' || h === 'total compartilhamentos');
+                    const sharesHeader = sharesHeaderIdx !== -1 ? headers[sharesHeaderIdx] : null;
+
+                    const viewsHeaderIdx = headersLower.findIndex(h => h === 'total views' || h === 'visualizações' || h === 'total visualizações' || h === 'visualizacoes' || h === 'visualizações do vídeo' || h === 'visualizacoes do video');
+                    const viewsHeader = viewsHeaderIdx !== -1 ? headers[viewsHeaderIdx] : null;
+
+                    const savedHeaderIdx = headersLower.findIndex(h => h === 'adicionar aos favoritos' || h === 'salvamentos' || h === 'favoritos');
+                    const savedHeader = savedHeaderIdx !== -1 ? headers[savedHeaderIdx] : null;
+
                     const contentData = data.map(row => {
                         const link = row[linkHeader] || '';
                         const idMatch = link.match(/\/video\/(\d+)/);
                         const original_id = idMatch ? idMatch[1] : link;
-
-                        // Find other headers dynamically
-                        const postTimeHeader = headers.find(h => h.toLowerCase() === 'post time' || h.toLowerCase() === 'tempo de publicação' || h.toLowerCase() === 'tempo de publicacao' || h.toLowerCase() === 'hora da publicação' || h.toLowerCase() === 'hora da publicacao');
-                        const likesHeader = headers.find(h => h.toLowerCase() === 'total likes' || h.toLowerCase() === 'curtidas' || h.toLowerCase() === 'total curtidas');
-                        const commentsHeader = headers.find(h => h.toLowerCase() === 'total comments' || h.toLowerCase() === 'comentários' || h.toLowerCase() === 'total comentários' || h.toLowerCase() === 'comentarios');
-                        const sharesHeader = headers.find(h => h.toLowerCase() === 'total shares' || h.toLowerCase() === 'compartilhamentos' || h.toLowerCase() === 'total compartilhamentos');
-                        const viewsHeader = headers.find(h => h.toLowerCase() === 'total views' || h.toLowerCase() === 'visualizações' || h.toLowerCase() === 'total visualizações' || h.toLowerCase() === 'visualizacoes' || h.toLowerCase() === 'visualizações do vídeo' || h.toLowerCase() === 'visualizacoes do video');
-                        const savedHeader = headers.find(h => h.toLowerCase() === 'adicionar aos favoritos' || h.toLowerCase() === 'salvamentos' || h.toLowerCase() === 'favoritos');
 
                         return {
                             original_id,
