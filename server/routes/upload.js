@@ -4,7 +4,11 @@ const { pb } = require('../services/db');
 const { parseInstagramCSV, parseTikTokCSV, parseFacebookCSV, parseYouTubeCSV } = require('../services/parser');
 
 const router = express.Router();
-const upload = multer(); // Memory storage
+const upload = multer({
+    limits: {
+        fileSize: 50 * 1024 * 1024 // 50MB limit
+    }
+}); // Memory storage
 
 // Helper to map parser platform to DB type
 const mapPlatformToType = (platform) => {
