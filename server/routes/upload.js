@@ -192,13 +192,6 @@ router.post('/instagram', upload.single('file'), async (req, res) => {
                     }
                 }
 
-                if (existingRecords.length > 0) {
-                    console.log(`[DEBUG] Found ${existingRecords.length} existing records for batch.`);
-                    console.log(`[DEBUG] Sample Exists: ${existingRecords[0].date} (${existingRecords[0].metric})`);
-                } else {
-                    console.log(`[DEBUG] No existing records found for filter range: ${minDate} to ${maxDate}`);
-                }
-
                 const existingMap = new Map();
                 if (!batchFetchFailed) {
                     for (const record of existingRecords) {
