@@ -46,6 +46,9 @@ export const dataService = {
 
         const response = await fetch(`${apiUrl}/api/upload/${endpoint}`, {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${pb.authStore.token}`
+            },
             body: formData
         });
 
@@ -67,7 +70,11 @@ export const dataService = {
             if (endDate) params.append('endDate', endDate);
 
             const apiUrl = import.meta.env.VITE_API_URL || 'https://api.meganalise.pro';
-            const response = await fetch(`${apiUrl}/api/dashboard/${country}/${platform}?${params.toString()}`);
+            const response = await fetch(`${apiUrl}/api/dashboard/${country}/${platform}?${params.toString()}`, {
+                headers: {
+                    'Authorization': `Bearer ${pb.authStore.token}`
+                }
+            });
 
             if (!response.ok) {
                 // Return empty structure on failure to avoid crashes
@@ -92,7 +99,11 @@ export const dataService = {
             if (endDate) params.append('endDate', endDate);
 
             const apiUrl = import.meta.env.VITE_API_URL || 'https://api.meganalise.pro';
-            const response = await fetch(`${apiUrl}/api/dashboard/aggregate/${country}?${params.toString()}`);
+            const response = await fetch(`${apiUrl}/api/dashboard/aggregate/${country}?${params.toString()}`, {
+                headers: {
+                    'Authorization': `Bearer ${pb.authStore.token}`
+                }
+            });
 
             if (!response.ok) {
                 return { metrics: [] };
