@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { dataService } from '../services/dataService';
+import { formatDate } from '../utils/formatters';
 
 export default function Evidence() {
     const navigate = useNavigate();
@@ -159,7 +160,7 @@ export default function Evidence() {
                                 </div>
                                 <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-1 truncate" title={reg.title}>{reg.title}</h3>
                                 <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">
-                                    {new Date(reg.start_date).toLocaleDateString()} - {new Date(reg.end_date).toLocaleDateString()}
+                                    {formatDate(reg.start_date)} - {formatDate(reg.end_date)}
                                 </p>
                             </div>
 

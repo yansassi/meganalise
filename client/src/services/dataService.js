@@ -438,7 +438,14 @@ export const dataService = {
 
             if (keywords.length > 0) {
                 // (title ~ "k1" || title ~ "k2" || ... || author ~ "k1" ...)
-                const keywordConditions = keywords.map(k => `title ~ "${k}" || author ~ "${k}"`).join(' || ');
+                const keywordConditions = keywords.map(k => {
+                    const clean = k.startsWith('@') ? k.slice(1) : k;
+                    let cond = `title ~ "${k}" || author ~ "${k}" || permalink ~ "${k}"`;
+                    if (clean !== k) {
+                        cond += ` || title ~ "${clean}" || author ~ "${clean}" || permalink ~ "${clean}"`;
+                    }
+                    return `(${cond})`;
+                }).join(' || ');
                 filter += ` && (${keywordConditions})`;
             }
 
@@ -484,9 +491,10 @@ export const dataService = {
                     if (keywords.length > 0) {
                         const keywordConditions = keywords.map(k => {
                             const clean = k.startsWith('@') ? k.slice(1) : k;
-                            const parts = fields.map(field => `${field} ~ "${k}"`);
+                            const searchFieldsWithPermalink = [...new Set([...fields, 'permalink'])];
+                            const parts = searchFieldsWithPermalink.map(field => `${field} ~ "${k}"`);
                             if (k !== clean) {
-                                fields.forEach(field => parts.push(`${field} ~ "${clean}"`));
+                                searchFieldsWithPermalink.forEach(field => parts.push(`${field} ~ "${clean}"`));
                             }
                             return `(${parts.join(' || ')})`;
                         }).join(' || ');
@@ -577,11 +585,14 @@ export const dataService = {
                             // Check Author (Case insensitive exact or simplified match)
                             if (item.author && item.author.toLowerCase() === cleanKeyword.toLowerCase()) return true;
 
+                            // Also check Permalink for author handle to catch Stories and organic posts where author field might be missing or different
+                            if (item.permalink && item.permalink.toLowerCase().includes(cleanKeyword.toLowerCase())) return true;
+
                             // 2. Title Match (Mentions)
                             // ONLY match Title if the keyword explicitly starts with '@' (verifying it's a mention)
                             // We IGNORE title matches for keywords without '@' to prevent matching hashtags/text like #comprasparaguai
                             if (keyword.startsWith('@')) {
-                                if (regex.test(item.title)) return true;
+                                if (item.title && regex.test(item.title)) return true;
                             }
 
                             return false;
