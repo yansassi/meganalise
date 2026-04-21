@@ -596,6 +596,10 @@ export const dataService = {
                                 }
                             }
 
+                            // Fallback matches (from remote)
+                            if (item.author && item.author.toLowerCase() === handleLower) return true;
+                            if (item.permalink && item.permalink.toLowerCase().includes(handleLower)) return true;
+
                             // 2. Definir contas oficiais da marca para detectar compartilhamentos
                             const brandAccounts = ['megaeletronicosoficialpy', 'megaelectronicosparaguay'];
 
