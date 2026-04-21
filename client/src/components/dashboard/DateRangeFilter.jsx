@@ -3,10 +3,16 @@ import React, { useState, useEffect } from 'react';
 const DateRangeFilter = ({ onFilterChange, className, initialRange }) => {
     // Helper to format date as YYYY-MM-DD
     const formatDate = (date) => {
-        if (!date) return new Date().toISOString().split('T')[0];
-        const d = new Date(date);
-        return isNaN(d.getTime()) ? new Date().toISOString().split('T')[0] : d.toISOString().split('T')[0];
+        const d = date ? new Date(date) : new Date();
+        if (isNaN(d.getTime())) return new Date().toLocaleDateString('en-CA');
+        
+        // Use local date parts to avoid UTC shift
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     };
+
 
     // Initialize with provided range or "Last 30 Days"
     const [startDate, setStartDate] = useState(() => {

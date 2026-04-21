@@ -73,7 +73,10 @@ const ContentDashboard = () => {
             // Logic: Is NOT a story platform type AND title doesn't start with Story
             // Logic: Is explicitly a story OR (is social type AND title starts with Story)
             // Do NOT use views > 0 alone, as Reels also have views.
-            const isStory = c.platform_type === 'story' || (c.platform_type === 'social' && c.title?.startsWith('Story -'));
+            const isStory = c.platform_type === 'story' || 
+                            c.social_network === 'facebook' && c.title?.toLowerCase().includes('story') ||
+                            c.permalink?.toLowerCase().includes('/stories/') ||
+                            (c.platform_type === 'social' && c.title?.startsWith('Story -'));
 
             if (!isStory) {
                 // Double check it's a valid content type for the feed

@@ -339,23 +339,21 @@ const normalizeContentData = (data, isUSFormat = 'auto', fileName = '') => {
 
         const rawType = (getValue(['Tipo de post', 'Tipo de conteúdo', 'Tipo de conteÃºdo', 'Content type', 'Formato']) || '');
         const typeLower = rawType.toLowerCase();
+        const permalinkLower = permalink.toLowerCase();
 
         let platform = 'social';
         const isVideoReport = getValue(['Número de identificação do ativo de vídeo', 'Identificação do vídeo universal']) !== undefined;
 
-        if (typeLower.includes('story') || typeLower.includes('historia') || typeLower.includes('história')) {
+        // Enhanced Story detection
+        if (typeLower.includes('story') || typeLower.includes('historia') || typeLower.includes('história') || permalinkLower.includes('/stories/')) {
             platform = 'story';
         } else if (typeLower.includes('reel') || typeLower.includes('video') || typeLower.includes('vídeo') || isVideoReport) {
             platform = 'video';
         } else if (headersLower.some(h => h.includes('story'))) {
-            // Fallback to story only if type is ambiguous
             platform = 'story';
         }
 
-
-
-        // Robust Title/Caption extraction - prioritized list of candidates
-        // We check each and take the first non-empty one.
+        // Robust Title/Caption extraction
         const titleCandidates = [
             'Descrição', 'Descricao', 'TÃtulo da legenda', 'Legenda', 'Título/Legenda', 'Titulo/Legenda', 
             'Caption', 'Título', 'Titulo', 'TÃtulo', 'Texto do post', 'Texto',
@@ -372,11 +370,9 @@ const normalizeContentData = (data, isUSFormat = 'auto', fileName = '') => {
             }
         }
 
-        // Fallback para Facebook Stories: se não tem link e veio de relatório de vídeo, ou título indica
-        if (permalink === '' || permalink === 'N/A') {
-            if (isVideoReport || !title || title.trim() === '') {
-                platform = 'story';
-            }
+        // Fallback detection for stories based on missing permalink (common in some Meta reports)
+        if (platform === 'social' && (permalink === '' || permalink === 'N/A') && (isVideoReport || !title)) {
+            platform = 'story';
         }
 
         if (platform === 'social' && title && (title.toLowerCase().startsWith('story') || title.toLowerCase().startsWith('história'))) {
@@ -391,18 +387,13 @@ const normalizeContentData = (data, isUSFormat = 'auto', fileName = '') => {
             }
         }
 
-        if (!dateFormatted) {
-            // If date cannot be parsed, this is likely a summary row or invalid data. Skip it.
-            return null;
-        }
-
         // Robust ID generation
         let id = getValue(['Identificação do post', 'Número de identificação do ativo de vídeo', 'Identificação do vídeo universal', 'Identificador multimídia', 'Identificador', 'Post ID', 'ID']);
         if (!id || id === 'Total') {
-            // Fallback: Generate hash from unique-ish content
             const uniqueString = `${title}-${dateFormatted}-${timeFormatted}-${platform}`;
             id = `gen-${crypto.createHash('md5').update(uniqueString).digest('hex')}`;
         }
+
 
         return {
             id,

@@ -33,12 +33,14 @@ const FacebookStoriesDashboard = () => {
         const stories = dbData.content.filter(c =>
             c.platform_type === 'story' ||
             c.platform === 'story' ||
+            c.permalink?.toLowerCase().includes('/stories/') ||
             (c.title && (
                 c.title.toLowerCase().startsWith('story') || 
                 c.title.toLowerCase().includes('historia') ||
                 c.title.toLowerCase().includes('história')
             ))
         );
+
 
 
         totalStories = stories.length;
