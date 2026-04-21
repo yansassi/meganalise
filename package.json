@@ -16,6 +16,7 @@
     "csv-parse": "^6.1.0",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "iconv-lite": "^0.7.2",
     "multer": "^2.0.2",
     "papaparse": "^5.5.3",
     "pocketbase": "^0.26.8"
