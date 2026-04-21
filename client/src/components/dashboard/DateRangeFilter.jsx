@@ -36,6 +36,9 @@ const DateRangeFilter = ({ onFilterChange, className, initialRange }) => {
         return 'custom';
     });
 
+    const lastNotified = React.useRef(null);
+    const isFirstRender = React.useRef(true);
+
     // Sync with initialRange if it changes externally
     useEffect(() => {
         if (initialRange) {
@@ -46,14 +49,29 @@ const DateRangeFilter = ({ onFilterChange, className, initialRange }) => {
             if (newStart !== startDate) setStartDate(newStart);
             if (newEnd !== endDate) setEndDate(newEnd);
             if (newPreset !== activePreset) setActivePreset(newPreset);
+            
+            // Mark last notified to prevent immediate bounce back
+            lastNotified.current = `${newStart}|${newEnd}|${newPreset}`;
         }
     }, [initialRange]);
 
-
-    // Notify parent whenever dates change — also sends the active preset
+    // Notify parent whenever dates change — only if they actually changed
     useEffect(() => {
-        onFilterChange({ startDate, endDate, preset: activePreset });
-    }, [startDate, endDate, activePreset]);
+        const currentKey = `${startDate}|${endDate}|${activePreset}`;
+        
+        // Skip first render if we already have initial values sync'd
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            lastNotified.current = currentKey;
+            return;
+        }
+
+        if (lastNotified.current !== currentKey) {
+            lastNotified.current = currentKey;
+            onFilterChange({ startDate, endDate, preset: activePreset });
+        }
+    }, [startDate, endDate, activePreset, onFilterChange]);
+
 
     const handlePresetChange = (preset) => {
         const end = new Date();
