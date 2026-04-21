@@ -25,10 +25,23 @@ const FacebookContentDashboard = () => {
 
     const processDbData = (dbData) => {
         let items = [];
+        
+        // Use metrics array for more accurate stats (from Interações.csv, Visitas.csv etc)
         let totalReach = 0;
         let totalInteractions = 0;
         let totalViews = 0;
         let totalShares = 0;
+
+        dbData.metrics.forEach(m => {
+            const metric = m.metric.toLowerCase();
+            if (metric === 'reach' || metric === 'visualizadores') totalReach += m.value;
+            if (metric === 'interactions' || metric === 'interacoes') totalInteractions += m.value;
+            if (metric === 'views' || metric === 'video_views' || metric === 'impressions' || metric === 'visualizacoes') totalViews += m.value;
+            if (metric === 'shares') totalShares += m.value;
+        });
+
+        // If metrics are 0, fallback to content sum (though metrics are usually more complete)
+        let contentReach = 0, contentInteractions = 0, contentViews = 0, contentShares = 0;
 
         dbData.content.forEach(c => {
             const item = {
@@ -51,17 +64,22 @@ const FacebookContentDashboard = () => {
                 permalink: c.permalink
             };
 
-            // Filter out Stories
             const isStory = c.platform_type === 'story' || c.title?.toLowerCase().startsWith('story');
 
             if (!isStory) {
                 items.push(item);
-                totalReach += (item.reach || 0);
-                totalViews += (item.views || 0);
-                totalShares += (item.shares || 0);
-                totalInteractions += (item.likes || 0) + (item.shares || 0) + (item.comments || 0);
+                contentReach += (item.reach || 0);
+                contentViews += (item.views || 0);
+                contentShares += (item.shares || 0);
+                contentInteractions += (item.likes || 0) + (item.shares || 0) + (item.comments || 0);
             }
         });
+
+        // Merge or Fallback
+        if (totalReach === 0) totalReach = contentReach;
+        if (totalInteractions === 0) totalInteractions = contentInteractions;
+        if (totalViews === 0) totalViews = contentViews;
+        if (totalShares === 0) totalShares = contentShares;
 
         const stats = [
             { label: 'Alcance do Feed', value: totalReach, trend: 0, icon: 'visibility', color: 'blue' },
@@ -76,6 +94,7 @@ const FacebookContentDashboard = () => {
             isLoaded: true
         });
     };
+
 
     return (
         <div className="space-y-8 animate-fade-in">

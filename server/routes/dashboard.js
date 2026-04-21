@@ -179,7 +179,7 @@ router.get('/:country/:platform', async (req, res) => {
             }));
 
         } else if (socialNetwork === 'facebook') {
-            const metricsFilter = pb.filter('country = {:country} && platform = "facebook"', { country }) + dateFilter;
+            const metricsFilter = pb.filter('country = {:country}', { country }) + dateFilter;
             const contentFilter = pb.filter('country = {:country}', { country }) + dateFilter;
 
             const [metricsResult, contentResult] = await Promise.all([
