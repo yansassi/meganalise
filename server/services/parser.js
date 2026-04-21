@@ -475,14 +475,14 @@ const normalizeAudienceData = (lines) => {
             sectionHeaders = cols;
             continue;
         } else if (lowerLine.includes('seguidores') || lowerLine.includes('followers')) {
-            // Ensure it's the section header, not a data row
-            if (cols.length < 5) {
+            // Ensure it's the section header, not a data row (data rows usually have dates)
+            if (!parseDate(cols[0])) {
                 currentSection = 'followers';
                 pendingKeys = [];
                 sectionHeaders = cols;
                 continue;
             }
-        } else if (lowerLine.includes('páginas similares') || lowerLine.includes('similar pages')) {
+        } else if (lowerLine.includes('páginas similares') || lowerLine.includes('similar pages') || lowerLine.includes('principais páginas')) {
             currentSection = 'similar_pages';
             pendingKeys = [];
             sectionHeaders = cols;
@@ -547,19 +547,38 @@ const normalizeAudienceData = (lines) => {
             }
         } else if (currentSection === 'followers') {
             // Growth history: "Data", "Seguidores"
-            if (cols[0] && parseDate(cols[0])) {
+            const date = parseDate(cols[0]);
+            if (date) {
                 data.followers_history.push({
-                    date: parseDate(cols[0]),
+                    date: date,
                     value: parseNumber(cols[1])
                 });
             }
         } else if (currentSection === 'similar_pages') {
-            // Similar pages: "Página", "Seguidores" (or just a list)
-            if (cols[0] && cols[0] !== 'Página' && cols[0] !== 'Page') {
-                data.similar_pages.push({
-                    name: cols[0],
-                    category: cols[1] || ''
+            // Support both horizontal and vertical format (like cities/countries)
+            const isNumericRow = cols.some(c => c !== '' && !isNaN(parseFloat(c.replace(',', '.'))));
+
+            if (!isNumericRow && cols.length > 1) {
+                pendingKeys = cols.filter(c => c !== '');
+            } else if (pendingKeys.length > 0 && isNumericRow) {
+                const vals = cols.filter(c => c !== '');
+                vals.forEach((val, idx) => {
+                    if (pendingKeys[idx]) {
+                        data.similar_pages.push({
+                            name: pendingKeys[idx],
+                            value: parseNumber(val)
+                        });
+                    }
                 });
+                pendingKeys = []; 
+            } else if (cols.length >= 2 && !isNaN(parseFloat(cols[1].replace(',', '.')))) {
+                // Vertical format: "Página", "Seguidores"
+                if (cols[0] !== 'Página' && cols[0] !== 'Page') {
+                    data.similar_pages.push({
+                        name: cols[0],
+                        value: parseNumber(cols[1])
+                    });
+                }
             }
         }
     }

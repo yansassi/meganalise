@@ -51,17 +51,29 @@ const AudienceView = ({ data }) => {
         return null;
     };
 
-    // Process Growth Data
-    const growthData = (data.followersHistory || []).map(item => ({
-        name: new Date(item.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-        value: item.value
-    }));
+    // Process Growth Data with robustness
+    const rawHistory = data.followersHistory || data.followers_history || [];
+    const growthData = rawHistory
+        .filter(item => item && item.date)
+        .map(item => {
+            const dateObj = new Date(item.date);
+            const name = !isNaN(dateObj.getTime()) 
+                ? dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
+                : item.date.split('T')[0];
+            return {
+                name: name,
+                value: parseFloat(item.value) || 0
+            };
+        })
+        .filter(item => item.value > 0);
+
+    const rawPages = data.similarPages || data.similar_pages || [];
 
     return (
         <div className="space-y-8 animate-fade-in pb-12">
             
             {/* 1. Followers Growth Section */}
-            {growthData.length > 0 && (
+            {growthData.length > 0 ? (
                 <div className="bg-white dark:bg-gray-800/40 backdrop-blur-md rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/10">
                     <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
                         <span className="material-icons-round text-blue-500 bg-blue-50 dark:bg-blue-500/20 p-1.5 rounded-xl">trending_up</span>
@@ -71,9 +83,15 @@ const AudienceView = ({ data }) => {
                         <GrowthChart data={growthData} />
                     </div>
                 </div>
+            ) : (
+                <div className="bg-gray-50/50 dark:bg-white/5 rounded-2xl p-8 border border-dashed border-gray-200 dark:border-white/10 text-center">
+                    <span className="material-icons-round text-gray-300 text-4xl mb-2">analytics</span>
+                    <p className="text-gray-400 text-sm">Dados de crescimento indisponíveis neste arquivo.</p>
+                </div>
             )}
 
             {/* 2. Age & Gender Section */}
+            {/* ... keep existing ... */}
             <div className="bg-white dark:bg-gray-800/40 backdrop-blur-md rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/10">
                 <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
                     <span className="material-icons-round text-indigo-500 bg-indigo-50 dark:bg-indigo-500/20 p-1.5 rounded-xl">wc</span>
@@ -175,14 +193,14 @@ const AudienceView = ({ data }) => {
                 )}
 
                 {/* Similar Pages */}
-                {data.similarPages && data.similarPages.length > 0 && (
+                {rawPages.length > 0 && (
                     <div className="bg-white dark:bg-gray-800/40 backdrop-blur-md rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-white/10">
                         <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-6 flex items-center gap-2">
                             <span className="material-icons-round text-rose-500 bg-rose-50 dark:bg-rose-500/20 p-1.5 rounded-xl">favorite</span>
                             Páginas Similares (Afinidade)
                         </h3>
                         <div className="divide-y divide-gray-50 dark:divide-white/5">
-                            {data.similarPages.slice(0, 10).map((page, idx) => (
+                            {rawPages.slice(0, 10).map((page, idx) => (
                                 <div key={idx} className="py-3 flex items-center justify-between first:pt-0 last:pb-0">
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-rose-500/20 to-orange-500/20 flex items-center justify-center text-rose-500 text-[10px] font-black uppercase border border-rose-500/10">
