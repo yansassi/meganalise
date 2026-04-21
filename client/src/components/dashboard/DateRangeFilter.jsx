@@ -3,15 +3,21 @@ import React, { useState, useEffect } from 'react';
 const DateRangeFilter = ({ onFilterChange, className, initialRange }) => {
     // Helper to format date as YYYY-MM-DD
     const formatDate = (date) => {
+        if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
         const d = date ? new Date(date) : new Date();
         if (isNaN(d.getTime())) return new Date().toLocaleDateString('en-CA');
         
-        // Use local date parts to avoid UTC shift
+        // If it was a string that JS parsed as UTC, we need to be careful.
+        // But for "Today" (new Date()), we want local.
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');
+        
+        // Safety: if it's late night and JS shifted it, this might still be tricky.
+        // Better: if we are formatting a Date object we just created, use local.
         return `${year}-${month}-${day}`;
     };
+
 
 
     // Initialize with provided range or "Last 30 Days"

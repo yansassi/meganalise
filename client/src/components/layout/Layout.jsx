@@ -16,6 +16,7 @@ export default function Layout({ country, setCountry }) {
         return `${year}-${month}-${day}`;
     };
 
+
     return { 
         startDate: formatDate(start), 
         endDate: formatDate(end), 
