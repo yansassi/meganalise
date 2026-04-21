@@ -91,28 +91,38 @@ const ContentGrid = ({ items = [], title = "Conteúdo", limit = 45, showPaginati
                                         </div>
 
                                         {/* Type Indicator (Top Left) */}
-                                        <div className="absolute top-1 left-1 flex gap-1">
-                                            <div className="w-5 h-5 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20">
-                                                <span className="material-icons-round text-white text-[12px]">
-                                                    {(item.platform === 'video' || item.platform === 'reel') ? 'play_arrow' :
-                                                        item.platform === 'story' ? 'amp_stories' :
-                                                            item.platform === 'social' ? 'camera_alt' : 'image'}
-                                                </span>
+                                        <div className="absolute top-1 left-1 flex flex-col gap-1 items-start">
+                                            <div className="flex gap-1">
+                                                <div className="w-5 h-5 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                                                    <span className="material-icons-round text-white text-[12px]">
+                                                        {(item.platform === 'video' || item.platform === 'reel') ? 'play_arrow' :
+                                                            item.platform === 'story' ? 'amp_stories' :
+                                                                item.platform === 'social' ? 'camera_alt' : 'image'}
+                                                    </span>
+                                                </div>
+                                                {/* Platform Badge */}
+                                                <div className={`w-5 h-5 rounded-full flex items-center justify-center border border-white/20 backdrop-blur-sm ${
+                                                    item.social_network === 'facebook' ? 'bg-blue-600/80' :
+                                                    item.social_network === 'tiktok' ? 'bg-black/60' :
+                                                    item.social_network === 'youtube' ? 'bg-red-600/80' :
+                                                    'bg-pink-600/80'
+                                                }`}>
+                                                    <span className="material-icons-round text-white text-[10px]">
+                                                        {item.social_network === 'facebook' ? 'facebook' :
+                                                         item.social_network === 'tiktok' ? 'music_note' :
+                                                         item.social_network === 'youtube' ? 'play_circle' :
+                                                         'photo_camera'}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            {/* Platform Badge */}
-                                            <div className={`w-5 h-5 rounded-full flex items-center justify-center border border-white/20 backdrop-blur-sm ${
-                                                item.social_network === 'facebook' ? 'bg-blue-600/80' :
-                                                item.social_network === 'tiktok' ? 'bg-black/60' :
-                                                item.social_network === 'youtube' ? 'bg-red-600/80' :
-                                                'bg-pink-600/80'
-                                            }`}>
-                                                <span className="material-icons-round text-white text-[10px]">
-                                                    {item.social_network === 'facebook' ? 'facebook' :
-                                                     item.social_network === 'tiktok' ? 'music_note' :
-                                                     item.social_network === 'youtube' ? 'play_circle' :
-                                                     'photo_camera'}
-                                                </span>
-                                            </div>
+
+                                            {/* Shared Indicator */}
+                                            {item.is_shared_content && (
+                                                <div className="bg-blue-600/90 backdrop-blur-sm text-white px-1.5 py-0.5 rounded-lg text-[8px] font-black uppercase flex items-center gap-0.5 shadow-lg border border-white/20 animate-bounce-subtle">
+                                                    <span className="material-icons-round text-[10px]">share</span>
+                                                    Marca
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* External Link (Top Right) */}

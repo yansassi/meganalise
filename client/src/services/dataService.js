@@ -580,22 +580,44 @@ export const dataService = {
 
                         // Strict Influencer Logic
                         if (registry.type === 'influencer') {
-                            // 1. Author Match (Strip @ for robust matching against raw author field)
-                            // If keyword is "@yan", author might be "yan". If keyword is "yan", author "yan".
                             const cleanKeyword = keyword.startsWith('@') ? keyword.slice(1) : keyword;
-
-                            // Check Author (Case insensitive exact or simplified match)
-                            if (item.author && item.author.toLowerCase() === cleanKeyword.toLowerCase()) return true;
-
-                            // Also check Permalink for author handle to catch Stories and organic posts where author field might be missing or different
-                            if (item.permalink && item.permalink.toLowerCase().includes(cleanKeyword.toLowerCase())) return true;
-
-                            // 2. Title Match (Mentions)
-                            // ONLY match Title if the keyword explicitly starts with '@' (verifying it's a mention)
-                            // We IGNORE title matches for keywords without '@' to prevent matching hashtags/text like #comprasparaguai
-                            if (keyword.startsWith('@')) {
-                                if (item.title && regex.test(item.title)) return true;
+                            const handleLower = cleanKeyword.toLowerCase();
+                            
+                            // 1. Identificar quem postou o conteúdo (Poster)
+                            let poster = (item.author || '').toLowerCase();
+                            
+                            // Extrair do permalink se possível (mais confiável para Stories do Instagram)
+                            if (item.permalink && item.permalink.includes('instagram.com/')) {
+                                const urlParts = item.permalink.split('instagram.com/')[1].split('/');
+                                if (urlParts[0] === 'stories' && urlParts[1]) {
+                                    poster = urlParts[1].toLowerCase();
+                                } else if (urlParts[0] && urlParts[0] !== 'p' && urlParts[0] !== 'reel') {
+                                    poster = urlParts[0].toLowerCase();
+                                }
                             }
+
+                            // 2. Definir contas oficiais da marca para detectar compartilhamentos
+                            const brandAccounts = ['megaeletronicosoficialpy', 'megaelectronicosparaguay'];
+
+                            // 3. Lógica de Correspondência
+                            // Caso A: O autor do post é o próprio influenciador (Conteúdo Original)
+                            if (poster === handleLower) return true;
+
+                            // Caso B: O post é da marca mencionando o influenciador (Compartilhamento)
+                            if (brandAccounts.includes(poster)) {
+                                // Só aceita se for uma menção EXPLÍCITA (@) no título/legenda
+                                if (keyword.startsWith('@') && item.title && regex.test(item.title)) {
+                                    // Marcamos como compartilhado para que a UI possa distinguir se necessário
+                                    item.is_shared_content = true;
+                                    item.original_author_tagged = handleLower;
+                                    return true;
+                                }
+                                return false;
+                            }
+
+                            // Caso C: Outra conta mencionando o influenciador (Menção de Terceiros)
+                            if (keyword.startsWith('@') && item.title && regex.test(item.title)) return true;
+                            if (item.author && item.author.toLowerCase().includes(handleLower)) return true;
 
                             return false;
                         } else {

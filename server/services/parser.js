@@ -723,7 +723,7 @@ const parseInstagramCSV = async (buffer, fileName) => {
 
                 const isFollowers = fileNameLower.includes('seguid') || fileNameLower.includes('follow') || ((hasColumn('data') || hasColumn('date')) && (hasColumn('seguidores') || hasColumn('followers')));
                 if (isFollowers) {
-                    resolve({ type: 'metric', metric: 'followers', data: normalizeDailyMetric(data, 'followers') });
+                    resolve({ type: 'metric', metric: 'followers_total', data: normalizeDailyMetric(data, 'followers_total') });
                     return;
                 }
 

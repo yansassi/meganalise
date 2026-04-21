@@ -465,9 +465,14 @@ const VectorPDFTemplate = ({ registry, items = [], chartData = [], totalReach = 
                                                     <Text style={styles.contentAuthor}>{item.influencer_name || item.author || 'Perfil Monitorado'}</Text>
                                                     <Text style={styles.contentDate}>{item.date ? new Date(item.date).toLocaleDateString() : ''}</Text>
                                                 </View>
-                                                <Text style={[styles.platformBadge, { backgroundColor: getPlatformColor(network) }]}>
-                                                    {item.platform_type || item.platform || 'Post'}
-                                                </Text>
+                                                <View style={{ flexDirection: 'row', gap: 4 }}>
+                                                    {item.is_shared_content && (
+                                                        <Text style={[styles.platformBadge, { backgroundColor: '#2563EB' }]}>MARCA</Text>
+                                                    )}
+                                                    <Text style={[styles.platformBadge, { backgroundColor: getPlatformColor(network) }]}>
+                                                        {item.platform_type || item.platform || 'Post'}
+                                                    </Text>
+                                                </View>
                                             </View>
                                             <Text style={styles.contentTitle}>
                                                 {(item.title || item.caption || "Conteúdo capturado via monitoramento.").substring(0, 200)}
