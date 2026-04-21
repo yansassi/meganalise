@@ -423,16 +423,31 @@ const normalizeAudienceData = (lines) => {
     const data = {
         gender_age: {},
         cities: [],
-        countries: []
+        countries: [],
+        followers_history: [],
+        similar_pages: []
     };
 
     let currentSection = null;
     let pendingKeys = [];
+    let sectionHeaders = [];
 
-    // Helper to extract percentages
-    const parsePercentage = (val) => {
+    // Helper to extract percentages or numbers
+    const parseNumber = (val) => {
         if (!val) return 0;
-        return parseFloat(val.replace(',', '.').replace('%', ''));
+        // Handle cases like "1.234" or "1,234" or "20%"
+        const clean = val.replace('%', '').replace(/\s/g, '');
+        // Heuristic: if it has both . and , (e.g. 1.234,56), it's likely European/Brazilian formatting
+        if (clean.includes('.') && clean.includes(',')) {
+            return parseFloat(clean.replace(/\./g, '').replace(',', '.'));
+        }
+        // If it has only comma and it's like "10,5", it's decimal
+        if (clean.includes(',') && !clean.includes('.')) {
+            // But if it's like "1,234" (thousands), we might misinterpret. 
+            // Meta usually uses comma for decimals in PT-BR.
+            return parseFloat(clean.replace(',', '.'));
+        }
+        return parseFloat(clean);
     };
 
     for (let i = 0; i < lines.length; i++) {
@@ -440,75 +455,119 @@ const normalizeAudienceData = (lines) => {
         if (!line) continue;
 
         const lowerLine = line.toLowerCase();
+        const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Split CSV respecting quotes
+        const cols = parts.map(p => p.replace(/['"]/g, '').trim());
 
         // Section Detection
         if (lowerLine.includes('faixa etária e gênero') || lowerLine.includes('age range and gender')) {
             currentSection = 'gender_age';
             pendingKeys = [];
+            sectionHeaders = cols;
             continue;
         } else if (lowerLine.includes('principais cidades') || lowerLine.includes('top cities')) {
             currentSection = 'cities';
             pendingKeys = [];
+            sectionHeaders = cols;
             continue;
         } else if (lowerLine.includes('principais países') || lowerLine.includes('top countries')) {
             currentSection = 'countries';
             pendingKeys = [];
+            sectionHeaders = cols;
+            continue;
+        } else if (lowerLine.includes('seguidores') || lowerLine.includes('followers')) {
+            // Ensure it's the section header, not a data row
+            if (cols.length < 5) {
+                currentSection = 'followers';
+                pendingKeys = [];
+                sectionHeaders = cols;
+                continue;
+            }
+        } else if (lowerLine.includes('páginas similares') || lowerLine.includes('similar pages')) {
+            currentSection = 'similar_pages';
+            pendingKeys = [];
+            sectionHeaders = cols;
             continue;
         }
 
         // Parse Data based on section
-        const parts = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); // Split CSV respecting quotes
-        const cols = parts.map(p => p.replace(/['"]/g, '').trim());
-
         if (currentSection === 'gender_age') {
-            // Vertical format check: "18-24", "20%", "5%"
+            // Detect Gender Order from sectionHeaders or previous lines
+            // Usually Row 1 is header: ["", "Homens", "Mulheres"]
+            if (cols[0] === '' || lowerLine.includes('homem') || lowerLine.includes('mulher') || lowerLine.includes('men') || lowerLine.includes('women')) {
+                sectionHeaders = cols.map(c => c.toLowerCase());
+                continue;
+            }
+
             if (cols[0] && /\d{2}-\d{2}|65\+/.test(cols[0])) {
                 const age = cols[0];
-                const val1 = parsePercentage(cols[1]);
-                const val2 = parsePercentage(cols[2]);
-                data.gender_age[age] = { female: val1, male: val2 || 0 };
+                let male = 0;
+                let female = 0;
+
+                // Find indices for Homens/Mulheres
+                const maleIdx = sectionHeaders.findIndex(h => h.includes('homem') || h.includes('male') || h.includes('men'));
+                const femaleIdx = sectionHeaders.findIndex(h => h.includes('mulher') || h.includes('female') || h.includes('women'));
+
+                if (maleIdx !== -1) male = parseNumber(cols[maleIdx]);
+                if (femaleIdx !== -1) female = parseNumber(cols[femaleIdx]);
+
+                // Fallback to indices if headers not found (common: 1=male, 2=female in PT-BR Meta CSV)
+                if (maleIdx === -1 && femaleIdx === -1) {
+                    male = parseNumber(cols[1]);
+                    female = parseNumber(cols[2]);
+                }
+
+                data.gender_age[age] = { female, male };
             }
-            // Horizontal format check (if keys matched previously? rare for age/gender but possible)
         } else if (currentSection === 'cities' || currentSection === 'countries') {
-            // Horizontal Data Check
-            // Row 1: Names (e.g., "São Paulo", "Rio")
-            // Row 2: Values (e.g., "10.5", "5.2")
+            // Meta horizontal format
+            const isNumericRow = cols.some(c => c !== '' && !isNaN(parseFloat(c.replace(',', '.'))));
 
-            // Heuristic: If row has numbers, it's values. If text, it's keys.
-            const isNumericRow = cols.some(c => !isNaN(parseFloat(c.replace(',', '.'))));
-
-            if (!isNumericRow) {
-                // Assume these are names
-                pendingKeys = cols;
+            if (!isNumericRow && cols.length > 1) {
+                pendingKeys = cols.filter(c => c !== '');
             } else if (pendingKeys.length > 0 && isNumericRow) {
-                // Map keys to values
                 const collection = currentSection === 'cities' ? data.cities : data.countries;
-
-                cols.forEach((val, idx) => {
+                const vals = cols.filter(c => c !== '');
+                
+                vals.forEach((val, idx) => {
                     if (pendingKeys[idx]) {
                         collection.push({
                             name: pendingKeys[idx],
-                            value: parsePercentage(val)
+                            value: parseNumber(val)
                         });
                     }
                 });
-                pendingKeys = []; // Reset after consuming
-            } else {
-                // Maybe vertical format? "City", "Value"
-                if (cols.length >= 2 && !isNaN(parseFloat(cols[1].replace(',', '.')))) {
-                    const collection = currentSection === 'cities' ? data.cities : data.countries;
-                    collection.push({
-                        name: cols[0],
-                        value: parsePercentage(cols[1])
-                    });
-                }
+                pendingKeys = []; 
+            } else if (cols.length >= 2 && !isNaN(parseFloat(cols[1].replace(',', '.')))) {
+                // Vertical format
+                const collection = currentSection === 'cities' ? data.cities : data.countries;
+                collection.push({
+                    name: cols[0],
+                    value: parseNumber(cols[1])
+                });
+            }
+        } else if (currentSection === 'followers') {
+            // Growth history: "Data", "Seguidores"
+            if (cols[0] && parseDate(cols[0])) {
+                data.followers_history.push({
+                    date: parseDate(cols[0]),
+                    value: parseNumber(cols[1])
+                });
+            }
+        } else if (currentSection === 'similar_pages') {
+            // Similar pages: "Página", "Seguidores" (or just a list)
+            if (cols[0] && cols[0] !== 'Página' && cols[0] !== 'Page') {
+                data.similar_pages.push({
+                    name: cols[0],
+                    category: cols[1] || ''
+                });
             }
         }
     }
 
-    // Sort lists by value desc
+    // Sort and Sanitize
     data.cities.sort((a, b) => b.value - a.value);
     data.countries.sort((a, b) => b.value - a.value);
+    data.followers_history.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     return data;
 };

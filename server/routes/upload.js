@@ -33,7 +33,9 @@ const updateAudienceDemographics = async (data, country) => {
         import_date: new Date().toISOString(),
         gender_age_data: JSON.stringify(data.gender_age),
         cities_data: JSON.stringify(data.cities),
-        countries_data: JSON.stringify(data.countries)
+        countries_data: JSON.stringify(data.countries),
+        followers_history_data: JSON.stringify(data.followers_history || []),
+        similar_pages_data: JSON.stringify(data.similar_pages || [])
     };
 
     // Check for existing record for today and country

@@ -229,7 +229,9 @@ export const dataService = {
                 importDate: item.import_date,
                 genderAge: typeof item.gender_age === 'string' ? JSON.parse(item.gender_age) : item.gender_age || item.gender_age_data || {},
                 cities: typeof item.cities === 'string' ? JSON.parse(item.cities) : item.cities || item.cities_data || [],
-                countries: typeof item.countries === 'string' ? JSON.parse(item.countries) : item.countries || item.countries_data || []
+                countries: typeof item.countries === 'string' ? JSON.parse(item.countries) : item.countries || item.countries_data || [],
+                followersHistory: typeof item.followers_history_data === 'string' ? JSON.parse(item.followers_history_data) : item.followers_history_data || [],
+                similarPages: typeof item.similar_pages_data === 'string' ? JSON.parse(item.similar_pages_data) : item.similar_pages_data || []
             };
         } catch (err) {
             console.error("Error fetching audience demographics Details:", {
