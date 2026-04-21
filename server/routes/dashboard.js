@@ -127,15 +127,22 @@ router.get('/:country/:platform', async (req, res) => {
         const socialNetwork = platform.toLowerCase();
 
         let dateFilter = '';
-        if (startDate && endDate) {
-            // Ensure full ISO timestamp for accurate comparison if stored as ISO
-            // Or just >= start and <= end
-            const start = new Date(startDate).toISOString();
-            const endDateObj = new Date(endDate);
-            endDateObj.setUTCHours(23, 59, 59, 999);
-            const end = endDateObj.toISOString();
-            dateFilter = pb.filter(' && date >= {:start} && date <= {:end}', { start, end });
+        if (startDate && endDate && startDate !== 'undefined' && endDate !== 'undefined') {
+            try {
+                const startDateObj = new Date(startDate);
+                const endDateObj = new Date(endDate);
+                
+                if (!isNaN(startDateObj.getTime()) && !isNaN(endDateObj.getTime())) {
+                    const start = startDateObj.toISOString();
+                    endDateObj.setUTCHours(23, 59, 59, 999);
+                    const end = endDateObj.toISOString();
+                    dateFilter = pb.filter(' && date >= {:start} && date <= {:end}', { start, end });
+                }
+            } catch (e) {
+                console.error('Invalid date format received:', { startDate, endDate });
+            }
         }
+
 
 
         let metrics = [];

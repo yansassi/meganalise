@@ -39,11 +39,16 @@ const DateRangeFilter = ({ onFilterChange, className, initialRange }) => {
     // Sync with initialRange if it changes externally
     useEffect(() => {
         if (initialRange) {
-            if (initialRange.startDate) setStartDate(formatDate(initialRange.startDate));
-            if (initialRange.endDate) setEndDate(formatDate(initialRange.endDate));
-            if (initialRange.preset) setActivePreset(initialRange.preset);
+            const newStart = initialRange.startDate ? formatDate(initialRange.startDate) : startDate;
+            const newEnd = initialRange.endDate ? formatDate(initialRange.endDate) : endDate;
+            const newPreset = initialRange.preset || activePreset;
+
+            if (newStart !== startDate) setStartDate(newStart);
+            if (newEnd !== endDate) setEndDate(newEnd);
+            if (newPreset !== activePreset) setActivePreset(newPreset);
         }
     }, [initialRange]);
+
 
     // Notify parent whenever dates change — also sends the active preset
     useEffect(() => {

@@ -16,7 +16,7 @@ const StoriesDashboard = () => {
     });
 
     useEffect(() => {
-        // if (!dateRange.startDate || !dateRange.endDate) return; // Removed blocking check
+        if (!dateRange.startDate || !dateRange.endDate) return; 
         loadData();
     }, [country, dateRange]);
 
