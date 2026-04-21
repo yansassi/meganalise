@@ -130,8 +130,8 @@ const PlatformSection = ({ platform, items }) => {
 const EditRegistryModal = ({ registry, onClose, onSave }) => {
     const [formData, setFormData] = useState({
         title: registry.title,
-        start_date: registry.start_date.split('T')[0],
-        end_date: registry.end_date.split('T')[0],
+        start_date: registry.start_date.split('T')[0].split(' ')[0],
+        end_date: registry.end_date.split('T')[0].split(' ')[0],
         keywords: registry.keywords.join(', '),
         country: registry.country || 'BR',
         type: registry.type || 'keyword'
@@ -384,7 +384,7 @@ export default function EvidenceDashboard() {
                         </span>
                         <span className="flex items-center gap-1 bg-slate-100 rounded-lg px-2 py-1">
                             <span className="material-icons-round text-sm">calendar_today</span>
-                            {new Date(registry.start_date).toLocaleDateString()} - {new Date(registry.end_date).toLocaleDateString()}
+                            {formatDate(registry.start_date)} - {formatDate(registry.end_date)}
                         </span>
                         <span className="flex items-center gap-1 bg-slate-100 rounded-lg px-2 py-1">
                             <span className="material-icons-round text-sm">{isInfluencer ? 'alternate_email' : 'tag'}</span>

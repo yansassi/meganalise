@@ -841,7 +841,7 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                     // Fetch existing records for the date range
                     // Relaxed Filter: Removing 'platform="facebook"' just in case
                     existingItems = await pb.collection('facebook_daily_metrics').getFullList({
-                        filter: `country = "${country}" && date >= "${minDate}" && date <= "${maxDate}"`,
+                        filter: `country = "${country}" && date >= "${minDate} 00:00:00" && date <= "${maxDate} 23:59:59"`,
                         requestKey: null
                     });
                 }
@@ -982,7 +982,7 @@ router.post('/facebook', upload.single('file'), async (req, res) => {
                                 original_id: item.id,
                                 title: item.title,
                                 permalink: item.permalink,
-                                platform_type: item.platform, // 'social' or 'video'
+                                platform_type: item.platform_type || item.platform || 'social', // 'social', 'video', 'reel', etc.
                                 social_network: 'facebook',
                                 country: country,
                                 date: (() => {

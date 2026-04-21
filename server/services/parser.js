@@ -146,23 +146,26 @@ const parseDate = (dateStr) => {
 
 const normalizeDailyMetric = (data, metricName) => {
     return data.map(row => {
-        // Find Date Key case-insensitive and robust
+        // Find Date Key case-insensitive and robust, avoiding "Total" summary rows
         const keys = Object.keys(row);
-        const dateKey = keys.find(k => k.toLowerCase().trim() === 'data' || k.toLowerCase().trim() === 'date');
+        const dateKey = keys.find(k => {
+            const normK = k.toLowerCase().trim().replace(/['"]/g, '');
+            const val = String(row[k] || '').toLowerCase().trim();
+            return (normK === 'data' || normK === 'date') && val !== 'total';
+        });
 
         if (!dateKey) return null;
 
         const dateVal = row[dateKey];
 
         // Find Value Key: first key that is not the date key and looks numeric-ish if possible
-        // But simply taking the other column is standard for these 2-col exports
         const valueKey = keys.find(k => k !== dateKey);
 
         if (!dateVal || !valueKey) return null;
 
         return {
             date: parseDate(dateVal),
-            value: parseInt(row[valueKey] || 0, 10),
+            value: parseInt(String(row[valueKey] || 0).replace(/[^\d]/g, '') || 0, 10),
             metric: metricName
         };
     }).filter(item => item && item.date); // Filter nulls
@@ -271,18 +274,26 @@ const normalizeContentData = (data, isUSFormat = 'auto', fileName = '') => {
         const keyMap = createKeyMap(row);
         const getValue = (candidates) => findValue(row, keyMap, candidates);
 
-        const reach = parseInt(getValue(['Alcance', 'Reach']) || 0, 10);
-        const likes = parseInt(getValue(['Curtidas', 'Likes', 'Curtida', 'Like', 'Reações', 'Reacoes', 'Reactions']) || 0, 10);
-        const shares = parseInt(getValue(['Compartilhamentos', 'Shares', 'Share']) || 0, 10);
-        const comments = parseInt(getValue(['Respostas', 'Comentários', 'Comments', 'Comentarios', 'Comentario', 'Comment', 'Res']) || 0, 10);
-        const saved = parseInt(getValue(['Salvamentos', 'Saved', 'Save']) || 0, 10);
+        const reach = parseInt(String(getValue(['Alcance', 'Reach']) || 0).replace(/[^\d]/g, '') || 0, 10);
+        const likes = parseInt(String(getValue(['Curtidas', 'Likes', 'Curtida', 'Like', 'Reações', 'Reacoes', 'Reactions']) || 0).replace(/[^\d]/g, '') || 0, 10);
+        const shares = parseInt(String(getValue(['Compartilhamentos', 'Shares', 'Share']) || 0).replace(/[^\d]/g, '') || 0, 10);
+        const comments = parseInt(String(getValue(['Respostas', 'Comentários', 'Comments', 'Comentarios', 'Comentario', 'Comment', 'Res']) || 0).replace(/[^\d]/g, '') || 0, 10);
+        const saved = parseInt(String(getValue(['Salvamentos', 'Saved', 'Save']) || 0).replace(/[^\d]/g, '') || 0, 10);
         // Facebook video reports use 'Visualizações de 3 segundos', general reports use 'Visualizações' or 'Impressões'
-        const views = parseInt(getValue(['Visualizações de 3 segundos', 'Visualizações', 'Visualizacoes', 'Views', 'View', 'Impressões do anúncio', 'Impressões', 'Reproduções', 'Reproducoes']) || 0, 10);
-        const duration = parseInt(getValue(['Duração (s)', 'Duration (s)', 'Duracao']) || 0, 10);
-        const clicks = parseInt(getValue(['Cliques no link', 'Link Clicks', 'Cliques']) || 0, 10);
+        const views = parseInt(String(getValue(['Visualizações de 3 segundos', 'Visualizações', 'Visualizacoes', 'Views', 'View', 'Impressões do anúncio', 'Impressões', 'Reproduções', 'Reproducoes']) || 0).replace(/[^\d]/g, '') || 0, 10);
+        const duration = parseInt(String(getValue(['Duração (s)', 'Duration (s)', 'Duracao']) || 0).replace(/[^\d]/g, '') || 0, 10);
+        const clicks = parseInt(String(getValue(['Cliques no link', 'Link Clicks', 'Cliques']) || 0).replace(/[^\d]/g, '') || 0, 10);
 
         const permalink = getValue(['Link permanente', 'Permalink', 'Link']) || '';
         const author = getValue(['Nome de usuário da conta', 'Account username', 'Username', 'Nome da Página']) || '';
+        
+        // Facebook specific: identify platform type from 'Tipo de post' column
+        const rawPlatformType = (getValue(['Tipo de post', 'Post type', 'Type', 'Formato']) || '').toLowerCase();
+        let platform_type = 'social';
+        if (rawPlatformType.includes('reel')) platform_type = 'reel';
+        else if (rawPlatformType.includes('video') || rawPlatformType.includes('vídeo')) platform_type = 'video';
+        else if (rawPlatformType.includes('story')) platform_type = 'story';
+        else if (rawPlatformType.includes('imagem') || rawPlatformType.includes('image') || rawPlatformType.includes('foto')) platform_type = 'image';
 
         const engagements = likes + shares + comments + saved + clicks;
         const virality = reach > 0 ? ((engagements / reach) * 100).toFixed(1) : 0;
@@ -294,7 +305,7 @@ const normalizeContentData = (data, isUSFormat = 'auto', fileName = '') => {
         const rawDate = getValue(['Horário de publicação', 'Data', 'Date', 'Horario']);
 
         // Check if row is a summary row (starts with Total or date is Total)
-        if (rawDate === 'Total' || getValue(['Identificação do post']) === 'Total') {
+        if (String(rawDate).toLowerCase() === 'total' || String(getValue(['Identificação do post'])).toLowerCase() === 'total') {
             return null; // Skip this row
         }
 
@@ -394,10 +405,26 @@ const normalizeContentData = (data, isUSFormat = 'auto', fileName = '') => {
         }
 
         return {
-            id, title, imageUrl: '', permalink, platform, manager: 'Time Social', author,
-            date: dateFormatted, posting_time: timeFormatted, virality, status, reach, likes, shares, comments, saved, views, clicks, duration
+            id,
+            title: title,
+            author: author,
+            date: dateFormatted,
+            time: timeFormatted,
+            reach: reach,
+            likes: likes,
+            comments: comments,
+            shares: shares,
+            saved: saved,
+            views: views,
+            clicks: clicks,
+            engagement: engagements,
+            virality: virality,
+            duration: duration,
+            permalink: permalink,
+            platform_type: platform_type || platform,
+            status: status
         };
-    }).filter(item => item !== null); // Remove skipped rows
+    }).filter(item => item && item.date); // Filter nulls
 };
 
 // Helper to parse diverse audience/demographics file
@@ -883,12 +910,18 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
                 transformHeader: h => h.trim(),
                 beforeFirstChunk: (chunk) => {
                     const lines = chunk.split(/\r?\n/);
-                    // Find line starting with "Data"
-                    const index = lines.findIndex(l => l.toLowerCase().includes('"data"') || l.toLowerCase().startsWith('data,'));
+                    // More robust header search for metrics
+                    const index = lines.findIndex(l => {
+                        const lower = l.toLowerCase();
+                        // Look for Data/Date column and some numeric column or specific headers
+                        return (lower.includes('data,') || lower.includes('date,') || lower.includes('"data"') || lower.includes('"date"')) ||
+                               (lower.includes(',primary') || lower.includes(',valor') || lower.includes(',value'));
+                    });
                     if (index !== -1) {
                         return lines.slice(index).join('\n');
                     }
                     return chunk;
+
                 },
                 complete: (results) => {
                     const data = results.data;
@@ -914,22 +947,7 @@ const parseFacebookCSV = (fileBuffer, fileName) => {
             header: true,
             skipEmptyLines: true,
             transformHeader: h => h.trim(),
-            beforeFirstChunk: (chunk) => {
-                const lines = chunk.split(/\r?\n/);
-                // Look for header line containing key columns
-                // Keywords: "Link permanente", "Permalink", "Identificação", "Título", "Data"
-                const index = lines.findIndex(l => {
-                    const lower = l.toLowerCase();
-                    return lower.includes('link permanente') || lower.includes('permalink') ||
-                        lower.includes('identificação do post') || lower.includes('active video id') ||
-                        lower.includes('título') || lower.includes('title');
-                });
 
-                if (index !== -1) {
-                    return lines.slice(index).join('\n');
-                }
-                return chunk;
-            },
             complete: (results) => {
                 const data = results.data;
                 const headers = results.meta.fields || [];
