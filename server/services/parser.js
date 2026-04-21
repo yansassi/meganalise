@@ -412,7 +412,8 @@ const normalizeContentData = (data, isUSFormat = 'auto', fileName = '') => {
             virality: virality,
             duration: duration,
             permalink: permalink,
-            platform_type: platform_type || platform,
+            platform: platform,
+            platform_type: (platform_type && platform_type !== 'social') ? platform_type : platform,
             status: status
         };
     }).filter(item => item && item.date); // Filter nulls

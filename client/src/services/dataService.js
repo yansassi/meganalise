@@ -605,9 +605,8 @@ export const dataService = {
 
                             // Caso B: O post é da marca mencionando o influenciador (Compartilhamento)
                             if (brandAccounts.includes(poster)) {
-                                // Só aceita se for uma menção EXPLÍCITA (@) no título/legenda
-                                if (keyword.startsWith('@') && item.title && regex.test(item.title)) {
-                                    // Marcamos como compartilhado para que a UI possa distinguir se necessário
+                                // Aceita se houver uma menção no título/legenda (com ou sem @)
+                                if (item.title && regex.test(item.title)) {
                                     item.is_shared_content = true;
                                     item.original_author_tagged = handleLower;
                                     return true;
