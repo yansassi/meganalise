@@ -168,6 +168,7 @@ const PlatformView = ({ platform }) => {
         let likes = 0, comments = 0, shares = 0, saved = 0;
         let watchTimeSum = 0, ctrSum = 0, ctrCount = 0;
         let netFollowers = 0;
+        let leads = 0, phoneClicks = 0;
 
         const followersParams = { start: null, end: null };
         const chartMap = {};
@@ -215,13 +216,25 @@ const PlatformView = ({ platform }) => {
                 if (!followersParams.end || d > followersParams.end.date) followersParams.end = { date: d, value: m.value };
                 followersData.push({ date: m.date, value: m.value });
             }
-            if (m.metric === 'website_clicks') websiteClicks += m.value;
+            if (m.metric === 'website_clicks' || m.metric === 'phone_clicks') phoneClicks += m.value;
+            if (m.metric === 'leads') leads += m.value;
             if (m.metric === 'profile_visits') profileVisits += m.value;
 
-            if (m.metric === 'reach' || m.metric === 'video_views' || m.metric === 'views') {
-                chartMap[m.date] = (chartMap[m.date] || 0) + m.value;
+            // Chart Data Mapping (GrowthChart)
+            // For TikTok, we have both 'reach' and 'video_views'. To avoid double counting on the same date:
+            if (m.metric === 'reach' || m.metric === 'video_views' || m.metric === 'views' || m.metric === 'impressions') {
+                if (!chartMap[m.date]) chartMap[m.date] = { reach: 0, video_views: 0 };
+                
+                if (m.metric === 'reach') chartMap[m.date].reach = m.value;
+                if (m.metric === 'video_views' || m.metric === 'views' || m.metric === 'impressions') chartMap[m.date].video_views = m.value;
             }
         });
+
+        // Convert chartMap to array, choosing the best metric for the "value" field
+        const chartData = Object.entries(chartMap).map(([date, vals]) => ({
+            date,
+            value: vals.reach || vals.video_views || 0 // Prefer reach if available
+        })).sort((a, b) => new Date(a.date) - new Date(b.date));
 
         // YouTube/TikTok Retention Processing
         const retentionMap = {};
@@ -359,8 +372,8 @@ const PlatformView = ({ platform }) => {
 
         // ── Calcular métricas do período anterior ──────────────────────────────────
         const prevImpressions = sumMetric(prevDbData.metrics, 'impressions', 'video_views', 'views');
-        const prevReach = sumMetric(prevDbData.metrics, 'reach', 'impressions');
-        const prevInteractions = sumMetric(prevDbData.metrics, 'interactions', 'likes', 'comments', 'shares');
+        const prevReach = sumMetric(prevDbData.metrics, 'reach');
+        const prevInteractions = sumMetric(prevDbData.metrics, 'interactions', 'likes', 'comments', 'shares', 'saved', 'favorites');
         const prevProfileVisits = sumMetric(prevDbData.metrics, 'profile_visits', 'profile_views');
         const prevWebsiteClicks = sumMetric(prevDbData.metrics, 'website_clicks');
         const prevLikes = sumMetric(prevDbData.metrics, 'likes');
@@ -380,6 +393,7 @@ const PlatformView = ({ platform }) => {
         if (platform === 'TikTok') {
             stats = [
                 { label: 'Visualizações', value: impressions, trend: calcTrend(impressions, prevImpressions), icon: 'play_circle', color: 'red' },
+                { label: 'Alcance', value: reach, trend: calcTrend(reach, prevReach), icon: 'radar', color: 'orange' },
                 { label: 'Seguidores (Saldo)', value: netFollowers, trend: calcTrend(netFollowers, prevNetFollowers), icon: 'group_add', color: 'cyan' },
                 { label: 'Visitas ao Perfil', value: profileVisits, trend: calcTrend(profileVisits, prevProfileVisits), icon: 'person_search', color: 'teal' },
                 { label: 'Interações', value: interactions, trend: calcTrend(interactions, prevInteractions), icon: 'favorite_border', color: 'purple' },
@@ -388,6 +402,9 @@ const PlatformView = ({ platform }) => {
                 { label: 'Compartilhamentos', value: shares, trend: calcTrend(shares, prevShares), icon: 'share', color: 'green' },
                 { label: 'Favoritos', value: saved, trend: calcTrend(saved, prevSaves), icon: 'bookmark', color: 'orange' }
             ];
+
+            if (data.leads > 0) stats.push({ label: 'Leads', value: data.leads, icon: 'leaderboard', color: 'indigo' });
+            if (data.phoneClicks > 0) stats.push({ label: 'Cliques (Tel)', value: data.phoneClicks, icon: 'phone', color: 'blue' });
         } else if (platform === 'Facebook') {
             stats = [
                 { label: 'Visualizações', value: impressions, trend: calcTrend(impressions, prevImpressions), icon: 'visibility', color: 'blue' },
@@ -444,10 +461,12 @@ const PlatformView = ({ platform }) => {
             netFollowers,
             reach,
             impressions,
-            interactions,
             websiteClicks,
             profileVisits,
             saved,
+            leads,
+            phoneClicks,
+            chartData,
             isLoaded: true
         });
     };

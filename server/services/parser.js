@@ -876,7 +876,10 @@ const parseTikTokCSV = async (buffer, fileName) => {
                         'Comentarios': 'comments',
                         'Compartilhamentos': 'shares',
                         'Novos seguidores': 'followers_change',
-                        'Crescimento líquido': 'net_followers'
+                        'Crescimento líquido': 'net_followers',
+                        'Cliques no número de telefone': 'phone_clicks',
+                        'Envio de leads': 'leads',
+                        'Seguidores perdidos': 'followers_lost'
                     };
                     resolve({ type: 'metric', data: normalizeTikTokDailyMetric(data, mapping) });
                     return;
