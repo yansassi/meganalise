@@ -767,10 +767,15 @@ const normalizeTikTokDailyMetric = (data, metricMapping) => {
         for (const [csvKey, dbMetricName] of Object.entries(metricMapping)) {
             const rowKey = Object.keys(row).find(k => k.toLowerCase() === csvKey.toLowerCase());
             if (rowKey && row[rowKey] !== undefined) {
+                let rawVal = (row[rowKey] || '0').toString().trim();
+                // Limpa caracteres não numéricos (como --, NAN, ou símbolos)
+                const cleanVal = rawVal.replace(/[^\d.-]/g, '');
+                const val = parseInt(cleanVal, 10) || 0;
+
                 metrics.push({
                     date: parseDate(dateVal),
                     metric: dbMetricName,
-                    value: parseInt(row[rowKey] || 0, 10)
+                    value: val
                 });
             }
         }
