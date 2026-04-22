@@ -5,8 +5,7 @@ WORKDIR /app
 # Copy package.json only to avoid lockfile platform issues
 COPY package.json ./
 
-# Install build dependencies and tools
-RUN apk add --no-cache python3 make g++ git
+# No build dependencies needed for current project packages
 
 # Install dependencies
 RUN npm cache clean --force && npm install --omit=dev
