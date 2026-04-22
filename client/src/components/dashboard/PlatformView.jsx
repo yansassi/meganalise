@@ -230,11 +230,7 @@ const PlatformView = ({ platform }) => {
             }
         });
 
-        // Convert chartMap to array, choosing the best metric for the "value" field
-        const chartData = Object.entries(chartMap).map(([date, vals]) => ({
-            date,
-            value: vals.reach || vals.video_views || 0 // Prefer reach if available
-        })).sort((a, b) => new Date(a.date) - new Date(b.date));
+        // TikTok Retention processing logic below...
 
         // YouTube/TikTok Retention Processing
         const retentionMap = {};
@@ -307,10 +303,11 @@ const PlatformView = ({ platform }) => {
         const chartData = Object.keys(finalChartMap).sort().map(date => {
             const shortDate = date.split('T')[0];
             const postStats = postStatsMap[shortDate] || { count: 0, types: {} };
+            const rawValue = finalChartMap[date];
 
             return {
                 name: date,
-                value: finalChartMap[date],
+                value: typeof rawValue === 'object' ? (rawValue.reach || rawValue.video_views || 0) : rawValue,
                 postsCount: postStats.count,
                 postTypes: postStats.types
             };
@@ -466,7 +463,6 @@ const PlatformView = ({ platform }) => {
             saved,
             leads,
             phoneClicks,
-            chartData,
             isLoaded: true
         });
     };
