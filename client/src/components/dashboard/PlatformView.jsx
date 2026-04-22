@@ -165,7 +165,7 @@ const PlatformView = ({ platform }) => {
     const processDbData = (dbData, prevDbData = { metrics: [], content: [] }) => {
         let reach = 0, interactions = 0, followers = 0, websiteClicks = 0, profileVisits = 0, storyViews = 0;
         let impressions = 0;
-        let likes = 0, comments = 0, shares = 0;
+        let likes = 0, comments = 0, shares = 0, saved = 0;
         let watchTimeSum = 0, ctrSum = 0, ctrCount = 0;
         let netFollowers = 0;
 
@@ -202,6 +202,10 @@ const PlatformView = ({ platform }) => {
             }
             if (m.metric === 'shares') {
                 shares += m.value;
+                interactions += m.value;
+            }
+            if (m.metric === 'saved' || m.metric === 'favorites') {
+                saved += m.value;
                 interactions += m.value;
             }
 
@@ -362,6 +366,7 @@ const PlatformView = ({ platform }) => {
         const prevLikes = sumMetric(prevDbData.metrics, 'likes');
         const prevComments = sumMetric(prevDbData.metrics, 'comments');
         const prevShares = sumMetric(prevDbData.metrics, 'shares');
+        const prevSaves = sumMetric(prevDbData.metrics, 'saved', 'favorites');
 
         // Calcula net followers anterior
         const prevFollowersData = prevDbData.metrics.filter(m => m.metric === 'followers_total');
@@ -380,7 +385,8 @@ const PlatformView = ({ platform }) => {
                 { label: 'Interações', value: interactions, trend: calcTrend(interactions, prevInteractions), icon: 'favorite_border', color: 'purple' },
                 { label: 'Curtidas', value: likes, trend: calcTrend(likes, prevLikes), icon: 'favorite', color: 'pink' },
                 { label: 'Comentários', value: comments, trend: calcTrend(comments, prevComments), icon: 'chat_bubble', color: 'blue' },
-                { label: 'Compartilhamentos', value: shares, trend: calcTrend(shares, prevShares), icon: 'share', color: 'green' }
+                { label: 'Compartilhamentos', value: shares, trend: calcTrend(shares, prevShares), icon: 'share', color: 'green' },
+                { label: 'Favoritos', value: saved, trend: calcTrend(saved, prevSaves), icon: 'bookmark', color: 'orange' }
             ];
         } else if (platform === 'Facebook') {
             stats = [
@@ -441,6 +447,7 @@ const PlatformView = ({ platform }) => {
             interactions,
             websiteClicks,
             profileVisits,
+            saved,
             isLoaded: true
         });
     };

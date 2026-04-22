@@ -824,12 +824,20 @@ const parseTikTokCSV = async (buffer, fileName) => {
 
                     const contentData = data.map(row => {
                         const link = row[linkHeader] || '';
+                        
+                        // Extração do ID do vídeo
                         const idMatch = link.match(/\/video\/(\d+)/);
                         const original_id = idMatch ? idMatch[1] : link;
+
+                        // Extração do Autor (Username) a partir do link
+                        // Ex: https://www.tiktok.com/@megaeletronicosoficialpy/video/... -> @megaeletronicosoficialpy
+                        const authorMatch = link.match(/tiktok\.com\/(@[^\/?#]+)/);
+                        const author = authorMatch ? authorMatch[1] : '';
 
                         return {
                             original_id,
                             title: row[titleHeader],
+                            author: author,
                             permalink: link,
                             post_time: postTimeHeader ? row[postTimeHeader] : null,
                             date_published: parseDate(postTimeHeader ? row[postTimeHeader] : null),
@@ -845,21 +853,38 @@ const parseTikTokCSV = async (buffer, fileName) => {
                     return;
                 }
 
-                // 2. Overview (Daily Metrics)
-                if (headersLower.includes('video views') && headersLower.includes('profile views')) {
-                    const mapping = {
+                // 2. Overview (Daily Metrics) - English or Portuguese
+                const hasEnglishOverview = headersLower.includes('video views') && headersLower.includes('profile views');
+                const hasPortugueseOverview = headersLower.includes('visualizações do vídeo') || headersLower.includes('visualizacoes do video') || headersLower.includes('visualizações do perfil') || headersLower.includes('audiência alcançada');
+
+                if (hasEnglishOverview || hasPortugueseOverview) {
+                    const mapping = hasEnglishOverview ? {
                         'Video Views': 'video_views',
                         'Profile Views': 'profile_views',
                         'Likes': 'likes',
                         'Comments': 'comments',
                         'Shares': 'shares'
+                    } : {
+                        'Visualizações do vídeo': 'video_views',
+                        'Visualizacoes do video': 'video_views',
+                        'Audiência alcançada': 'reach',
+                        'Audiencia alcancada': 'reach',
+                        'Visualizações do perfil': 'profile_views',
+                        'Visualizacoes do perfil': 'profile_views',
+                        'Curtidas': 'likes',
+                        'Comentários': 'comments',
+                        'Comentarios': 'comments',
+                        'Compartilhamentos': 'shares',
+                        'Novos seguidores': 'followers_change',
+                        'Crescimento líquido': 'net_followers'
                     };
                     resolve({ type: 'metric', data: normalizeTikTokDailyMetric(data, mapping) });
                     return;
                 }
 
                 // 3. Viewers
-                if (headersLower.includes('total viewers') && headersLower.includes('new viewers')) {
+                const hasEnglishViewers = headersLower.includes('total viewers') && headersLower.includes('new viewers');
+                if (hasEnglishViewers) {
                     const mapping = {
                         'Total Viewers': 'total_viewers',
                         'New Viewers': 'new_viewers',
@@ -869,11 +894,20 @@ const parseTikTokCSV = async (buffer, fileName) => {
                     return;
                 }
 
-                // 4. Follower History
-                if (headersLower.includes('followers') && headersLower.includes('difference in followers from previous day')) {
-                    const mapping = {
+                // 4. Follower History / Audiência
+                const hasEnglishFollowers = headersLower.includes('followers') && headersLower.includes('difference in followers from previous day');
+                const hasPortugueseAudience = headersLower.includes('novos seguidores') && headersLower.includes('total de seguidores');
+
+                if (hasEnglishFollowers || hasPortugueseAudience) {
+                    const mapping = hasEnglishFollowers ? {
                         'Followers': 'followers_total',
                         'Difference in followers from previous day': 'followers_change'
+                    } : {
+                        'Novos seguidores': 'followers_change',
+                        'Total de seguidores': 'followers_total',
+                        'Audiência alcançada': 'reach',
+                        'Audiencia alcancada': 'reach',
+                        'Audiência engajada': 'interactions'
                     };
                     resolve({ type: 'metric', data: normalizeTikTokDailyMetric(data, mapping) });
                     return;
