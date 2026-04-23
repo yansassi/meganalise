@@ -10,13 +10,13 @@ const GRAPH_API_BASE = `https://graph.facebook.com/${GRAPH_API_VERSION}`;
 // Configuração das páginas por país
 const PAGE_CONFIGS = [
     {
-        country: 'brasil',
+        country: 'BR',
         pageId: process.env.FB_PAGE_ID_BRASIL,
         token: process.env.FB_PAGE_TOKEN_BRASIL,
         label: 'Mega Eletrônicos Paraguai'
     },
     {
-        country: 'paraguai',
+        country: 'PY',
         pageId: process.env.FB_PAGE_ID_PARAGUAI,
         token: process.env.FB_PAGE_TOKEN_PARAGUAI,
         label: 'Mega Electrónicos Paraguay'

@@ -128,7 +128,8 @@ const UploadMetrics = () => {
     };
 
     // ── Facebook API Sync ──────────────────────────────────────────
-    const countrySlug = selectedCountry === 'BR' ? 'brasil' : 'paraguai';
+    // Usa 'BR'/'PY' igual ao padrão do CSV e do dashboard
+    const countrySlug = selectedCountry;
 
     const applyPreset = (days) => {
         setSyncPreset(days);
