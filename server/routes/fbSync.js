@@ -161,7 +161,7 @@ router.post('/sync', async (req, res) => {
         const { country, since, until, syncContent = true } = req.body;
 
         if (!country) {
-            return res.status(400).json({ error: '"country" é obrigatório (brasil ou paraguai)' });
+            return res.status(400).json({ error: '"country" é obrigatório (BR ou PY)' });
         }
 
         // Período padrão: últimos 30 dias
@@ -240,7 +240,7 @@ router.post('/sync', async (req, res) => {
 
 router.post('/sync/all', async (req, res) => {
     const { since, until, syncContent = true } = req.body;
-    const countries = ['brasil', 'paraguai'];
+    const countries = ['BR', 'PY'];
 
     const results = [];
     for (const country of countries) {

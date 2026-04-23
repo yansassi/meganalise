@@ -65,8 +65,8 @@ const graphFetch = async (path, params = {}) => {
  * Retorna a configuração da página pelo country slug.
  */
 const getPageConfig = (country) => {
-    const config = PAGE_CONFIGS.find(c => c.country === country.toLowerCase());
-    if (!config) throw new Error(`Configuração de página não encontrada para country: "${country}"`);
+    const config = PAGE_CONFIGS.find(c => c.country.toUpperCase() === country.toUpperCase());
+    if (!config) throw new Error(`Configuração de página não encontrada para country: "${country}" (disponíveis: ${PAGE_CONFIGS.map(p => p.country).join(', ')})`);
     if (!config.pageId || !config.token) throw new Error(`Token ou Page ID ausente para country: "${country}". Verifique o .env`);
     return config;
 };
