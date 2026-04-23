@@ -4,6 +4,7 @@ const cors = require('cors');
 const { pb } = require('./services/db');
 const uploadRoutes = require('./routes/upload');
 const dashboardRoutes = require('./routes/dashboard');
+const fbSyncRoutes = require('./routes/fbSync');
 const { requireAuth } = require('./middleware/auth');
 
 const app = express();
@@ -35,6 +36,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/upload', requireAuth, uploadRoutes);
 app.use('/api/dashboard', requireAuth, dashboardRoutes);
+app.use('/api/facebook', requireAuth, fbSyncRoutes);
 
 // Health Check
 app.get('/', (req, res) => {

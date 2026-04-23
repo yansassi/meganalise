@@ -1,8 +1,8 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 
 const Sidebar = ({ country }) => {
-  const [openSubmenu, setOpenSubmenu] = React.useState('Instagram');
+  const location = useLocation();
 
   const navItems = [
     { name: 'Painel', icon: 'dashboard', path: '/' },
@@ -52,6 +52,24 @@ const Sidebar = ({ country }) => {
     { name: 'Evidências', icon: 'folder_special', path: '/evidence' },
     { name: 'Configurações', icon: 'settings', path: '/settings' },
   ];
+
+  const [openSubmenu, setOpenSubmenu] = React.useState(() => {
+    const currentPath = window.location.pathname;
+    const activeItem = navItems.find(item => 
+      item.submenu && currentPath.includes(item.path)
+    );
+    return activeItem ? activeItem.name : null;
+  });
+
+  React.useEffect(() => {
+    const currentPath = location.pathname;
+    const activeItem = navItems.find(item => 
+      item.submenu && currentPath.includes(item.path)
+    );
+    if (activeItem) {
+      setOpenSubmenu(activeItem.name);
+    }
+  }, [location.pathname]);
 
   const toggleSubmenu = (name) => {
     setOpenSubmenu(openSubmenu === name ? null : name);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-// import { instagramParser } from '../services/instagramParser'; // Deprecated - using backend
 import { dataService } from '../services/dataService';
+import { pb } from '../lib/pocketbase';
 
 const UploadMetrics = () => {
     const [selectedPlatform, setSelectedPlatform] = useState('');
@@ -8,12 +8,24 @@ const UploadMetrics = () => {
     const [isDragging, setIsDragging] = useState(false);
     const [files, setFiles] = useState([]);
 
-    // Progress State
+    // Progress State (CSV upload)
     const [showProgress, setShowProgress] = useState(false);
     const [progressValue, setProgressValue] = useState(0);
     const [progressAction, setProgressAction] = useState('');
     const [progressDetails, setProgressDetails] = useState('');
     const [completed, setCompleted] = useState(false);
+
+    // Facebook API Sync State
+    const [showSyncPanel, setShowSyncPanel] = useState(false);
+    const [syncPreset, setSyncPreset] = useState('30');
+    const [syncSince, setSyncSince] = useState(() => {
+        const d = new Date(); d.setDate(d.getDate() - 30);
+        return d.toISOString().split('T')[0];
+    });
+    const [syncUntil, setSyncUntil] = useState(() => new Date().toISOString().split('T')[0]);
+    const [syncLoading, setSyncLoading] = useState(false);
+    const [syncResult, setSyncResult] = useState(null);
+    const [syncError, setSyncError] = useState('');
 
     // Platforms Configuration
     const platforms = [
@@ -113,6 +125,47 @@ const UploadMetrics = () => {
         e.preventDefault();
         setIsDragging(false);
         handleFileUpload(e.dataTransfer.files);
+    };
+
+    // ── Facebook API Sync ──────────────────────────────────────────
+    const countrySlug = selectedCountry === 'BR' ? 'brasil' : 'paraguai';
+
+    const applyPreset = (days) => {
+        setSyncPreset(days);
+        const d = new Date();
+        d.setDate(d.getDate() - parseInt(days));
+        setSyncSince(d.toISOString().split('T')[0]);
+        setSyncUntil(new Date().toISOString().split('T')[0]);
+    };
+
+    const handleSyncFacebook = async () => {
+        setSyncLoading(true);
+        setSyncResult(null);
+        setSyncError('');
+
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL || 'https://api.meganalise.pro';
+            const response = await fetch(`${apiUrl}/api/facebook/sync`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${pb.authStore.token}`
+                },
+                body: JSON.stringify({ country: countrySlug, since: syncSince, until: syncUntil })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || data.error) {
+                throw new Error(data.error || 'Erro ao sincronizar');
+            }
+
+            setSyncResult(data.summary);
+        } catch (err) {
+            setSyncError(err.message);
+        } finally {
+            setSyncLoading(false);
+        }
     };
 
     return (
@@ -272,7 +325,7 @@ const UploadMetrics = () => {
                                     Você está enviando dados para <strong className="text-primary">{selectedPlatform}</strong> em <strong className="text-indigo-500">{selectedCountry === 'BR' ? 'Brasil' : 'Paraguai'}</strong>.
                                 </p>
 
-                                <div className="flex gap-4">
+                                <div className="flex gap-4 flex-wrap justify-center">
                                     <button
                                         onClick={() => document.getElementById('pageFileInput').click()}
                                         className="px-8 py-4 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/30 hover:shadow-primary/50 hover:-translate-y-1 transition-all flex items-center gap-2"
@@ -280,7 +333,132 @@ const UploadMetrics = () => {
                                         <span className="material-icons-round">folder_open</span>
                                         Escolher Arquivos
                                     </button>
+
+                                    {/* Botão API — somente para Facebook */}
+                                    {selectedPlatform === 'Facebook' && (
+                                        <button
+                                            onClick={() => { setShowSyncPanel(p => !p); setSyncResult(null); setSyncError(''); }}
+                                            className="px-8 py-4 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 hover:-translate-y-1 transition-all flex items-center gap-2"
+                                        >
+                                            <span className="material-icons-round">sync</span>
+                                            Sincronizar via API
+                                        </button>
+                                    )}
                                 </div>
+
+                                {/* Painel de Sync da API — Facebook */}
+                                {selectedPlatform === 'Facebook' && showSyncPanel && (
+                                    <div className="mt-6 w-full max-w-md mx-auto bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700/40 rounded-2xl p-5 text-left animate-fade-in">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <span className="material-icons-round text-blue-600 text-lg">api</span>
+                                            <h4 className="font-bold text-blue-700 dark:text-blue-300 text-sm">Meta Graph API</h4>
+                                            <span className="ml-auto text-xs text-gray-400">{selectedCountry === 'BR' ? '🇧🇷 Brasil' : '🇵🇾 Paraguai'}</span>
+                                        </div>
+
+                                        {/* Presets de período */}
+                                        <p className="text-xs text-gray-500 mb-2 font-semibold">Período a sincronizar</p>
+                                        <div className="flex gap-2 mb-4 flex-wrap">
+                                            {['7', '30', '90'].map(d => (
+                                                <button
+                                                    key={d}
+                                                    onClick={() => applyPreset(d)}
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                                        syncPreset === d
+                                                            ? 'bg-blue-600 text-white shadow-md'
+                                                            : 'bg-white dark:bg-white/10 text-gray-600 dark:text-gray-300 hover:bg-blue-100'
+                                                    }`}
+                                                >
+                                                    Últimos {d} dias
+                                                </button>
+                                            ))}
+                                            <button
+                                                onClick={() => setSyncPreset('custom')}
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                                    syncPreset === 'custom'
+                                                        ? 'bg-blue-600 text-white shadow-md'
+                                                        : 'bg-white dark:bg-white/10 text-gray-600 dark:text-gray-300 hover:bg-blue-100'
+                                                }`}
+                                            >
+                                                Personalizado
+                                            </button>
+                                        </div>
+
+                                        {/* Datas customizadas */}
+                                        {syncPreset === 'custom' && (
+                                            <div className="flex gap-3 mb-4">
+                                                <div className="flex-1">
+                                                    <label className="text-xs text-gray-500 block mb-1">De</label>
+                                                    <input
+                                                        type="date"
+                                                        value={syncSince}
+                                                        onChange={e => setSyncSince(e.target.value)}
+                                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-card-dark text-sm focus:outline-none focus:border-blue-400"
+                                                    />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="text-xs text-gray-500 block mb-1">Até</label>
+                                                    <input
+                                                        type="date"
+                                                        value={syncUntil}
+                                                        onChange={e => setSyncUntil(e.target.value)}
+                                                        className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-card-dark text-sm focus:outline-none focus:border-blue-400"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Período selecionado */}
+                                        {syncPreset !== 'custom' && (
+                                            <p className="text-xs text-gray-400 mb-4">
+                                                <span className="font-semibold text-blue-600">{syncSince}</span> até <span className="font-semibold text-blue-600">{syncUntil}</span>
+                                            </p>
+                                        )}
+
+                                        {/* Botão de Sincronizar */}
+                                        <button
+                                            onClick={handleSyncFacebook}
+                                            disabled={syncLoading}
+                                            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-md"
+                                        >
+                                            {syncLoading ? (
+                                                <><span className="material-icons-round animate-spin text-lg">sync</span> Sincronizando...</>
+                                            ) : (
+                                                <><span className="material-icons-round text-lg">cloud_sync</span> Iniciar Sync</>  
+                                            )}
+                                        </button>
+
+                                        {/* Resultado */}
+                                        {syncResult && (
+                                            <div className="mt-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700/30 rounded-xl p-4 animate-fade-in">
+                                                <div className="flex items-center gap-2 mb-3">
+                                                    <span className="material-icons-round text-green-500">check_circle</span>
+                                                    <span className="font-bold text-green-700 dark:text-green-400 text-sm">Sincronização concluída!</span>
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    {[
+                                                        { label: 'Métricas', icon: 'bar_chart', val: syncResult.metrics?.saved ?? 0 },
+                                                        { label: 'Posts', icon: 'article', val: syncResult.posts?.saved ?? 0 },
+                                                        { label: 'Stories', icon: 'auto_stories', val: syncResult.stories?.saved ?? 0 },
+                                                    ].map(item => (
+                                                        <div key={item.label} className="text-center bg-white dark:bg-white/5 rounded-lg p-2">
+                                                            <span className="material-icons-round text-blue-500 text-base">{item.icon}</span>
+                                                            <p className="font-bold text-lg text-gray-800 dark:text-white leading-none mt-1">{item.val}</p>
+                                                            <p className="text-xs text-gray-400">{item.label}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Erro */}
+                                        {syncError && (
+                                            <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/30 rounded-xl p-3 flex items-start gap-2 animate-fade-in">
+                                                <span className="material-icons-round text-red-500 text-base mt-0.5">error</span>
+                                                <p className="text-xs text-red-600 dark:text-red-400">{syncError}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 <input
                                     id="pageFileInput"
                                     type="file"
